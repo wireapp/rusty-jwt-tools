@@ -1,12 +1,14 @@
+use crate::ByteArray;
+
 /// Client identifier
 #[repr(C)]
 pub struct QualifiedClientId {
     /// the user ID UUID-4 in ASCII string representation
-    pub user: Vec<u8>,
+    pub user: ByteArray,
     /// the client number assigned by the backend
     pub client: u16,
     /// the backend domain of the client
-    pub domain: Vec<u8>,
+    pub domain: ByteArray,
 }
 
 /// Response for DPoP access token generation request
@@ -18,7 +20,7 @@ pub struct DpopResponse {
     pub error: u8,
 
     /// DPoP token. Will be empty in case of errors
-    pub dpop_token: Vec<u8>,
+    pub dpop_token: ByteArray,
 }
 
 /// Validate the provided dpop_proof DPoP proof JWT from the client,
@@ -100,26 +102,26 @@ pub struct DpopResponse {
 /// PEM format concatenated private key and public key of the Wire backend
 #[allow(clippy::too_many_arguments)]
 #[no_mangle]
-pub fn generate_dpop_token(
-    _dpop_proof: Vec<u8>,
+pub extern "C" fn generate_dpop_token(
+    _dpop_proof: ByteArray,
     _qualified_client_id: QualifiedClientId,
-    _backend_nonce: Vec<u8>,
-    _uri: Vec<u8>,
-    _method: Vec<u8>,
+    _backend_nonce: ByteArray,
+    _uri: ByteArray,
+    _method: ByteArray,
     _max_skew_secs: u16,
     _max_expiration: u64,
     now: u64,
-    _backend_pubkey_bundle: Vec<u8>,
+    _backend_pubkey_bundle: ByteArray,
 ) -> DpopResponse {
     if now % 2 == 0 {
         DpopResponse {
             error: 1,
-            dpop_token: vec![],
+            dpop_token: ByteArray::default(),
         }
     } else {
         DpopResponse {
             error: 0,
-            dpop_token: b"eyJhbGciOiJFZERTQSIsInR5cCI6ImRwb3Arand0IiwiandrIjp7ImFsZyI6IkVkRFNBIiwiY3J2IjoiZWQyNTUxOSIsImt0eSI6IkVDIiwieCI6IjE4dEZyaHgtMzR0VjNoUklDUkRZOXpDa0RscEJoRjQyVVFVZldWQVdCRnMiLCJ5IjoiOVZFNGpmXzBrXzA2NHpiVFRpY3VmSmFqSG10NnY5VERWclVCQ2R2R1JEQSJ9fQ.eyJodG0iOiJQT1NUIiwiaHR1IjoiaHR0cHM6Ly93aXJlLmV4YW1wbGUuY29tL2NsaWVudHMvMTIzL2FjY2Vzcy10b2tlbiIsImNoYWwiOiIxMjMiLCJqdGkiOiItQndDM0VTYzZhY2MyMVRjIiwiaWF0IjoxNjYxODQ3NzMzLCJpc3MiOiJ1cm46d2lyZTpiYWNrZW5kIiwiYXVkIjoidXJuOndpcmU6aW9zIiwiZXhwIjoxNjYxODU0OTMzLCJzdWIiOiIzZWJmMTViYy04MWIxLTQzZTgtOTU3MS0zOWM1NWVhMGQzMWU6MTIzOndpcmUuZXhhbXBsZS5jb20ifQ.3dbsfHg84uiRpuOBKLndaS-gCznvwSCaQbwblS3qElCA5e-CZZwi3et0OS8T0V4OCtNfDft5wipGgbLumNweAA".to_vec(),
+            dpop_token: ByteArray::from(vec![1, 2, 3]),
         }
     }
 }
@@ -131,19 +133,19 @@ mod tests {
     #[test]
     fn test_dpop() {
         let response = generate_dpop_token(
-            vec![],
+            ByteArray::default(),
             QualifiedClientId {
-                user: vec![],
+                user: ByteArray::default(),
                 client: 1,
-                domain: vec![],
+                domain: ByteArray::default(),
             },
-            vec![],
-            vec![],
-            vec![],
+            ByteArray::default(),
+            ByteArray::default(),
+            ByteArray::default(),
             1,
             1,
             1,
-            vec![],
+            ByteArray::default(),
         );
         assert_eq!(response.error, 0);
         assert!(!response.dpop_token.is_empty());
@@ -152,19 +154,19 @@ mod tests {
     #[test]
     fn test_dpop_error() {
         let response = generate_dpop_token(
-            vec![],
+            ByteArray::default(),
             QualifiedClientId {
-                user: vec![],
+                user: ByteArray::default(),
                 client: 1,
-                domain: vec![],
+                domain: ByteArray::default(),
             },
-            vec![],
-            vec![],
-            vec![],
+            ByteArray::default(),
+            ByteArray::default(),
+            ByteArray::default(),
             1,
             1,
             0,
-            vec![],
+            ByteArray::default(),
         );
         assert_eq!(response.error, 1);
         assert!(response.dpop_token.is_empty());
