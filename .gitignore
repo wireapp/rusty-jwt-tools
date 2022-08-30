@@ -1,0 +1,13 @@
+# Rust
+/target
+/debug
+/Cargo.lock
+
+# Idea
+.idea
+*.iws
+*.iml
+*.ipr
+
+# VSCode
+.vscode
