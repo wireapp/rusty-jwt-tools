@@ -97,7 +97,7 @@ pub struct DpopResponse {
 ///
 /// ex: 1661211368
 ///
-/// # backend_pubkey_bundle
+/// ## backend_pubkey_bundle
 ///
 /// PEM format concatenated private key and public key of the Wire backend
 #[allow(clippy::too_many_arguments)]
@@ -115,13 +115,14 @@ pub extern "C" fn generate_dpop_token(
 ) -> DpopResponse {
     if now % 2 == 0 {
         DpopResponse {
-            error: 1,
+            error: (now as u8 % 13) + 1,
             dpop_token: ByteArray::default(),
         }
     } else {
+        let sample_response= b"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
         DpopResponse {
             error: 0,
-            dpop_token: ByteArray::from(vec![1, 2, 3]),
+            dpop_token: ByteArray::from_slice(sample_response.to_owned().as_mut_slice()),
         }
     }
 }
