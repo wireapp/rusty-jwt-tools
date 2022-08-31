@@ -1,6 +1,4 @@
-# Rusty JWT Tools
-
-A collection of JWT utilities.
+# Rusty JWT Tools FFI bindings
 
 [![Wire logo](https://github.com/wireapp/wire/blob/master/assets/header-small.png?raw=true)](https://wire.com/jobs/)
 
@@ -11,3 +9,17 @@ You can find the published source code at [github.com/wireapp/wire](https://gith
 For licensing information, see the attached LICENSE file and the list of third-party licenses at [wire.com/legal/licenses/](https://wire.com/legal/licenses/).
 
 No license is granted to the Wire trademark and its associated logos, all of which will continue to be owned exclusively by Wire Swiss GmbH. Any use of the Wire trademark and/or its associated logos is expressly prohibited without the express prior written consent of Wire Swiss GmbH.
+
+## Haskell
+
+To run the demo you need: 
+* [Rust toolchain](https://rustup.rs/)
+* [cargo-make](https://crates.io/crates/cargo-make)
+* [cabal](https://www.haskell.org/cabal/)
+
+Then simply
+
+```bash
+cd jwt-ffi
+cargo make hs-demo
+```

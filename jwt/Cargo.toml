@@ -1,0 +1,26 @@
+[package]
+name = "rusty-jwt-tools"
+description = "Utilities to handle JWTs"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/wireapp/rusty-jwt-tools"
+license = "GPL-3.0-only"
+publish = false
+
+[lib]
+name = "rusty_jwt_tools"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+jsonwebtoken = "8.1"
+thiserror = "1"
+serde = "1"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+rstest = "0.15"
+rstest_reuse = "0.4"
+rand = "0.8"
+curve25519-parser = "0.3"
+josekit = "0.8"
+hex = "0.4"

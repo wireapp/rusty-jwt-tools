@@ -1,0 +1,16 @@
+[package]
+name = "rusty-jwt-tools-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rusty_jwt_tools_ffi"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+rusty-jwt-tools = { version = "0.1", path = "../jwt" }
+cfg-if = "1.0"
+
+[features]
+default = ["haskell"]
+haskell = []

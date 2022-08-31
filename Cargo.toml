@@ -1,9 +1,7 @@
-[package]
-name = "rusty-jwt-tools"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["jwt", "jwt-ffi"]
+resolver = "2"
 
-[dependencies]
-
-[lib]
-crate-type = ["cdylib", "rlib"]
+[patch.crates-io.jsonwebtoken]
+git = "https://github.com/beltram/jsonwebtoken"
+branch = "wasm"
