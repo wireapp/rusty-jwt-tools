@@ -1,22 +1,140 @@
-name:                rusty-jwt-tools-hs
-version:             0.0.1.0
-build-type:          Simple
-cabal-version:       >=1.10
+name:          rusty-jwt-tools-hs
+version:       0.0.1.0
+build-type:    Custom
+cabal-version: >=1.10
 
-executable rusty-jwt-tools-hs-exec
-  main-is:             Main.hs
-  hs-source-dirs:      src
-  build-depends:       base >= 4.7 && < 5
-  default-language:    Haskell2010
-  other-modules:       RustyJwtToolsHs
-  extra-libraries:     rusty_jwt_tools_ffi, pthread
-  extra-lib-dirs:      target/debug
+custom-setup
+  setup-depends:
+      base       >=4.7 && <5
+    , Cabal
+    , directory
 
 library
-  hs-source-dirs:      src
-  exposed-modules:     RustyJwtToolsHs
-  other-extensions:    ForeignFunctionInterface
-  build-depends:       base >= 4.7 && < 5
-  default-language:    Haskell2010
-  extra-libraries:     rusty_jwt_tools_ffi, pthread
-  extra-lib-dirs:      target/debug
+  hs-source-dirs:     src
+  exposed-modules:    RustyJwtToolsHs
+  other-extensions:   ForeignFunctionInterface
+  build-depends:
+      base                   >=4.7 && <5
+    , base64-bytestring
+    , bytestring
+    , bytestring-conversion
+    , either
+    , extra
+    , string-conversions
+    , text
+    , uuid
+    , transformers
+
+  default-language:   Haskell2010
+  extra-libraries:
+    rusty_jwt_tools_ffi
+    pthread
+
+  ghc-options:
+    -O2 -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates
+    -Wpartial-fields -fwarn-tabs -optP-Wno-nonportable-include-path
+    "-optl=-Wl,-rpath,./target/debug"
+
+  default-extensions:
+    NoImplicitPrelude
+    AllowAmbiguousTypes
+    BangPatterns
+    ConstraintKinds
+    DataKinds
+    DefaultSignatures
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    EmptyCase
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    MultiWayIf
+    NamedFieldPuns
+    OverloadedStrings
+    PackageImports
+    PatternSynonyms
+    PolyKinds
+    QuasiQuotes
+    RankNTypes
+    ScopedTypeVariables
+    StandaloneDeriving
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeFamilyDependencies
+    TypeOperators
+    UndecidableInstances
+    ViewPatterns
+
+test-suite rusty-jwt-tools-hs-tests
+  main-is:            Spec.hs
+  type:               exitcode-stdio-1.0
+  build-depends:
+      base
+    , base64-bytestring
+    , bytestring
+    , bytestring-conversion
+    , either
+    , extra
+    , hspec
+    , QuickCheck
+    , rusty-jwt-tools-hs
+    , string-conversions
+    , text
+    , uuid
+
+  hs-source-dirs:     test
+  default-language:   Haskell2010
+  ghc-options:
+    -O2 -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates
+    -Wpartial-fields -fwarn-tabs -optP-Wno-nonportable-include-path
+    -threaded -with-rtsopts=-N "-optl=-Wl,-rpath,./target/debug"
+
+  default-extensions:
+    NoImplicitPrelude
+    AllowAmbiguousTypes
+    BangPatterns
+    ConstraintKinds
+    DataKinds
+    DefaultSignatures
+    DeriveFunctor
+    DeriveGeneric
+    DeriveLift
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    EmptyCase
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    MultiWayIf
+    NamedFieldPuns
+    OverloadedStrings
+    PackageImports
+    PatternSynonyms
+    PolyKinds
+    QuasiQuotes
+    RankNTypes
+    ScopedTypeVariables
+    StandaloneDeriving
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeFamilyDependencies
+    TypeOperators
+    UndecidableInstances
+    ViewPatterns

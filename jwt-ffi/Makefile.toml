@@ -1,14 +1,14 @@
 ##################################### Haskell ####################################
 
-[tasks.hs-demo]
+[tasks.hs-test]
 script = '''
     cargo build
 
     cd bindings/haskell
     # link Rust libs we just built
     # required because cabal does not support relative paths outside its root dir :/
-    ln -Fs ../../../target .
+    ln -fs ../../../target .
 
-    # run the simple Haskell demo
-    cabal run
+    # test the Haskell bindings
+    cabal test --test-show-details=always --test-option=--color
 '''

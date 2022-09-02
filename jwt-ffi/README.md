@@ -21,5 +21,5 @@ Then simply
 
 ```bash
 cd jwt-ffi
-cargo make hs-demo
+cargo make hs-test
 ```
