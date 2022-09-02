@@ -1,6 +1,4 @@
-use jsonwebtoken::{Algorithm, EncodingKey, Header};
-
-use crate::{dpop::Dpop, error::RustyJwtResult};
+use crate::error::RustyJwtResult;
 
 use super::RustyJwtTools;
 
@@ -24,7 +22,7 @@ impl RustyJwtTools {
     /// * (exp) claim is no later than now plus max_skew_secs.
     ///
     /// # Arguments
-    /// * `dpop_proof` - JWS Compact Serialization format Note that the proof consists of three runs
+    /// * `dpop_proof` - JWS Compact Serialization format. Note that the proof consists of three runs
     /// of base64url characters (header, claims, signature) separated by period characters.
     /// ex: b"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" (whitespace in the example is not included in the actual proof)
     /// * `user` - user ID UUID-4 in ASCII string representation
@@ -50,37 +48,42 @@ impl RustyJwtTools {
         _now: u64,
         _backend_keys: &'a [u8],
     ) -> RustyJwtResult<String> {
-        /*let headers = Self::create_header(alg);
-        Ok(jsonwebtoken::encode(&headers, &dpop, &signature_key)?)*/
         Ok(super::SAMPLE_TOKEN.to_string())
-    }
-
-    fn create_header(alg: Algorithm) -> Header {
-        let mut header = Header::new(alg);
-        header.typ = None;
-        header
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use jsonwebtoken::Validation;
     use wasm_bindgen_test::*;
 
-    use crate::{dpop::Dpop, test_utils::*};
+    use crate::DPOP_TOKEN;
+    use crate::test_utils::*;
 
     use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 
+    #[test]
+    fn sample() {
+        let dpop_proof = DPOP_TOKEN;
+        let token = RustyJwtTools::generate_dpop_access_token(
+            dpop_proof.as_bytes(),
+            b"user",
+            42,
+            b"wire",
+            b"nonce",
+            b"wire.com",
+            b"POST",
+            1,
+            10_000,
+            10_000,
+            b"",
+        )
+        .unwrap();
+    }
+
     mod headers {
         use super::*;
-
-        #[test]
-        fn sample() {
-            let keys: JwtKeys = ed_keys();
-            // let token = RustyJwtTools::generate_dpop_access_token(keys.alg, &Dpop::default(), &keys.encoding, 0).unwrap();
-        }
 
         /*#[apply(all_keys)]
         #[wasm_bindgen_test]

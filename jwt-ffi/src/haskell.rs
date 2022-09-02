@@ -40,7 +40,8 @@ impl RustyJwtToolsFfi {
             expiration,
             now,
             backend_keys,
-        ).unwrap();
+        )
+        .unwrap();
         CString::new(token).unwrap().into_raw()
     }
 
