@@ -1,19 +1,16 @@
 /// Wrapper over a [Result] with a [RustyJwtError] error
 pub type RustyJwtResult<T> = Result<T, RustyJwtError>;
 
-/// TODO
+/// All errors which [crate::RustyJwtTools] might throw
 #[derive(Debug, thiserror::Error)]
 pub enum RustyJwtError {
-    /*/// TODO
+    /// JWT error from `jwt-simple` crate
     #[error(transparent)]
-    JsonWebTokenError(#[from] jsonwebtoken::errors::Error),*/
-    /// TODO
+    JwtSimpleError(#[from] jwt_simple::Error),
+    /// Invalid elliptic curve, either for [crate::JwsAlgorithm::P256] or [crate::JwsAlgorithm::P384]
     #[error(transparent)]
-    JwtSimpleError(#[from] jwt_simple::JWTError),
-    /// TODO
-    #[error(transparent)]
-    JwtSimpleBubbleError(#[from] jwt_simple::Error),
-    /// TODO
-    #[error(transparent)]
-    Utf8Error(#[from] core::str::Utf8Error),
+    EllipticCurveError(#[from] elliptic_curve::Error),
+    /// We have done something terribly wrong
+    #[error("We have done something terribly wrong and it needs to be fixed")]
+    ImplementationError,
 }

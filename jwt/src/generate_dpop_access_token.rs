@@ -1,6 +1,6 @@
 use crate::error::RustyJwtResult;
 
-use super::RustyJwtTools;
+use crate::prelude::*;
 
 impl RustyJwtTools {
     /// Validate the provided [dpop_proof] DPoP proof JWT from the client, and if valid, return an

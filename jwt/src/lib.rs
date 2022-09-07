@@ -7,13 +7,12 @@ extern crate core;
 #[cfg(test)]
 use rstest_reuse;
 
-pub use error::{RustyJwtError, RustyJwtResult};
-
 #[cfg(test)]
 #[macro_use]
 pub mod test_utils;
 // both imports above have to be defined at the beginning of the crate for rstest to work
 
+mod alg;
 mod dpop;
 mod error;
 mod generate_dpop_access_token;
@@ -21,26 +20,21 @@ mod generate_dpop_token;
 mod jwk;
 mod verify_dpop_token;
 
-/// TODO
-#[derive(Debug, Copy, Clone)]
-pub enum JwsAlgorithm {
-    /// TODO
-    P256,
-    /// TODO
-    Ed25519,
+/// Prelude
+pub mod prelude {
+
+    use super::*;
+
+    pub use super::RustyJwtTools;
+    pub use alg::JwsAlgorithm;
+    pub use error::{RustyJwtError, RustyJwtResult};
 }
 
-impl ToString for JwsAlgorithm {
-    fn to_string(&self) -> String {
-        match self {
-            JwsAlgorithm::P256 => "ES256",
-            JwsAlgorithm::Ed25519 => "EdDSA",
-        }
-        .to_string()
-    }
-}
-
-/// TODO
+/// Provides helpers for creating a validating DPoP (Demonstrating Proof of Possession) JWT
+///
+/// Specified in [OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)][1]
+///
+/// [1]: https://www.ietf.org/archive/id/draft-ietf-oauth-dpop-08.html
 pub struct RustyJwtTools;
 
 /// TODO
