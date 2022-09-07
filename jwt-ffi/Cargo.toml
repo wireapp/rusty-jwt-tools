@@ -1,7 +1,11 @@
 [package]
 name = "rusty-jwt-tools-ffi"
+description = "Exposing utilities to handle JWTs in Haskell, Android, iOS & WASM"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/wireapp/rusty-jwt-tools"
+license = "MPL-2.0"
+publish = false
 
 [lib]
 name = "rusty_jwt_tools_ffi"
