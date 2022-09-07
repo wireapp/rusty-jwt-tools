@@ -17,7 +17,7 @@ impl RustyJwtTools {
     /// * method corresponds to the (htm) claim.
     /// * (jti) claim is present
     /// * (chal) claim is present
-    /// * (iat) claim is present and no earlier or later than max_skew_secs seconds   of now
+    /// * (iat) claim is present and no earlier or later than max_skew_secs seconds of now
     /// * (exp) claim is present and no larger (later) than max_expiration.
     /// * (exp) claim is no later than now plus max_skew_secs.
     ///

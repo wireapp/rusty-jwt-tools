@@ -5,6 +5,7 @@ use jwt_simple::prelude::*;
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
 
+use crate::jwk::TryIntoJwk;
 use crate::{
     alg::{JwsEcAlgorithm, JwsEdAlgorithm},
     dpop::Dpop,
@@ -15,17 +16,21 @@ use crate::{
 #[template]
 #[export]
 #[rstest(
-    key,
-    case::Ed25519($crate::test_utils::JwtKey::new_key(JwsAlgorithm::Ed25519)),
-    case::P256($crate::test_utils::JwtKey::new_key(JwsAlgorithm::P256)),
-    case::P384($crate::test_utils::JwtKey::new_key(JwsAlgorithm::P384))
+key,
+case::Ed25519($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::Ed25519)),
+case::P256($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P256)),
+case::P384($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P384))
 )]
 #[allow(non_snake_case)]
 pub fn all_keys(key: JwtKey) {}
 
 pub struct JwtKey {
-    pub sk_pem: String,
-    pub pk_pem: String,
+    /// KeyPair
+    pub kp: Pem,
+    /// SecretKey
+    pub sk: Pem,
+    /// PublicKey
+    pub pk: Pem,
     pub alg: JwsAlgorithm,
 }
 
@@ -49,24 +54,29 @@ impl JwtKey {
 #[template]
 #[export]
 #[rstest(
-    key,
-    case::P256($crate::test_utils::JwtEcKey::new_key($crate::alg::JwsEcAlgorithm::P256)),
-    case::P384($crate::test_utils::JwtEcKey::new_key($crate::alg::JwsEcAlgorithm::P384))
+key,
+case::P256($ crate::test_utils::JwtEcKey::new_key($ crate::alg::JwsEcAlgorithm::P256)),
+case::P384($ crate::test_utils::JwtEcKey::new_key($ crate::alg::JwsEcAlgorithm::P384))
 )]
 #[allow(non_snake_case)]
 pub fn all_ec_keys(key: JwtEcKey) {}
 
 pub struct JwtEcKey {
-    pub sk_pem: String,
-    pub pk_pem: String,
+    /// KeyPair
+    pub kp: Pem,
+    /// SecretKey
+    pub sk: Pem,
+    /// PublicKey
+    pub pk: Pem,
     pub alg: JwsEcAlgorithm,
 }
 
 impl From<JwtEcKey> for JwtKey {
     fn from(key: JwtEcKey) -> Self {
         Self {
-            sk_pem: key.sk_pem,
-            pk_pem: key.pk_pem,
+            kp: key.kp,
+            sk: key.sk,
+            pk: key.pk,
             alg: key.alg.into(),
         }
     }
@@ -75,8 +85,9 @@ impl From<JwtEcKey> for JwtKey {
 impl From<&JwtKey> for JwtEcKey {
     fn from(key: &JwtKey) -> Self {
         Self {
-            sk_pem: key.sk_pem.clone(),
-            pk_pem: key.pk_pem.clone(),
+            kp: key.kp.clone(),
+            sk: key.sk.clone(),
+            pk: key.pk.clone(),
             alg: key.alg.try_into().unwrap(),
         }
     }
@@ -88,27 +99,37 @@ impl JwtEcKey {
             JwsEcAlgorithm::P256 => {
                 let kp = ES256KeyPair::generate();
                 let kp = kp.key_pair();
-                let sk_pem = kp.to_pem().unwrap();
-                let pk_pem = kp.public_key().to_pem().unwrap();
-                Self { sk_pem, pk_pem, alg }
+                let sk: Pem = kp.to_pem().unwrap().into();
+                let pk = kp.public_key().to_pem().unwrap().into();
+                Self {
+                    kp: sk.clone(),
+                    sk,
+                    pk,
+                    alg,
+                }
             }
             JwsEcAlgorithm::P384 => {
                 let kp = ES384KeyPair::generate();
                 let kp = kp.key_pair();
-                let sk_pem = kp.to_pem().unwrap();
-                let pk_pem = kp.public_key().to_pem().unwrap();
-                Self { sk_pem, pk_pem, alg }
+                let sk: Pem = kp.to_pem().unwrap().into();
+                let pk = kp.public_key().to_pem().unwrap().into();
+                Self {
+                    kp: sk.clone(),
+                    sk,
+                    pk,
+                    alg,
+                }
             }
         }
     }
 
     pub fn claims(&self, token: &str) -> JWTClaims<Dpop> {
         match self.alg {
-            JwsEcAlgorithm::P256 => ES256PublicKey::from_pem(&self.pk_pem)
+            JwsEcAlgorithm::P256 => ES256PublicKey::from_pem(&self.pk)
                 .unwrap()
                 .verify_token::<Dpop>(token, None)
                 .unwrap(),
-            JwsEcAlgorithm::P384 => ES384PublicKey::from_pem(&self.pk_pem)
+            JwsEcAlgorithm::P384 => ES384PublicKey::from_pem(&self.pk)
                 .unwrap()
                 .verify_token::<Dpop>(token, None)
                 .unwrap(),
@@ -117,27 +138,31 @@ impl JwtEcKey {
 }
 
 /// --- Edward curves ---
-
 #[template]
 #[export]
 #[rstest(
-    key,
-    case::Ed25519($crate::test_utils::JwtEdKey::new_key($crate::alg::JwsEdAlgorithm::Ed25519))
+key,
+case::Ed25519($ crate::test_utils::JwtEdKey::new_key($ crate::alg::JwsEdAlgorithm::Ed25519))
 )]
 #[allow(non_snake_case)]
 pub fn all_ed_keys(key: JwtEdKey) {}
 
 pub struct JwtEdKey {
-    pub sk_pem: String,
-    pub pk_pem: String,
+    /// KeyPair
+    pub kp: Pem,
+    /// SecretKey
+    pub sk: Pem,
+    /// PublicKey
+    pub pk: Pem,
     pub alg: JwsEdAlgorithm,
 }
 
 impl From<JwtEdKey> for JwtKey {
     fn from(key: JwtEdKey) -> Self {
         Self {
-            sk_pem: key.sk_pem,
-            pk_pem: key.pk_pem,
+            kp: key.kp,
+            sk: key.sk,
+            pk: key.pk,
             alg: key.alg.into(),
         }
     }
@@ -146,8 +171,9 @@ impl From<JwtEdKey> for JwtKey {
 impl From<&JwtKey> for JwtEdKey {
     fn from(key: &JwtKey) -> Self {
         Self {
-            sk_pem: key.sk_pem.clone(),
-            pk_pem: key.pk_pem.clone(),
+            kp: key.kp.clone(),
+            sk: key.sk.clone(),
+            pk: key.pk.clone(),
             alg: key.alg.try_into().unwrap(),
         }
     }
@@ -159,8 +185,9 @@ impl JwtEdKey {
             JwsEdAlgorithm::Ed25519 => {
                 let kp = ed25519_compact::KeyPair::generate();
                 Self {
-                    sk_pem: kp.sk.to_pem(),
-                    pk_pem: kp.pk.to_pem(),
+                    kp: kp.to_pem().into(),
+                    sk: kp.sk.to_pem().into(),
+                    pk: kp.pk.to_pem().into(),
                     alg,
                 }
             }
@@ -169,7 +196,7 @@ impl JwtEdKey {
 
     pub fn claims(&self, token: &str) -> JWTClaims<Dpop> {
         match self.alg {
-            JwsEdAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(&self.pk_pem)
+            JwsEdAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(&self.pk)
                 .unwrap()
                 .verify_token::<Dpop>(token, None)
                 .unwrap(),
@@ -209,11 +236,11 @@ impl RustyJwk {
     }
 
     pub fn rand_jwk(alg: JwsAlgorithm) -> Jwk {
-        let pk = match alg {
-            JwsAlgorithm::P256 => ES256KeyPair::generate().public_key().to_pem().unwrap(),
-            JwsAlgorithm::P384 => ES384KeyPair::generate().public_key().to_pem().unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519KeyPair::generate().public_key().to_pem(),
-        };
-        RustyJwk::new_jwk(alg, pk).unwrap()
+        use crate::jwk::TryIntoJwk as _;
+        match alg {
+            JwsAlgorithm::P256 => ES256KeyPair::generate().public_key().try_into_jwk().unwrap(),
+            JwsAlgorithm::P384 => ES384KeyPair::generate().public_key().try_into_jwk().unwrap(),
+            JwsAlgorithm::Ed25519 => Ed25519KeyPair::generate().public_key().try_into_jwk().unwrap(),
+        }
     }
 }

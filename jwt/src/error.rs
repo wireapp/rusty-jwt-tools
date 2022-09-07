@@ -10,6 +10,12 @@ pub enum RustyJwtError {
     /// Invalid elliptic curve, either for [crate::JwsAlgorithm::P256] or [crate::JwsAlgorithm::P384]
     #[error(transparent)]
     EllipticCurveError(#[from] elliptic_curve::Error),
+    /// Invalid URL
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+    /// Invalid URL
+    #[error("Invalid Htu '{0}' in DPoP token because {1}")]
+    HtuError(url::Url, &'static str),
     /// We have done something terribly wrong
     #[error("We have done something terribly wrong and it needs to be fixed")]
     ImplementationError,
