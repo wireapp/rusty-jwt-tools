@@ -3,7 +3,7 @@ use jwt_simple::prelude::*;
 use crate::prelude::*;
 
 /// Narrows the supported signature algorithms to the ones we define
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum JwsAlgorithm {
     /// ECDSA using P-256 and SHA-256
     ///
@@ -38,7 +38,7 @@ impl ToString for JwsAlgorithm {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum JwsEcAlgorithm {
     P256,
     P384,
@@ -78,7 +78,7 @@ impl From<JwsEcAlgorithm> for JwsAlgorithm {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum JwsEdAlgorithm {
     Ed25519,
 }

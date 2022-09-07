@@ -18,16 +18,71 @@ mod error;
 mod generate_dpop_access_token;
 mod generate_dpop_token;
 mod jwk;
+mod nonce;
 mod verify_dpop_token;
 
 /// Prelude
 pub mod prelude {
-
-    use super::*;
-
-    pub use super::RustyJwtTools;
     pub use alg::JwsAlgorithm;
     pub use error::{RustyJwtError, RustyJwtResult};
+    pub use nonce::{AcmeChallenge, BackendNonce};
+
+    pub use super::ClientId;
+    pub use super::Pem;
+    pub use super::RustyJwtTools;
+    use super::*;
+}
+
+/// UTF-8 String in the PEM (Privacy-Enhanced Mail) format
+///
+/// Specified in [RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures][1]
+///
+/// [1]: https://tools.ietf.org/html/rfc7468
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Pem(String);
+
+impl From<String> for Pem {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl From<Pem> for String {
+    fn from(p: Pem) -> Self {
+        p.0
+    }
+}
+
+impl std::ops::Deref for Pem {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+/// Unique user handle
+#[derive(Debug, Clone, Default, Eq, PartialEq)]
+pub struct ClientId(String);
+
+impl From<String> for ClientId {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl From<ClientId> for String {
+    fn from(p: ClientId) -> Self {
+        p.0
+    }
+}
+
+impl std::ops::Deref for ClientId {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 /// Provides helpers for creating a validating DPoP (Demonstrating Proof of Possession) JWT
