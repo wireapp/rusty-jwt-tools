@@ -1,5 +1,4 @@
-use jwt_simple::claims::{Claims, JWTClaims};
-use jwt_simple::prelude::Duration;
+use jwt_simple::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]

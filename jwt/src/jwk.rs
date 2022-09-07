@@ -1,47 +1,71 @@
+use elliptic_curve::{
+    sec1::{Coordinates, ToEncodedPoint},
+    AffineXCoordinate,
+};
 use jwt_simple::prelude::*;
 
-use crate::{JwsAlgorithm, RustyJwtResult};
+use crate::{
+    alg::{JwsEcAlgorithm, JwsEdAlgorithm},
+    prelude::*,
+};
 
 pub struct RustyJwk;
 
 impl RustyJwk {
     pub fn new_jwk(alg: JwsAlgorithm, pk: String) -> RustyJwtResult<Jwk> {
         Ok(match alg {
-            JwsAlgorithm::Ed25519 => Self::new_ed25519_jwk(&pk),
-            JwsAlgorithm::P256 => Self::new_p256_jwk(&pk),
+            JwsAlgorithm::Ed25519 => Self::new_ed_jwk(alg.try_into()?, &pk)?,
+            JwsAlgorithm::P256 | JwsAlgorithm::P384 => Self::new_ec_jwk(alg.try_into()?, &pk)?,
         })
     }
 
-    fn new_ed25519_jwk(pk: &str) -> Jwk {
-        let pk = Ed25519PublicKey::from_pem(pk).unwrap();
-        let x = base64::encode_config(pk.to_bytes(), base64::URL_SAFE_NO_PAD);
-        let params = OctetKeyPairParameters {
-            key_type: OctetKeyPairType::OctetKeyPair,
-            curve: EdwardCurve::Ed25519,
-            x,
+    fn new_ed_jwk(alg: JwsEdAlgorithm, pk: &str) -> RustyJwtResult<Jwk> {
+        let x = match alg {
+            JwsEdAlgorithm::Ed25519 => Self::base64_url_encode(Ed25519PublicKey::from_pem(pk)?.to_bytes()),
         };
-        Jwk {
+        Ok(Jwk {
             common: Self::common_parameters(),
-            algorithm: AlgorithmParameters::OctetKeyPair(params),
-        }
+            algorithm: AlgorithmParameters::OctetKeyPair(OctetKeyPairParameters {
+                key_type: alg.kty(),
+                curve: alg.curve(),
+                x,
+            }),
+        })
     }
 
-    fn new_p256_jwk(pk: &str) -> Jwk {
-        const P256_KEY_LENGTH: usize = 32;
-        let pk = P256PublicKey::from_pem(pk).unwrap().to_bytes_uncompressed();
-        let (x, y) = pk[1..].split_at(P256_KEY_LENGTH);
-        let x = base64::encode_config(x, base64::URL_SAFE_NO_PAD);
-        let y = base64::encode_config(&y[..P256_KEY_LENGTH], base64::URL_SAFE_NO_PAD);
-        let params = EllipticCurveKeyParameters {
-            key_type: EllipticCurveKeyType::EC,
-            curve: EllipticCurve::P256,
-            x,
-            y,
+    fn new_ec_jwk(alg: JwsEcAlgorithm, pk: &str) -> RustyJwtResult<Jwk> {
+        use std::str::FromStr as _;
+        let (x, y) = match alg {
+            JwsEcAlgorithm::P256 => {
+                let points = elliptic_curve::PublicKey::<p256::NistP256>::from_str(pk)?
+                    .to_projective()
+                    .to_encoded_point(false);
+                let x = Self::base64_url_encode(points.x().ok_or(RustyJwtError::ImplementationError)?);
+                let y = Self::base64_url_encode(points.y().ok_or(RustyJwtError::ImplementationError)?);
+                (x, y)
+            }
+            JwsEcAlgorithm::P384 => {
+                let points = elliptic_curve::PublicKey::<p384::NistP384>::from_str(pk)?
+                    .to_projective()
+                    .to_encoded_point(false);
+                let x = Self::base64_url_encode(points.x().ok_or(RustyJwtError::ImplementationError)?);
+                let y = Self::base64_url_encode(points.y().ok_or(RustyJwtError::ImplementationError)?);
+                (x, y)
+            }
         };
-        Jwk {
+        Ok(Jwk {
             common: Self::common_parameters(),
-            algorithm: AlgorithmParameters::EllipticCurve(params),
-        }
+            algorithm: AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                key_type: EllipticCurveKeyType::EC,
+                curve: alg.curve(),
+                x,
+                y,
+            }),
+        })
+    }
+
+    fn base64_url_encode(i: impl AsRef<[u8]>) -> String {
+        base64::encode_config(i, base64::URL_SAFE_NO_PAD)
     }
 
     fn common_parameters() -> CommonParameters {
