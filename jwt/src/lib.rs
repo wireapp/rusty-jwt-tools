@@ -18,8 +18,8 @@ mod dpop;
 mod error;
 mod generate_dpop_access_token;
 mod generate_dpop_token;
-mod verify_dpop_token;
 mod jwk;
+mod verify_dpop_token;
 
 /// TODO
 #[derive(Debug, Copy, Clone)]
@@ -34,8 +34,9 @@ impl ToString for JwsAlgorithm {
     fn to_string(&self) -> String {
         match self {
             JwsAlgorithm::P256 => "ES256",
-            JwsAlgorithm::Ed25519 => "EdDSA"
-        }.to_string()
+            JwsAlgorithm::Ed25519 => "EdDSA",
+        }
+        .to_string()
     }
 }
 

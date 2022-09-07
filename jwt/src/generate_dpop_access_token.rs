@@ -35,6 +35,7 @@ impl RustyJwtTools {
     /// * `expiration` - The expiration date and time, in seconds since epoch ex: 1668987368
     /// * `now` - Current time in seconds since epoch ex: 1661211368
     /// * `backend_keys` - PEM format concatenated private key and public key of the Wire backend
+    #[allow(clippy::too_many_arguments)]
     pub fn generate_dpop_access_token<'a>(
         _dpop_proof: &'a [u8],
         _user: &'a [u8],
@@ -56,8 +57,8 @@ impl RustyJwtTools {
 mod tests {
     use wasm_bindgen_test::*;
 
-    use crate::DPOP_TOKEN;
     use crate::test_utils::*;
+    use crate::DPOP_TOKEN;
 
     use super::*;
 

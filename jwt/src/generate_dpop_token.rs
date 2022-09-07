@@ -1,8 +1,8 @@
 use jwt_simple::prelude::*;
 
-use crate::{JwsAlgorithm, RustyJwtResult, RustyJwtTools};
 use crate::dpop::Dpop;
 use crate::jwk::RustyJwk;
+use crate::{JwsAlgorithm, RustyJwtResult, RustyJwtTools};
 
 impl RustyJwtTools {
     /// TODO
@@ -49,7 +49,8 @@ pub mod tests {
         #[apply(all_keys)]
         #[wasm_bindgen_test]
         fn should_have_dpop_typ(keys: JwtKeys) {
-            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem).unwrap();
+            let token =
+                RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem).unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
             assert_eq!(header.signature_type(), Some(Dpop::TYP))
         }
@@ -57,7 +58,8 @@ pub mod tests {
         #[apply(all_keys)]
         #[wasm_bindgen_test]
         fn should_have_alg(keys: JwtKeys) {
-            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem).unwrap();
+            let token =
+                RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem).unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
             assert_eq!(header.algorithm(), keys.alg.to_string().as_str())
         }
@@ -70,7 +72,8 @@ pub mod tests {
         #[wasm_bindgen_test]
         fn should_have_p256_jwk() {
             let keys = JwtKeys::new_ec_keys(JwsAlgorithm::P256);
-            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem.clone()).unwrap();
+            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem.clone())
+                .unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
             let jwk = header.public_key().unwrap();
             let is_valid = |p: &EllipticCurveKeyParameters| {
@@ -85,7 +88,8 @@ pub mod tests {
         #[wasm_bindgen_test]
         pub fn should_have_ed25519_jwk() {
             let keys = JwtKeys::new_ed_keys();
-            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem.clone()).unwrap();
+            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem.clone())
+                .unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
             let jwk = header.public_key().unwrap();
             let is_valid = |p: &OctetKeyPairParameters| {
@@ -104,7 +108,8 @@ pub mod tests {
         #[wasm_bindgen_test]
         pub fn should_verify_p256() {
             let keys = JwtKeys::new_ec_keys(JwsAlgorithm::P256);
-            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem.clone()).unwrap();
+            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem.clone())
+                .unwrap();
 
             // validate token given raw public key
             let pk = ES256PublicKey::from_pem(&keys.pk_pem).unwrap();
@@ -129,7 +134,8 @@ pub mod tests {
         #[wasm_bindgen_test]
         pub fn should_verify_ed25519() {
             let keys = JwtKeys::new_ed_keys();
-            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem.clone()).unwrap();
+            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem, keys.pk_pem.clone())
+                .unwrap();
 
             // validate token given raw public key
             let pk = Ed25519PublicKey::from_pem(&keys.pk_pem).unwrap();
@@ -143,7 +149,11 @@ pub mod tests {
             let header = Token::decode_metadata(token.as_str()).unwrap();
             let jwk = header.public_key().unwrap();
 
-            let is_valid = |j: &Jwk| RustyJwk::ed25519_jwk_to_kp(j).verify_token::<Dpop>(&token, None).is_ok();
+            let is_valid = |j: &Jwk| {
+                RustyJwk::ed25519_jwk_to_kp(j)
+                    .verify_token::<Dpop>(&token, None)
+                    .is_ok()
+            };
             assert!(matches!(jwk.algorithm, AlgorithmParameters::OctetKeyPair(_) if is_valid(jwk)));
 
             // should not be valid with another jwk
@@ -158,11 +168,12 @@ pub mod tests {
         #[apply(all_keys)]
         #[wasm_bindgen_test]
         fn should_have_jti(keys: JwtKeys) {
-            let token = RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem.clone(), keys.pk_pem.clone()).unwrap();
+            let token =
+                RustyJwtTools::generate_dpop_token(Dpop::default(), keys.alg, keys.sk_pem.clone(), keys.pk_pem.clone())
+                    .unwrap();
             let claims = keys.claims(&token);
             assert!(claims.jwt_id.is_some());
             assert!(uuid::Uuid::try_parse(&claims.jwt_id.unwrap()).is_ok());
         }
     }
 }
-

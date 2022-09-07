@@ -5,15 +5,15 @@ use jwt_simple::prelude::*;
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
 
-use crate::{jwk::RustyJwk, JwsAlgorithm};
 use crate::dpop::Dpop;
+use crate::{jwk::RustyJwk, JwsAlgorithm};
 
 #[template]
 #[export]
 #[rstest(
-keys,
-case::Ed25519(crate::test_utils::JwtKeys::new_ed_keys()),
-case::P256(crate::test_utils::JwtKeys::new_ec_keys(JwsAlgorithm::P256))
+    keys,
+    case::Ed25519(crate::test_utils::JwtKeys::new_ed_keys()),
+    case::P256(crate::test_utils::JwtKeys::new_ec_keys(JwsAlgorithm::P256))
 )]
 #[allow(non_snake_case)]
 pub fn all_keys(keys: JwtKeys) {}
@@ -30,7 +30,11 @@ impl JwtKeys {
         let sk_pem = kp.sk.to_pem();
         let pk_pem = kp.pk.to_pem();
         let pk = pk_pem.clone();
-        Self { sk_pem, pk_pem, alg: JwsAlgorithm::Ed25519 }
+        Self {
+            sk_pem,
+            pk_pem,
+            alg: JwsAlgorithm::Ed25519,
+        }
     }
 
     pub fn new_ec_keys(alg: JwsAlgorithm) -> Self {

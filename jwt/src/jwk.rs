@@ -32,7 +32,12 @@ impl RustyJwk {
         let (x, y) = pk[1..].split_at(P256_KEY_LENGTH);
         let x = base64::encode_config(x, base64::URL_SAFE_NO_PAD);
         let y = base64::encode_config(&y[..P256_KEY_LENGTH], base64::URL_SAFE_NO_PAD);
-        let params = EllipticCurveKeyParameters { key_type: EllipticCurveKeyType::EC, curve: EllipticCurve::P256, x, y };
+        let params = EllipticCurveKeyParameters {
+            key_type: EllipticCurveKeyType::EC,
+            curve: EllipticCurve::P256,
+            x,
+            y,
+        };
         Jwk {
             common: Self::common_parameters(),
             algorithm: AlgorithmParameters::EllipticCurve(params),
