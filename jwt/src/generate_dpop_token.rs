@@ -124,7 +124,7 @@ pub mod tests {
             )
             .unwrap();
             let parts = token.split('.').collect::<Vec<&str>>();
-            let claims = parts.get(0).unwrap();
+            let claims = parts.first().unwrap();
             let claims = base64::decode(claims).unwrap();
             let claims = serde_json::from_slice::<serde_json::Value>(claims.as_slice()).unwrap();
             let claims = claims.as_object().unwrap();
