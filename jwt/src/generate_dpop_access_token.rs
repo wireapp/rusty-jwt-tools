@@ -26,26 +26,26 @@ impl RustyJwtTools {
     /// of base64url characters (header, claims, signature) separated by period characters.
     /// ex: b"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" (whitespace in the example is not included in the actual proof)
     /// * `user` - user ID UUID-4 in ASCII string representation
-    /// * `client` - client number assigned by the backend
+    /// * `client_id` - client number assigned by the backend
     /// * `domain` - backend domain of the client
     /// * `backend_nonce` - The most recent DPoP nonce provided by the backend to the current client ex: hex!("b62551e728771515234fac0b04b2008d")
     /// * `uri` - The HTTPS URI on the backend for the DPoP auth token endpoint ex: "https://wire.example.com/clients/authtoken"
     /// * `method` - The HTTPS method used on the backend for the DPoP auth token endpoint ex: b"POST"
     /// * `max_skew_secs` - The maximum number of seconds of clock skew the implementation will allow ex: 360 (5 min)
-    /// * `expiration` - The expiration date and time, in seconds since epoch ex: 1668987368
+    /// * `max_expiration` - The maximal expiration date and time, in seconds since epoch ex: 1668987368
     /// * `now` - Current time in seconds since epoch ex: 1661211368
     /// * `backend_keys` - PEM format concatenated private key and public key of the Wire backend
     #[allow(clippy::too_many_arguments)]
     pub fn generate_dpop_access_token<'a>(
         _dpop_proof: &'a [u8],
         _user: &'a [u8],
-        _client: u16,
+        _client_id: u16,
         _domain: &'a [u8],
         _backend_nonce: &'a [u8],
         _uri: &'a [u8],
         _method: &'a [u8],
         _max_skew_secs: u16,
-        _expiration: u64,
+        _max_expiration: u64,
         _now: u64,
         _backend_keys: &'a [u8],
     ) -> RustyJwtResult<String> {
