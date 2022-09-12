@@ -30,8 +30,30 @@ pub struct Dpop {
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[cfg_attr(test, derive(Default))]
 pub enum Htm {
+    /// HTTP POST method
     #[cfg_attr(test, default)]
     Post,
+    #[cfg(test)]
+    Put,
+}
+
+impl TryFrom<&str> for Htm {
+    type Error = RustyJwtError;
+
+    fn try_from(value: &str) -> RustyJwtResult<Self> {
+        Ok(match value {
+            "POST" => Self::Post,
+            _ => return Err(RustyJwtError::InvalidHtm(value.to_string())),
+        })
+    }
+}
+
+impl TryFrom<&[u8]> for Htm {
+    type Error = RustyJwtError;
+
+    fn try_from(value: &[u8]) -> RustyJwtResult<Self> {
+        core::str::from_utf8(value)?.try_into()
+    }
 }
 
 /// The HTTP request URI without query and fragment parts
@@ -45,7 +67,7 @@ pub struct Htu(url::Url);
 #[cfg(test)]
 impl Default for Htu {
     fn default() -> Self {
-        "http://wire.com".try_into().unwrap()
+        "https://wire.example.com/client/token".try_into().unwrap()
     }
 }
 
@@ -54,6 +76,14 @@ impl TryFrom<String> for Htu {
 
     fn try_from(u: String) -> RustyJwtResult<Self> {
         u.as_str().try_into()
+    }
+}
+
+impl TryFrom<&[u8]> for Htu {
+    type Error = RustyJwtError;
+
+    fn try_from(u: &[u8]) -> RustyJwtResult<Self> {
+        core::str::from_utf8(u)?.try_into()
     }
 }
 
@@ -66,10 +96,10 @@ impl TryFrom<&str> for Htu {
 
         let uri = url::Url::try_from(u)?;
         if uri.query().is_some() {
-            return Err(RustyJwtError::HtuError(uri, QUERY_REASON));
+            return Err(RustyJwtError::InvalidHtu(uri, QUERY_REASON));
         }
         if uri.fragment().is_some() {
-            return Err(RustyJwtError::HtuError(uri, FRAGMENT_REASON));
+            return Err(RustyJwtError::InvalidHtu(uri, FRAGMENT_REASON));
         }
         Ok(Self(uri))
     }
@@ -85,12 +115,13 @@ impl Dpop {
     /// [1]: https://tools.ietf.org/html/rfc7519#section-4.1.4
     pub const EXP: u64 = 3600 * 24 * 90; // 90 days
 
-    pub fn into_jwt_claims(self, nonce: BackendNonce, client_id: ClientId) -> JWTClaims<Dpop> {
+    /// Create JWT claims (a JSON object) from DPoP fields
+    pub fn into_jwt_claims(self, nonce: BackendNonce, client_id: QualifiedClientId) -> JWTClaims<Dpop> {
         let exp = Duration::from_secs(Dpop::EXP);
         let mut claims = Claims::with_custom_claims(self, exp);
         claims = claims.with_jwt_id(Self::new_jti());
         claims = claims.with_nonce(nonce);
-        claims = claims.with_subject(String::from(client_id));
+        claims = claims.with_subject(client_id.subject());
         claims
     }
 
@@ -102,8 +133,6 @@ impl Dpop {
 #[cfg(test)]
 pub mod tests {
     use wasm_bindgen_test::*;
-
-    use crate::test_utils::*;
 
     use super::*;
 
@@ -131,7 +160,7 @@ pub mod tests {
         fn fail_creating_from_invalid_with_query() {
             let uri = "https://wire.com?a=b";
             assert!(
-                matches!(Htu::try_from(uri).unwrap_err(), RustyJwtError::HtuError(u, r) if u == url::Url::try_from(uri).unwrap() && r == "cannot contain query parameter")
+                matches!(Htu::try_from(uri).unwrap_err(), RustyJwtError::InvalidHtu(u, r) if u == url::Url::try_from(uri).unwrap() && r == "cannot contain query parameter")
             )
         }
 
@@ -140,7 +169,7 @@ pub mod tests {
         fn fail_creating_from_invalid_with_fragment() {
             let uri = "https://wire.com#rocks";
             assert!(
-                matches!(Htu::try_from(uri).unwrap_err(), RustyJwtError::HtuError(u, r) if u == url::Url::try_from(uri).unwrap() && r == "cannot contain fragment parameter")
+                matches!(Htu::try_from(uri).unwrap_err(), RustyJwtError::InvalidHtu(u, r) if u == url::Url::try_from(uri).unwrap() && r == "cannot contain fragment parameter")
             )
         }
     }

@@ -17,7 +17,7 @@ impl RustyJwtTools {
         kp: Pem,
         dpop: Dpop,
         nonce: BackendNonce,
-        client_id: ClientId,
+        client_id: QualifiedClientId,
     ) -> RustyJwtResult<String> {
         // TODO: is it up to us to validate the 'client_id' format or is it opaque to us ?
         use crate::jwk::TryIntoJwk as _;
@@ -60,15 +60,16 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use fluvio_wasm_timer::{SystemTime, UNIX_EPOCH};
     use wasm_bindgen_test::*;
 
+    use crate::jwk::TryFromJwk;
     use crate::{
         alg::{JwsEcAlgorithm, JwsEdAlgorithm},
         dpop::*,
         jwk::RustyJwk,
         test_utils::*,
     };
-    use fluvio_wasm_timer::{SystemTime, UNIX_EPOCH};
 
     use super::*;
 
@@ -85,7 +86,7 @@ pub mod tests {
                 key.kp,
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
@@ -100,7 +101,7 @@ pub mod tests {
                 key.kp,
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
@@ -120,7 +121,7 @@ pub mod tests {
                 key.kp,
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let parts = token.split('.').collect::<Vec<&str>>();
@@ -153,7 +154,7 @@ pub mod tests {
                 key.kp,
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
@@ -163,13 +164,13 @@ pub mod tests {
                     JwsEcAlgorithm::P256 => {
                         let kty = EllipticCurveKeyType::EC;
                         let curve = EllipticCurve::P256;
-                        let pk_pem = RustyJwk::p256_jwk_to_kp(jwk).to_pem().unwrap();
+                        let pk_pem = ES256PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
                         (kty, curve, pk_pem)
                     }
                     JwsEcAlgorithm::P384 => {
                         let kty = EllipticCurveKeyType::EC;
                         let curve = EllipticCurve::P384;
-                        let pk_pem = RustyJwk::p384_jwk_to_kp(jwk).to_pem().unwrap();
+                        let pk_pem = ES384PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
                         (kty, curve, pk_pem)
                     }
                 };
@@ -186,7 +187,7 @@ pub mod tests {
                 key.kp,
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
@@ -196,7 +197,7 @@ pub mod tests {
                     JwsEdAlgorithm::Ed25519 => {
                         let kty = OctetKeyPairType::OctetKeyPair;
                         let curve = EdwardCurve::Ed25519;
-                        let pk_pem = RustyJwk::ed25519_jwk_to_kp(jwk).to_pem();
+                        let pk_pem = Ed25519PublicKey::try_from_jwk(jwk).unwrap().to_pem();
                         (kty, curve, pk_pem)
                     }
                 };
@@ -217,7 +218,7 @@ pub mod tests {
                 key.kp,
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
 
@@ -244,8 +245,12 @@ pub mod tests {
             let jwk = header.public_key().unwrap();
             let is_valid = |j: &Jwk| {
                 match key.alg {
-                    JwsEcAlgorithm::P256 => RustyJwk::p256_jwk_to_kp(j).verify_token::<Dpop>(&token, None),
-                    JwsEcAlgorithm::P384 => RustyJwk::p384_jwk_to_kp(j).verify_token::<Dpop>(&token, None),
+                    JwsEcAlgorithm::P256 => ES256PublicKey::try_from_jwk(j)
+                        .unwrap()
+                        .verify_token::<Dpop>(&token, None),
+                    JwsEcAlgorithm::P384 => ES384PublicKey::try_from_jwk(j)
+                        .unwrap()
+                        .verify_token::<Dpop>(&token, None),
                 }
                 .is_ok()
             };
@@ -264,7 +269,7 @@ pub mod tests {
                 key.kp,
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
 
@@ -290,7 +295,9 @@ pub mod tests {
 
             let is_valid = |j: &Jwk| {
                 match key.alg {
-                    JwsEdAlgorithm::Ed25519 => RustyJwk::ed25519_jwk_to_kp(j).verify_token::<Dpop>(&token, None),
+                    JwsEdAlgorithm::Ed25519 => Ed25519PublicKey::try_from_jwk(j)
+                        .unwrap()
+                        .verify_token::<Dpop>(&token, None),
                 }
                 .is_ok()
             };
@@ -304,7 +311,6 @@ pub mod tests {
 
     pub mod claims {
         use super::*;
-        use std::time::Instant;
 
         #[apply(all_keys)]
         #[wasm_bindgen_test]
@@ -314,7 +320,7 @@ pub mod tests {
                 key.kp,
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let parts = token.split('.').collect::<Vec<&str>>();
@@ -339,7 +345,7 @@ pub mod tests {
                 key.kp.clone(),
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let claims = key.claims(&token);
@@ -359,7 +365,7 @@ pub mod tests {
                 key.kp.clone(),
                 dpop,
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             assert_eq!(key.claims(&token).custom.htm, Htm::Post);
@@ -378,7 +384,7 @@ pub mod tests {
                 key.kp.clone(),
                 dpop,
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             assert_eq!(key.claims(&token).custom.htu, htu);
@@ -392,7 +398,7 @@ pub mod tests {
                 key.kp.clone(),
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let claims = key.claims(&token);
@@ -412,7 +418,7 @@ pub mod tests {
                 key.kp.clone(),
                 Dpop::default(),
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let claims = key.claims(&token);
@@ -434,7 +440,7 @@ pub mod tests {
                 key.kp.clone(),
                 Dpop::default(),
                 nonce.clone(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let claims = key.claims(&token);
@@ -457,7 +463,7 @@ pub mod tests {
                 key.kp.clone(),
                 dpop,
                 BackendNonce::default(),
-                ClientId::default(),
+                QualifiedClientId::default(),
             )
             .unwrap();
             let claims = key.claims(&token);
@@ -469,7 +475,7 @@ pub mod tests {
         #[apply(all_keys)]
         #[wasm_bindgen_test]
         fn should_have_client_id(key: JwtKey) {
-            let client_id: ClientId = "URI:wireapp:SvPfLlwBQi-6oddVRrkqpw/04c7@example.com".to_string().into();
+            let client_id = QualifiedClientId::new("SvPfLlwBQi-6oddVRrkqpw", 1223, "example.com");
             let token = RustyJwtTools::generate_dpop_token(
                 key.alg,
                 key.kp.clone(),
@@ -480,7 +486,7 @@ pub mod tests {
             .unwrap();
             let claims = key.claims(&token);
             assert!(claims.subject.is_some());
-            assert_eq!(claims.subject.unwrap(), String::from(client_id))
+            assert_eq!(claims.subject.unwrap(), client_id.subject())
         }
     }
 }
