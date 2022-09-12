@@ -1,7 +1,4 @@
-use std::{
-    ffi::{CStr, CString},
-    os::raw::c_char,
-};
+use std::{ffi::CStr, os::raw::c_char};
 
 use rusty_jwt_tools::prelude::*;
 
@@ -22,7 +19,7 @@ impl RustyJwtToolsFfi {
         max_expiration: u64,
         now: u64,
         backend_keys: *const c_char,
-    ) -> HsResponse {
+    ) -> *const RustyJwtResult<String> {
         let dpop_proof = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let user = unsafe { CStr::from_ptr(user).to_bytes() };
         let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
@@ -31,7 +28,7 @@ impl RustyJwtToolsFfi {
         let method = unsafe { CStr::from_ptr(method).to_bytes() };
         let backend_keys = unsafe { CStr::from_ptr(backend_keys).to_bytes() };
 
-        RustyJwtTools::generate_dpop_access_token(
+        let res = RustyJwtTools::generate_dpop_access_token(
             dpop_proof,
             user,
             client_id,
@@ -43,43 +40,53 @@ impl RustyJwtToolsFfi {
             max_expiration,
             now,
             backend_keys,
-        )
-        .map_err(HsError::from)
-        .and_then(|token| CString::new(token).map_err(|_| HsError::FfiError))
-        .into()
+        );
+        Box::into_raw(Box::new(res))
     }
 
-    /// Frees the allocated [CString] used for returning the result.
+    #[no_mangle]
+    pub extern "C" fn get_error(ptr: *const RustyJwtResult<String>) -> *const u8 {
+        let result = unsafe {
+            assert!(!ptr.is_null());
+            &*ptr
+        };
+
+        match result {
+            Ok(_) => std::ptr::null_mut(),
+            Err(e) => {
+                // use From trait instead
+                let hs_err = match e {
+                    RustyJwtError::HtuError(_, _) => HsError::HtuMismatchError,
+                    RustyJwtError::ImplementationError => HsError::ImplementationError,
+                    _ => HsError::UnknownError,
+                };
+                &(hs_err as u8)
+            }
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn get_result(ptr: *const RustyJwtResult<String>) -> *const c_char {
+        let result = unsafe {
+            assert!(!ptr.is_null());
+            &*ptr
+        };
+
+        match result {
+            Ok(value) => value.as_ptr() as *const c_char,
+            Err(_) => std::ptr::null_mut(),
+        }
+    }
+
+    /// Frees the allocated [RustyJwtResult] used for returning the result.
     /// This has to be called from haskell
     #[no_mangle]
-    pub extern "C" fn free_dpop_access_token(ptr: *mut c_char) {
+    pub extern "C" fn free_dpop_access_token(ptr: *mut RustyJwtResult<String>) {
+        if ptr.is_null() {
+            return;
+        }
         unsafe {
-            if ptr.is_null() {
-                return;
-            }
-            CString::from_raw(ptr)
-        };
-    }
-}
-
-#[derive(Debug, Clone)]
-#[repr(C)]
-pub struct HsResponse {
-    pub value: *mut c_char,
-    pub error: u8,
-}
-
-impl From<Result<CString, HsError>> for HsResponse {
-    fn from(result: Result<CString, HsError>) -> Self {
-        match result {
-            Ok(value) => Self {
-                value: value.into_raw(),
-                error: HsError::NoError as u8,
-            },
-            Err(e) => Self {
-                value: std::ptr::null_mut(),
-                error: e as u8,
-            },
+            let _ = Box::from_raw(ptr);
         }
     }
 }
