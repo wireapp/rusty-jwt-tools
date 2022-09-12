@@ -1,17 +1,18 @@
-use std::str::FromStr;
-
-use elliptic_curve::PublicKey;
 use jwt_simple::prelude::*;
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
 
-use crate::jwk::TryIntoJwk;
+pub use jwk::*;
+pub use jwt::*;
+
 use crate::{
     alg::{JwsEcAlgorithm, JwsEdAlgorithm},
     dpop::Dpop,
-    jwk::RustyJwk,
     prelude::*,
 };
+
+pub mod jwk;
+pub mod jwt;
 
 #[template]
 #[export]
@@ -24,6 +25,7 @@ case::P384($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P384))
 #[allow(non_snake_case)]
 pub fn all_keys(key: JwtKey) {}
 
+#[derive(Debug, Clone)]
 pub struct JwtKey {
     /// KeyPair
     pub kp: Pem,
@@ -200,47 +202,6 @@ impl JwtEdKey {
                 .unwrap()
                 .verify_token::<Dpop>(token, None)
                 .unwrap(),
-        }
-    }
-}
-
-impl RustyJwk {
-    pub fn ed25519_jwk_to_kp(jwk: &Jwk) -> Ed25519PublicKey {
-        match &jwk.algorithm {
-            AlgorithmParameters::OctetKeyPair(p) => {
-                let x = base64::decode_config(&p.x, base64::URL_SAFE_NO_PAD).unwrap();
-                Ed25519PublicKey::from_bytes(&x).unwrap()
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    pub fn p256_jwk_to_kp(jwk: &Jwk) -> ES256PublicKey {
-        let jwk = serde_json::to_string(jwk).unwrap();
-        let jwk = elliptic_curve::JwkEcKey::from_str(&jwk).unwrap();
-        let pk: PublicKey<p256::NistP256> = jwk.to_public_key().unwrap();
-        use p256::pkcs8::EncodePublicKey as _;
-        let der = pk.to_public_key_der().unwrap();
-        let key = ES256PublicKey::from_der(der.as_bytes()).unwrap();
-        key
-    }
-
-    pub fn p384_jwk_to_kp(jwk: &Jwk) -> ES384PublicKey {
-        let jwk = serde_json::to_string(jwk).unwrap();
-        let jwk = elliptic_curve::JwkEcKey::from_str(&jwk).unwrap();
-        let pk: PublicKey<p384::NistP384> = jwk.to_public_key().unwrap();
-        use p384::pkcs8::EncodePublicKey as _;
-        let der = pk.to_public_key_der().unwrap();
-        let key = ES384PublicKey::from_der(der.as_bytes()).unwrap();
-        key
-    }
-
-    pub fn rand_jwk(alg: JwsAlgorithm) -> Jwk {
-        use crate::jwk::TryIntoJwk as _;
-        match alg {
-            JwsAlgorithm::P256 => ES256KeyPair::generate().public_key().try_into_jwk().unwrap(),
-            JwsAlgorithm::P384 => ES384KeyPair::generate().public_key().try_into_jwk().unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519KeyPair::generate().public_key().try_into_jwk().unwrap(),
         }
     }
 }

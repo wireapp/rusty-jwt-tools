@@ -36,9 +36,16 @@ impl std::fmt::Display for AcmeChallenge {
 }
 
 #[cfg(test)]
+impl AcmeChallenge {
+    pub fn rand() -> Self {
+        Self(rand_nonce(32))
+    }
+}
+
+#[cfg(test)]
 impl Default for AcmeChallenge {
     fn default() -> Self {
-        Self(rand_nonce(32))
+        Self("okAJ33Ym/XS2qmmhhh7aWSbBlYy4Ttm1EysqW8I/9ng".to_string())
     }
 }
 
@@ -46,9 +53,29 @@ impl Default for AcmeChallenge {
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BackendNonce(String);
 
+impl BackendNonce {
+    /// From bytes
+    pub fn try_from_bytes(bytes: &[u8]) -> RustyJwtResult<Self> {
+        Ok(core::str::from_utf8(bytes)?.into())
+    }
+}
+
 impl From<String> for BackendNonce {
     fn from(nonce: String) -> Self {
         Self(nonce)
+    }
+}
+
+impl From<&str> for BackendNonce {
+    fn from(nonce: &str) -> Self {
+        Self(nonce.to_string())
+    }
+}
+
+#[cfg(test)]
+impl<'a> From<&'a [u8]> for BackendNonce {
+    fn from(s: &'a [u8]) -> Self {
+        String::from_utf8(s.to_vec()).unwrap().into()
     }
 }
 
@@ -73,9 +100,16 @@ impl std::fmt::Display for BackendNonce {
 }
 
 #[cfg(test)]
+impl BackendNonce {
+    pub fn rand() -> Self {
+        Self(rand_nonce(32))
+    }
+}
+
+#[cfg(test)]
 impl Default for BackendNonce {
     fn default() -> Self {
-        Self(rand_nonce(32))
+        Self("WE88EvOBzbqGerznM+2P/AadVf7374y0cH19sDSZA2A".to_string())
     }
 }
 

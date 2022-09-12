@@ -38,6 +38,19 @@ impl ToString for JwsAlgorithm {
     }
 }
 
+impl TryFrom<&str> for JwsAlgorithm {
+    type Error = RustyJwtError;
+
+    fn try_from(alg: &str) -> Result<Self, Self::Error> {
+        Ok(match alg {
+            "ES256" => JwsAlgorithm::P256,
+            "ES384" => JwsAlgorithm::P384,
+            "EdDSA" => JwsAlgorithm::Ed25519,
+            _ => return Err(RustyJwtError::UnsupportedAlgorithm),
+        })
+    }
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum JwsEcAlgorithm {
     P256,
