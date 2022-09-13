@@ -54,12 +54,7 @@ impl RustyJwtToolsFfi {
         match result {
             Ok(_) => std::ptr::null_mut(),
             Err(e) => {
-                // use From trait instead
-                let hs_err = match e {
-                    RustyJwtError::HtuError(_, _) => HsError::HtuMismatchError,
-                    RustyJwtError::ImplementationError => HsError::ImplementationError,
-                    _ => HsError::UnknownError,
-                };
+                let hs_err = HsError::from(e);
                 &(hs_err as u8)
             }
         }
@@ -135,8 +130,8 @@ pub enum HsError {
     ExpError = 18,
 }
 
-impl From<RustyJwtError> for HsError {
-    fn from(e: RustyJwtError) -> Self {
+impl From<&RustyJwtError> for HsError {
+    fn from(e: &RustyJwtError) -> Self {
         match e {
             RustyJwtError::HtuError(_, _) => HsError::HtuMismatchError,
             RustyJwtError::ImplementationError => HsError::ImplementationError,
