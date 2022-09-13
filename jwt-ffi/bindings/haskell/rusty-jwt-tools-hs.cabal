@@ -18,12 +18,13 @@ library
     , base64-bytestring
     , bytestring
     , bytestring-conversion
+    , C-structs
     , either
     , extra
     , string-conversions
     , text
-    , uuid
     , transformers
+    , uuid
 
   default-language:   Haskell2010
   extra-libraries:
