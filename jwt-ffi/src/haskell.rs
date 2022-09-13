@@ -66,7 +66,7 @@ impl RustyJwtToolsFfi {
     }
 
     #[no_mangle]
-    pub extern "C" fn get_result(ptr: *const RustyJwtResult<String>) -> *const c_char {
+    pub extern "C" fn get_token(ptr: *const RustyJwtResult<String>) -> *const c_char {
         let result = unsafe {
             assert!(!ptr.is_null());
             &*ptr
