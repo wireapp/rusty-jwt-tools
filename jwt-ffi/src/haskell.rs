@@ -1,4 +1,7 @@
-use std::{ffi::CStr, os::raw::c_char};
+use std::{
+    ffi::{CStr, CString},
+    os::raw::c_char,
+};
 
 use rusty_jwt_tools::prelude::*;
 
@@ -68,7 +71,10 @@ impl RustyJwtToolsFfi {
         };
 
         match result {
-            Ok(value) => value.as_ptr() as *const c_char,
+            Ok(value) => {
+                // we have to convert this into a (null terminated!) C string
+                CString::new(value.clone()).unwrap().into_raw()
+            }
             Err(_) => std::ptr::null_mut(),
         }
     }
