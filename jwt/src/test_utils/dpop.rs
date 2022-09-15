@@ -11,6 +11,8 @@ pub struct TestDpop {
     pub htu: Option<Htu>,
     #[serde(rename = "chal", skip_serializing_if = "Option::is_none")]
     pub challenge: Option<AcmeChallenge>,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub extra_claims: Option<serde_json::Value>,
 }
 
 impl Default for TestDpop {
@@ -20,12 +22,13 @@ impl Default for TestDpop {
             htm: Some(dpop.htm),
             htu: Some(dpop.htu),
             challenge: Some(dpop.challenge),
+            extra_claims: None,
         }
     }
 }
 
 /// Helper to build a DPoP token with errors
-pub struct JwtTestBuilder {
+pub struct DpopBuilder {
     pub alg: String,
     pub typ: Option<&'static str>,
     pub dpop: TestDpop,
@@ -38,23 +41,15 @@ pub struct JwtTestBuilder {
     pub exp: Option<UnixTimeStamp>,
 }
 
-impl From<JwtKey> for JwtTestBuilder {
+impl From<JwtKey> for DpopBuilder {
     fn from(key: JwtKey) -> Self {
-        use crate::jwk::TryIntoJwk as _;
-
-        let pk = key.pk.as_str();
-        let jwk = match key.alg {
-            JwsAlgorithm::P256 => ES256PublicKey::from_pem(pk).unwrap().try_into_jwk().unwrap(),
-            JwsAlgorithm::P384 => ES384PublicKey::from_pem(pk).unwrap().try_into_jwk().unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(pk).unwrap().try_into_jwk().unwrap(),
-        };
-        let iat = Self::now();
+        let iat = now();
         let exp = iat + Duration::from_days(2);
         Self {
             alg: key.alg.to_string(),
             typ: Some("dpop+jwt"),
             dpop: TestDpop::default(),
-            jwk: Some(jwk),
+            jwk: Some(key.to_jwk()),
             key,
             sub: Some(QualifiedClientId::default()),
             nonce: Some(BackendNonce::default()),
@@ -65,7 +60,7 @@ impl From<JwtKey> for JwtTestBuilder {
     }
 }
 
-impl JwtTestBuilder {
+impl DpopBuilder {
     pub fn build(self) -> String {
         let kp = self.key.kp.as_str();
         match self.key.alg {
@@ -95,17 +90,11 @@ impl JwtTestBuilder {
     fn claims(&self) -> JWTClaims<TestDpop> {
         let exp = Duration::from_days(2);
         let mut claims = Claims::with_custom_claims(self.dpop.clone(), exp);
-        claims.subject = self.sub.as_ref().map(|c| c.subject());
+        claims.subject = self.sub.as_ref().map(|c| c.to_subject());
         claims.nonce = self.nonce.as_ref().map(|n| n.as_str().to_string());
         claims.jwt_id = self.jti.clone();
         claims.issued_at = self.iat;
         claims.expires_at = self.exp;
         claims
-    }
-
-    pub fn now() -> UnixTimeStamp {
-        use fluvio_wasm_timer::{SystemTime, UNIX_EPOCH};
-        let now = UnixTimeStamp::from_secs(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
-        now - Duration::from_secs(5)
     }
 }

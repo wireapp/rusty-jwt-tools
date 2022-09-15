@@ -5,7 +5,7 @@ use std::{
 
 use rusty_jwt_tools::prelude::*;
 
-struct RustyJwtToolsFfi;
+pub struct RustyJwtToolsFfi;
 
 impl RustyJwtToolsFfi {
     /// see [RustyJwtTools::generate_dpop_access_token]
@@ -20,36 +20,44 @@ impl RustyJwtToolsFfi {
         method: *const c_char,
         max_skew_secs: u16,
         max_expiration: u64,
-        now: u64,
+        _now: u64,
         backend_keys: *const c_char,
-    ) -> *const RustyJwtResult<String> {
+    ) -> *const HsResult<String> {
         // TODO: remove unwrap
-        let dpop_proof = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
-        let dpop_proof = core::str::from_utf8(dpop_proof).unwrap();
+        let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
+        let dpop = core::str::from_utf8(dpop);
         let user = unsafe { CStr::from_ptr(user).to_bytes() };
         let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
-        let client_id = QualifiedClientId::try_from_raw_parts(user, client_id, domain).unwrap();
-        let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() }).unwrap();
-        let uri: Htu = unsafe { CStr::from_ptr(uri).to_bytes() }.try_into().unwrap();
-        let method: Htm = unsafe { CStr::from_ptr(method).to_bytes() }.try_into().unwrap();
-        let backend_keys: Pem = unsafe { CStr::from_ptr(backend_keys).to_bytes() }.try_into().unwrap();
+        let client_id = QualifiedClientId::try_from_raw_parts(user, client_id, domain);
+        let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() });
+        let uri = unsafe { CStr::from_ptr(uri).to_bytes() }.try_into();
+        let method = unsafe { CStr::from_ptr(method).to_bytes() }.try_into();
+        let backend_kp = unsafe { CStr::from_ptr(backend_keys).to_bytes() }.try_into();
+        // TODO: change in API
+        let hash_algorithm = HashAlgorithm::SHA256;
 
-        let res = RustyJwtTools::generate_access_token(
-            dpop_proof,
-            client_id,
-            backend_nonce,
-            uri,
-            method,
-            max_skew_secs,
-            max_expiration,
-            now,
-            backend_keys,
-        );
-        Box::into_raw(Box::new(res))
+        if let (Ok(dpop), Ok(client_id), Ok(nonce), Ok(uri), Ok(method), Ok(kp)) =
+            (dpop, client_id, backend_nonce, uri, method, backend_kp)
+        {
+            let res = RustyJwtTools::generate_access_token(
+                dpop,
+                client_id,
+                nonce,
+                uri,
+                method,
+                max_skew_secs,
+                max_expiration,
+                kp,
+                hash_algorithm,
+            )
+            .map_err(HsError::from);
+            return Box::into_raw(Box::new(res));
+        }
+        Box::into_raw(Box::new(Err(HsError::ImplementationError)))
     }
 
     #[no_mangle]
-    pub extern "C" fn get_error(ptr: *const RustyJwtResult<String>) -> *const u8 {
+    pub extern "C" fn get_error(ptr: *const HsResult<String>) -> *const u8 {
         let result = unsafe {
             assert!(!ptr.is_null());
             &*ptr
@@ -57,15 +65,12 @@ impl RustyJwtToolsFfi {
 
         match result {
             Ok(_) => std::ptr::null_mut(),
-            Err(e) => {
-                let hs_err = HsError::from(e);
-                &(hs_err as u8)
-            }
+            Err(e) => &(*e as u8),
         }
     }
 
     #[no_mangle]
-    pub extern "C" fn get_token(ptr: *const RustyJwtResult<String>) -> *const c_char {
+    pub extern "C" fn get_token(ptr: *const HsResult<String>) -> *const c_char {
         let result = unsafe {
             assert!(!ptr.is_null());
             &*ptr
@@ -73,8 +78,12 @@ impl RustyJwtToolsFfi {
 
         match result {
             Ok(value) => {
-                // we have to convert this into a (null terminated!) C string
-                CString::new(value.clone()).unwrap().into_raw()
+                // we have to convert this into a ('\0' terminated!) C string
+                if let Ok(value) = CString::new(value.as_str()) {
+                    value.into_raw()
+                } else {
+                    std::ptr::null_mut()
+                }
             }
             Err(_) => std::ptr::null_mut(),
         }
@@ -93,7 +102,9 @@ impl RustyJwtToolsFfi {
     }
 }
 
-#[derive(Debug)]
+pub type HsResult<T> = Result<T, HsError>;
+
+#[derive(Debug, Copy, Clone)]
 #[repr(u8)]
 #[allow(dead_code)]
 pub enum HsError {
@@ -135,8 +146,8 @@ pub enum HsError {
     Expired = 18,
 }
 
-impl From<&RustyJwtError> for HsError {
-    fn from(e: &RustyJwtError) -> Self {
+impl From<RustyJwtError> for HsError {
+    fn from(e: RustyJwtError) -> Self {
         match e {
             RustyJwtError::InvalidHtu(_, _) => HsError::InvalidHtu,
             RustyJwtError::InvalidHtm(_) => HsError::InvalidHtm,
@@ -144,15 +155,15 @@ impl From<&RustyJwtError> for HsError {
             RustyJwtError::InvalidDpopTyp => HsError::InvalidDpopTyp,
             RustyJwtError::UnsupportedAlgorithm => HsError::UnsupportedDpopAlgorithm,
             RustyJwtError::InvalidToken(_) => HsError::InvalidDpopSignature,
-            RustyJwtError::DpopSubMismatch => HsError::ClientIdMismatch,
+            RustyJwtError::TokenSubMismatch => HsError::ClientIdMismatch,
             RustyJwtError::DpopNonceMismatch => HsError::BackendNonceMismatch,
-            RustyJwtError::MissingDpopClaim("jti") => HsError::MissingJti,
-            RustyJwtError::MissingDpopClaim("chal") => HsError::MissingChallenge,
-            RustyJwtError::MissingDpopClaim("iat") => HsError::MissingIat,
-            RustyJwtError::MissingDpopClaim("exp") => HsError::MissingExp,
+            RustyJwtError::MissingTokenClaim("jti") => HsError::MissingJti,
+            RustyJwtError::MissingTokenClaim("chal") => HsError::MissingChallenge,
+            RustyJwtError::MissingTokenClaim("iat") => HsError::MissingIat,
+            RustyJwtError::MissingTokenClaim("exp") => HsError::MissingExp,
             RustyJwtError::InvalidDpopIat => HsError::InvalidIat,
-            RustyJwtError::DpopLivesTooLong => HsError::ExpMismatch,
-            RustyJwtError::DpopExpired => HsError::Expired,
+            RustyJwtError::TokenLivesTooLong => HsError::ExpMismatch,
+            RustyJwtError::TokenExpired => HsError::Expired,
             RustyJwtError::ImplementationError => HsError::ImplementationError,
             _ => HsError::UnknownError,
         }

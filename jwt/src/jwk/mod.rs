@@ -19,19 +19,17 @@ where
 pub struct RustyJwk;
 
 impl RustyJwk {
+    #[inline]
     fn base64_url_encode(i: impl AsRef<[u8]>) -> String {
         base64::encode_config(i, base64::URL_SAFE_NO_PAD)
     }
 
+    #[inline]
     fn base64_url_decode(i: impl AsRef<[u8]>) -> RustyJwtResult<Vec<u8>> {
         Ok(base64::decode_config(i, base64::URL_SAFE_NO_PAD)?)
     }
 
     fn common_parameters() -> CommonParameters {
         CommonParameters::default()
-        /*CommonParameters {
-            public_key_use: Some(PublicKeyUse::Signature),
-            ..Default::default()
-        }*/
     }
 }

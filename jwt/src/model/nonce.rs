@@ -15,9 +15,23 @@ impl From<String> for AcmeChallenge {
     }
 }
 
+impl From<&str> for AcmeChallenge {
+    fn from(challenge: &str) -> Self {
+        challenge.to_string().into()
+    }
+}
+
 impl From<AcmeChallenge> for String {
     fn from(challenge: AcmeChallenge) -> Self {
         challenge.0
+    }
+}
+
+impl TryFrom<&[u8]> for AcmeChallenge {
+    type Error = RustyJwtError;
+
+    fn try_from(value: &[u8]) -> RustyJwtResult<Self> {
+        Ok(Self::from(core::str::from_utf8(value)?))
     }
 }
 
@@ -38,7 +52,7 @@ impl std::fmt::Display for AcmeChallenge {
 #[cfg(test)]
 impl AcmeChallenge {
     pub fn rand() -> Self {
-        Self(rand_nonce(32))
+        Self(crate::test_utils::rand_str(32))
     }
 }
 
@@ -102,7 +116,7 @@ impl std::fmt::Display for BackendNonce {
 #[cfg(test)]
 impl BackendNonce {
     pub fn rand() -> Self {
-        Self(rand_nonce(32))
+        Self(crate::test_utils::rand_str(32))
     }
 }
 
@@ -111,11 +125,4 @@ impl Default for BackendNonce {
     fn default() -> Self {
         Self("WE88EvOBzbqGerznM+2P/AadVf7374y0cH19sDSZA2A".to_string())
     }
-}
-
-#[cfg(test)]
-fn rand_nonce(size: usize) -> String {
-    use rand::distributions::{Alphanumeric, DistString};
-    let challenge: String = Alphanumeric.sample_string(&mut rand::thread_rng(), size);
-    base64::encode_config(challenge, base64::URL_SAFE_NO_PAD)
 }

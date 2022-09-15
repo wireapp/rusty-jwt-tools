@@ -11,3 +11,11 @@ You can find the published source code at [github.com/wireapp/wire](https://gith
 For licensing information, see the attached LICENSE file and the list of third-party licenses at [wire.com/legal/licenses/](https://wire.com/legal/licenses/).
 
 No license is granted to the Wire trademark and its associated logos, all of which will continue to be owned exclusively by Wire Swiss GmbH. Any use of the Wire trademark and/or its associated logos is expressly prohibited without the express prior written consent of Wire Swiss GmbH.
+
+## Example
+
+To run a sample end-to-end test you can
+
+```bash
+cargo test --color=always --test e2e -- --show-output 
+```

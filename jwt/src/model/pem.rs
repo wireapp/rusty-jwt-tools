@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use crate::prelude::*;
 
 /// UTF-8 String in the PEM (Privacy-Enhanced Mail) format
@@ -39,5 +41,11 @@ impl std::ops::Deref for Pem {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl Display for Pem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
