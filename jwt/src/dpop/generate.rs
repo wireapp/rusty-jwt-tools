@@ -22,35 +22,32 @@ impl RustyJwtTools {
         // TODO: is it up to us to validate the 'client_id' format or is it opaque to us ?
         use crate::jwk::TryIntoJwk as _;
 
-        let header = Self::new_header(alg);
+        let header = Self::new_dpop_header(alg);
         let claims = dpop.into_jwt_claims(nonce, client_id);
+        let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
         match alg {
             JwsAlgorithm::Ed25519 => {
                 let mut kp = Ed25519KeyPair::from_pem(kp.as_str())?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(Self::new_metadata(jwk))?;
+                kp.attach_metadata(with_jwk(jwk))?;
                 Ok(kp.sign_with_header(claims, header)?)
             }
             JwsAlgorithm::P256 => {
                 let mut kp = ES256KeyPair::from_pem(kp.as_str())?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(Self::new_metadata(jwk))?;
+                kp.attach_metadata(with_jwk(jwk))?;
                 Ok(kp.sign_with_header(claims, header)?)
             }
             JwsAlgorithm::P384 => {
                 let mut kp = ES384KeyPair::from_pem(kp.as_str())?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(Self::new_metadata(jwk))?;
+                kp.attach_metadata(with_jwk(jwk))?;
                 Ok(kp.sign_with_header(claims, header)?)
             }
         }
     }
 
-    fn new_metadata(jwk: Jwk) -> KeyMetadata {
-        KeyMetadata::default().with_public_key(jwk)
-    }
-
-    fn new_header(alg: JwsAlgorithm) -> JWTHeader {
+    fn new_dpop_header(alg: JwsAlgorithm) -> JWTHeader {
         let mut header = JWTHeader::default();
         header.algorithm = alg.to_string();
         header.signature_type = Some(Dpop::TYP.to_string());
@@ -64,14 +61,7 @@ pub mod tests {
     use wasm_bindgen_test::*;
 
     use crate::jwk::TryFromJwk;
-    use crate::{
-        alg::{JwsEcAlgorithm, JwsEdAlgorithm},
-        dpop::*,
-        jwk::RustyJwk,
-        test_utils::*,
-    };
-
-    use super::*;
+    use crate::{dpop::*, jwk::RustyJwk, test_utils::*};
 
     wasm_bindgen_test_configure!(run_in_browser);
 
@@ -105,12 +95,7 @@ pub mod tests {
             )
             .unwrap();
             let header = Token::decode_metadata(token.as_str()).unwrap();
-            let expected_alg = match key.alg {
-                JwsAlgorithm::P256 => "ES256",
-                JwsAlgorithm::P384 => "ES384",
-                JwsAlgorithm::Ed25519 => "EdDSA",
-            };
-            assert_eq!(header.algorithm(), expected_alg)
+            assert_eq!(header.algorithm(), key.alg.to_string())
         }
 
         #[apply(all_keys)]
@@ -124,14 +109,10 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            let parts = token.split('.').collect::<Vec<&str>>();
-            let claims = parts.first().unwrap();
-            let claims = base64::decode(claims).unwrap();
-            let claims = serde_json::from_slice::<serde_json::Value>(claims.as_slice()).unwrap();
-            let claims = claims.as_object().unwrap();
-            assert!(claims.get("typ").unwrap().as_str().is_some());
-            assert!(claims.get("alg").unwrap().as_str().is_some());
-            let jwk = claims.get("jwk").unwrap().as_object().unwrap();
+            let fields = jwt_header(token);
+            assert!(fields.get("typ").unwrap().as_str().is_some());
+            assert!(fields.get("alg").unwrap().as_str().is_some());
+            let jwk = fields.get("jwk").unwrap().as_object().unwrap();
             assert!(jwk.get("kty").unwrap().as_str().is_some());
             assert!(jwk.get("crv").unwrap().as_str().is_some());
             assert!(jwk.get("x").unwrap().as_str().is_some());
@@ -160,7 +141,7 @@ pub mod tests {
             let header = Token::decode_metadata(token.as_str()).unwrap();
             let jwk = header.public_key().unwrap();
             let is_valid = |p: &EllipticCurveKeyParameters| {
-                let (kty, curve, pk_pem) = match key.alg {
+                let (kty, curve, jwk_pk) = match key.alg {
                     JwsEcAlgorithm::P256 => {
                         let kty = EllipticCurveKeyType::EC;
                         let curve = EllipticCurve::P256;
@@ -174,7 +155,7 @@ pub mod tests {
                         (kty, curve, pk_pem)
                     }
                 };
-                p.key_type == kty && p.curve == curve && key.pk == pk_pem.into()
+                p.key_type == kty && p.curve == curve && key.pk == jwk_pk.into()
             };
             assert!(matches!(&jwk.algorithm, AlgorithmParameters::EllipticCurve(p) if is_valid(p)));
         }
@@ -193,7 +174,7 @@ pub mod tests {
             let header = Token::decode_metadata(token.as_str()).unwrap();
             let jwk = header.public_key().unwrap();
             let is_valid = |p: &OctetKeyPairParameters| {
-                let (kty, curve, pk_pem) = match key.alg {
+                let (kty, curve, jwk_pk) = match key.alg {
                     JwsEdAlgorithm::Ed25519 => {
                         let kty = OctetKeyPairType::OctetKeyPair;
                         let curve = EdwardCurve::Ed25519;
@@ -201,7 +182,7 @@ pub mod tests {
                         (kty, curve, pk_pem)
                     }
                 };
-                p.key_type == kty && p.curve == curve && key.pk == pk_pem.into()
+                p.key_type == kty && p.curve == curve && key.pk == jwk_pk.into()
             };
             assert!(matches!(&jwk.algorithm, AlgorithmParameters::OctetKeyPair(p) if is_valid(p)));
         }
@@ -310,6 +291,8 @@ pub mod tests {
     }
 
     pub mod claims {
+        use serde_json::{json, Value};
+
         use super::*;
 
         #[apply(all_keys)]
@@ -323,11 +306,7 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            let parts = token.split('.').collect::<Vec<&str>>();
-            let claims = parts.get(1).unwrap();
-            let claims = base64::decode(claims).unwrap();
-            let claims = serde_json::from_slice::<serde_json::Value>(claims.as_slice()).unwrap();
-            let claims = claims.as_object().unwrap();
+            let claims = jwt_claims(token);
             assert!(claims.get("jti").unwrap().as_str().is_some());
             assert!(claims.get("htm").unwrap().as_str().is_some());
             assert!(claims.get("nonce").unwrap().as_str().is_some());
@@ -348,7 +327,7 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            let claims = key.claims(&token);
+            let claims = key.claims::<Dpop>(&token);
             assert!(claims.jwt_id.is_some());
             assert!(uuid::Uuid::try_parse(&claims.jwt_id.unwrap()).is_ok());
         }
@@ -368,7 +347,7 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            assert_eq!(key.claims(&token).custom.htm, Htm::Post);
+            assert_eq!(key.claims::<Dpop>(&token).custom.htm, Htm::Post);
         }
 
         #[apply(all_keys)]
@@ -387,7 +366,7 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            assert_eq!(key.claims(&token).custom.htu, htu);
+            assert_eq!(key.claims::<Dpop>(&token).custom.htu, htu);
         }
 
         #[apply(all_keys)]
@@ -401,7 +380,7 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            let claims = key.claims(&token);
+            let claims = key.claims::<Dpop>(&token);
             assert!(claims.issued_at.is_some());
             let iat = claims.issued_at.unwrap().as_secs();
             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
@@ -421,7 +400,7 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            let claims = key.claims(&token);
+            let claims = key.claims::<Dpop>(&token);
             assert!(claims.expires_at.is_some());
             let exp = claims.expires_at.unwrap().as_secs();
             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
@@ -443,7 +422,7 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            let claims = key.claims(&token);
+            let claims = key.claims::<Dpop>(&token);
             assert!(claims.nonce.is_some());
             let generated_nonce: BackendNonce = claims.nonce.unwrap().into();
             assert!(!generated_nonce.is_empty());
@@ -466,7 +445,7 @@ pub mod tests {
                 QualifiedClientId::default(),
             )
             .unwrap();
-            let claims = key.claims(&token);
+            let claims = key.claims::<Dpop>(&token);
             let generated_challenge: AcmeChallenge = claims.custom.challenge;
             assert!(!generated_challenge.is_empty());
             assert_eq!(generated_challenge, challenge);
@@ -481,12 +460,47 @@ pub mod tests {
                 key.kp.clone(),
                 Dpop::default(),
                 BackendNonce::default(),
-                client_id.clone(),
+                client_id,
             )
             .unwrap();
-            let claims = key.claims(&token);
+            let claims = key.claims::<Dpop>(&token);
             assert!(claims.subject.is_some());
-            assert_eq!(claims.subject.unwrap(), client_id.subject())
+            assert_eq!(claims.subject.unwrap(), client_id.to_subject())
+        }
+
+        #[apply(all_keys)]
+        #[wasm_bindgen_test]
+        fn should_have_extra_claims(key: JwtKey) {
+            let extra_claims = json!({
+                "string": "string",
+                "number": 42,
+                "array": ["a", "b"],
+                "obj": { "a": "b" },
+            });
+            let dpop = Dpop {
+                extra_claims: Some(extra_claims),
+                ..Default::default()
+            };
+            let token = RustyJwtTools::generate_dpop_token(
+                key.alg,
+                key.kp,
+                dpop,
+                BackendNonce::default(),
+                QualifiedClientId::default(),
+            )
+            .unwrap();
+            let parts = token.split('.').collect::<Vec<&str>>();
+            let claims = parts.get(1).unwrap();
+            let claims = base64::decode(claims).unwrap();
+            let claims = serde_json::from_slice::<Value>(claims.as_slice()).unwrap();
+            let claims = claims.as_object().unwrap();
+            assert_eq!(claims.get("string").unwrap().as_str(), Some("string"));
+            assert_eq!(claims.get("number").unwrap().as_u64(), Some(42));
+            assert_eq!(
+                claims.get("array").unwrap().as_array(),
+                Some(&vec![json!("a"), json!("b")])
+            );
+            assert_eq!(claims.get("obj").unwrap().as_object(), json!({"a": "b"}).as_object());
         }
     }
 }

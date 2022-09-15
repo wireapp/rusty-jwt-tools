@@ -1,7 +1,5 @@
 use jwt_simple::prelude::*;
 
-use crate::alg::JwsEdAlgorithm;
-
 use super::*;
 
 impl TryIntoJwk for Ed25519PublicKey {

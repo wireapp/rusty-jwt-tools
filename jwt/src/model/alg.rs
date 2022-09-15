@@ -51,13 +51,17 @@ impl TryFrom<&str> for JwsAlgorithm {
     }
 }
 
+/// Supported elliptic curve algorithms
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum JwsEcAlgorithm {
+    /// P-256
     P256,
+    /// P-384
     P384,
 }
 
 impl JwsEcAlgorithm {
+    /// For JWK 'crv' field
     pub fn curve(&self) -> EllipticCurve {
         match self {
             JwsEcAlgorithm::P256 => EllipticCurve::P256,
@@ -65,6 +69,7 @@ impl JwsEcAlgorithm {
         }
     }
 
+    /// For JWK 'crv' field
     pub fn kty(&self) -> EllipticCurveKeyType {
         EllipticCurveKeyType::EC
     }
@@ -91,18 +96,22 @@ impl From<JwsEcAlgorithm> for JwsAlgorithm {
     }
 }
 
+/// Supported edward curve algorithms
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum JwsEdAlgorithm {
+    /// Ed25519
     Ed25519,
 }
 
 impl JwsEdAlgorithm {
+    /// For JWK 'crv' field
     pub fn curve(&self) -> EdwardCurve {
         match self {
             JwsEdAlgorithm::Ed25519 => EdwardCurve::Ed25519,
         }
     }
 
+    /// For JWK 'crv' field
     pub fn kty(&self) -> OctetKeyPairType {
         OctetKeyPairType::OctetKeyPair
     }
@@ -124,5 +133,21 @@ impl From<JwsEdAlgorithm> for JwsAlgorithm {
         match alg {
             JwsEdAlgorithm::Ed25519 => Self::Ed25519,
         }
+    }
+}
+
+/// Narrows the supported hashing algorithms to the ones we define
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum HashAlgorithm {
+    /// SHA-256
+    SHA256,
+    /// SHA-384
+    SHA384,
+}
+
+#[cfg(test)]
+impl HashAlgorithm {
+    pub fn values() -> [Self; 2] {
+        [Self::SHA256, Self::SHA384]
     }
 }

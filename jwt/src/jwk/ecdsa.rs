@@ -1,7 +1,5 @@
 use jwt_simple::prelude::*;
 
-use crate::alg::JwsEcAlgorithm;
-
 use super::*;
 
 impl TryIntoJwk for ES256PublicKey {
@@ -13,9 +11,14 @@ impl TryIntoJwk for ES256PublicKey {
 impl TryFromJwk for ES256PublicKey {
     fn try_from_jwk(jwk: &Jwk) -> RustyJwtResult<Self> {
         Ok(match &jwk.algorithm {
-            AlgorithmParameters::EllipticCurve(p) => {
-                let x = RustyJwk::base64_url_decode(p.x.as_bytes())?;
-                let y = RustyJwk::base64_url_decode(p.y.as_bytes())?;
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                key_type: EllipticCurveKeyType::EC,
+                curve: EllipticCurve::P256,
+                x,
+                y,
+            }) => {
+                let x = RustyJwk::base64_url_decode(x.as_bytes())?;
+                let y = RustyJwk::base64_url_decode(y.as_bytes())?;
                 let point =
                     p256::EncodedPoint::from_affine_coordinates(x.as_slice().into(), y.as_slice().into(), false);
                 ES256PublicKey::from_bytes(point.as_bytes())?
@@ -34,9 +37,14 @@ impl TryIntoJwk for ES384PublicKey {
 impl TryFromJwk for ES384PublicKey {
     fn try_from_jwk(jwk: &Jwk) -> RustyJwtResult<Self> {
         Ok(match &jwk.algorithm {
-            AlgorithmParameters::EllipticCurve(p) => {
-                let x = RustyJwk::base64_url_decode(p.x.as_bytes())?;
-                let y = RustyJwk::base64_url_decode(p.y.as_bytes())?;
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                key_type: EllipticCurveKeyType::EC,
+                curve: EllipticCurve::P384,
+                x,
+                y,
+            }) => {
+                let x = RustyJwk::base64_url_decode(x.as_bytes())?;
+                let y = RustyJwk::base64_url_decode(y.as_bytes())?;
                 let point =
                     p384::EncodedPoint::from_affine_coordinates(x.as_slice().into(), y.as_slice().into(), false);
                 ES384PublicKey::from_bytes(point.as_bytes())?
@@ -119,13 +127,34 @@ mod tests {
                 let original = ES256PublicKey::from_pem(key.pk.as_str()).unwrap();
                 let jwk = original.clone().try_into_jwk().unwrap();
                 let new_key = ES256PublicKey::try_from_jwk(&jwk).unwrap();
-                assert_eq!(original.to_bytes(), new_key.to_bytes())
+                assert_eq!(original.to_bytes(), new_key.to_bytes());
             }
             JwsEcAlgorithm::P384 => {
                 let original = ES384PublicKey::from_pem(key.pk.as_str()).unwrap();
                 let jwk = original.clone().try_into_jwk().unwrap();
                 let new_key = ES384PublicKey::try_from_jwk(&jwk).unwrap();
-                assert_eq!(original.to_bytes(), new_key.to_bytes())
+                assert_eq!(original.to_bytes(), new_key.to_bytes());
+            }
+        }
+    }
+
+    #[apply(all_ec_keys)]
+    #[test]
+    fn should_fail_converting_jwk_into_key_when_wrong_size(key: JwtEcKey) {
+        match key.alg {
+            JwsEcAlgorithm::P256 => {
+                let original = ES256PublicKey::from_pem(key.pk.as_str()).unwrap();
+                let jwk = original.try_into_jwk().unwrap();
+                // trying from the wrong key size
+                let result = ES384PublicKey::try_from_jwk(&jwk);
+                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
+            }
+            JwsEcAlgorithm::P384 => {
+                let original = ES384PublicKey::from_pem(key.pk.as_str()).unwrap();
+                let jwk = original.try_into_jwk().unwrap();
+                // trying from the wrong key size
+                let result = ES256PublicKey::try_from_jwk(&jwk);
+                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
             }
         }
     }
