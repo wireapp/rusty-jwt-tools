@@ -3,6 +3,10 @@ targets = [
     { triple = "wasm32-unknown-unknown" },
 ]
 
+[advisories]
+# TODO: use more conservative values when we come close to production
+vulnerability = "warn"
+
 [licenses]
 unlicensed = "deny"
 allow-osi-fsf-free = "both"
@@ -11,8 +15,19 @@ confidence-threshold = 0.93
 allow = [
     "MPL-2.0",
 ]
-
 exceptions = [{ allow = ["Unicode-DFS-2016"], name = "unicode-ident" }]
+
+[[licenses.clarify]]
+name = "ring"
+expression = "MIT AND ISC"
+license-files = [
+    { path = "LICENSE", hash = 0xbd0eed23 }
+]
+
+[[licenses.clarify]]
+name = "webpki"
+expression = "ISC"
+license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
 
 [sources]
 private = [
