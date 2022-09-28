@@ -454,7 +454,8 @@ pub mod tests {
         #[apply(all_keys)]
         #[wasm_bindgen_test]
         fn should_have_client_id(key: JwtKey) {
-            let client_id = QualifiedClientId::new("SvPfLlwBQi-6oddVRrkqpw", 1223, "example.com");
+            let client_id =
+                QualifiedClientId::try_new(QualifiedClientId::DEFAULT_RAW_USER, 1223, "example.com").unwrap();
             let token = RustyJwtTools::generate_dpop_token(
                 key.alg,
                 key.kp.clone(),
