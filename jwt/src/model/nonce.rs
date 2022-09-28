@@ -21,12 +21,6 @@ impl From<&str> for AcmeChallenge {
     }
 }
 
-impl From<AcmeChallenge> for String {
-    fn from(challenge: AcmeChallenge) -> Self {
-        challenge.0
-    }
-}
-
 impl TryFrom<&[u8]> for AcmeChallenge {
     type Error = RustyJwtError;
 
@@ -40,12 +34,6 @@ impl std::ops::Deref for AcmeChallenge {
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl std::fmt::Display for AcmeChallenge {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
 
@@ -93,23 +81,11 @@ impl<'a> From<&'a [u8]> for BackendNonce {
     }
 }
 
-impl From<BackendNonce> for String {
-    fn from(nonce: BackendNonce) -> Self {
-        nonce.0
-    }
-}
-
 impl std::ops::Deref for BackendNonce {
     type Target = String;
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl std::fmt::Display for BackendNonce {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
 

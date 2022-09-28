@@ -1,3 +1,5 @@
+#![warn(dead_code)]
+
 use rusty_jwt_tools::prelude::*;
 
 pub struct RustyJwtToolsFfi;

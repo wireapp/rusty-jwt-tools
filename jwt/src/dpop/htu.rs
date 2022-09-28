@@ -17,14 +17,6 @@ impl Default for Htu {
     }
 }
 
-impl TryFrom<String> for Htu {
-    type Error = RustyJwtError;
-
-    fn try_from(u: String) -> RustyJwtResult<Self> {
-        u.as_str().try_into()
-    }
-}
-
 impl TryFrom<&[u8]> for Htu {
     type Error = RustyJwtError;
 
@@ -59,39 +51,42 @@ pub mod tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    pub mod htu {
-        use super::*;
+    #[test]
+    #[wasm_bindgen_test]
+    fn can_create_from_valid_uri() {
+        let uri = "https://wire.com";
+        assert!(Htu::try_from(uri).is_ok())
+    }
 
-        #[test]
-        #[wasm_bindgen_test]
-        fn can_create_from_valid_uri() {
-            let uri = "https://wire.com";
-            assert!(Htu::try_from(uri).is_ok())
-        }
+    #[test]
+    #[wasm_bindgen_test]
+    fn can_create_from_bytes() {
+        let uri = "https://wire.com".as_bytes();
+        assert!(Htu::try_from(uri).is_ok())
+    }
 
-        #[test]
-        #[wasm_bindgen_test]
-        fn fail_creating_from_invalid_uri() {
-            let uri = "https://wire com";
-            assert!(Htu::try_from(uri).is_err())
-        }
+    #[test]
+    #[wasm_bindgen_test]
+    fn fail_creating_from_invalid_uri() {
+        let uri = "https://wire com";
+        assert!(Htu::try_from(uri).is_err())
+    }
 
-        #[test]
-        #[wasm_bindgen_test]
-        fn fail_creating_from_invalid_with_query() {
-            let uri = "https://wire.com?a=b";
-            assert!(
-                matches!(Htu::try_from(uri).unwrap_err(), RustyJwtError::InvalidHtu(u, r) if u == url::Url::try_from(uri).unwrap() && r == "cannot contain query parameter")
-            )
-        }
+    #[test]
+    #[wasm_bindgen_test]
+    fn fail_creating_from_invalid_with_query() {
+        let uri = "https://wire.com?a=b";
+        assert!(
+            matches!(Htu::try_from(uri).unwrap_err(), RustyJwtError::InvalidHtu(u, r) if u == url::Url::try_from(uri).unwrap() && r == "cannot contain query parameter")
+        )
+    }
 
-        #[test]
-        #[wasm_bindgen_test]
-        fn fail_creating_from_invalid_with_fragment() {
-            let uri = "https://wire.com#rocks";
-            assert!(
-                matches!(Htu::try_from(uri).unwrap_err(), RustyJwtError::InvalidHtu(u, r) if u == url::Url::try_from(uri).unwrap() && r == "cannot contain fragment parameter")
-            )
-        }
+    #[test]
+    #[wasm_bindgen_test]
+    fn fail_creating_from_invalid_with_fragment() {
+        let uri = "https://wire.com#rocks";
+        assert!(
+            matches!(Htu::try_from(uri).unwrap_err(), RustyJwtError::InvalidHtu(u, r) if u == url::Url::try_from(uri).unwrap() && r == "cannot contain fragment parameter")
+        )
     }
 }

@@ -43,3 +43,36 @@ impl TryFrom<&[u8]> for Htm {
         core::str::from_utf8(value)?.try_into()
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use wasm_bindgen_test::*;
+
+    use super::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_accept_post() {
+        assert!(Htm::try_from(b"POST".as_slice()).is_ok());
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_be_case_sensitive() {
+        assert!(matches!(
+            Htm::try_from(b"post".as_slice()).unwrap_err(),
+            RustyJwtError::InvalidHtm(m) if &m == "post"
+        ));
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_fail_when_unsupported_method() {
+        assert!(matches!(
+            Htm::try_from(b"HEAD".as_slice()).unwrap_err(),
+            RustyJwtError::InvalidHtm(m) if &m == "HEAD"
+        ));
+    }
+}

@@ -1,3 +1,5 @@
+#![warn(dead_code)]
+
 use std::{
     ffi::{CStr, CString},
     os::raw::c_char,

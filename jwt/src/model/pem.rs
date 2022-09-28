@@ -30,12 +30,6 @@ impl<'a> TryFrom<&'a [u8]> for Pem {
     }
 }
 
-impl From<Pem> for String {
-    fn from(p: Pem) -> Self {
-        p.0
-    }
-}
-
 impl std::ops::Deref for Pem {
     type Target = String;
 

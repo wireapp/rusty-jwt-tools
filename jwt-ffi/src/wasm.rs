@@ -1,3 +1,5 @@
+#![warn(dead_code)]
+
 use wasm_bindgen::prelude::*;
 
 use rusty_jwt_tools::prelude::*;
