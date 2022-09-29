@@ -26,6 +26,9 @@ serde_json = "1.0"
 sha2 = "0.10"
 oauth2 = "4.2"
 chrono = "0.4"
+either = { version = "1.8", features = ["serde"] }
+time = { version = "0.3", features = ["serde", "serde-well-known", "wasm-bindgen"] }
+json-patch = "0.2"
 
 [dependencies.jwt-simple]
 git = "https://github.com/beltram/rust-jwt-simple"
@@ -39,3 +42,4 @@ serde_json = "1.0"
 ed25519-compact = "1.0"
 fluvio-wasm-timer = "0.2.5"
 rand = "0.8"
+time = { version = "0.3", features = ["macros"] }

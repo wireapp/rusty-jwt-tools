@@ -1,10 +1,11 @@
-#![warn(dead_code)]
+#![allow(dead_code)]
 
 use rusty_jwt_tools::prelude::*;
 
 pub struct RustyJwtToolsFfi;
 
 impl RustyJwtToolsFfi {
+    #[allow(clippy::too_many_arguments)]
     pub fn generate_dpop_token(
         alg: JwsAlgorithm,
         kp_pem: Vec<u8>,
@@ -20,6 +21,7 @@ impl RustyJwtToolsFfi {
         let htm = Htm::try_from(method)?;
         let challenge = AcmeChallenge::try_from(acme_challenge.as_slice())?;
         let extra_claims = extra_claims.as_deref().map(serde_json::from_slice).transpose()?;
+
         let dpop = Dpop {
             htu,
             htm,

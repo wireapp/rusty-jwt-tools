@@ -20,6 +20,7 @@ mod jkt;
 mod jwk;
 mod jwt;
 mod model;
+mod oidc;
 
 /// Prelude
 pub mod prelude {
