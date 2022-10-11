@@ -31,13 +31,13 @@ pub struct RustyPresentation {
 }
 
 impl RustyPresentation {
-    pub fn try_json_serialize(&self) -> RustyJwtResult<Value> {
+    pub fn try_json_serialize(mut self) -> RustyJwtResult<Value> {
+        // we do not serialize 'extra' anyway
+        let extra = std::mem::take(&mut self.extra);
         let mut json = serde_json::to_value(self)?;
-        if let Some(extra) = &self.extra {
-            // TODO: fix, highly inefficient
-            let patch = serde_json::to_string(extra).unwrap();
-            let p: json_patch::Patch = serde_json::from_str(&patch).unwrap();
-            json_patch::patch(&mut json, &p).unwrap();
+        if let Some(extra) = extra {
+            let patch = serde_json::from_value::<json_patch::Patch>(extra).map_err(RustyJwtError::InvalidJsonPath)?;
+            json_patch::patch(&mut json, &patch)?;
         }
         Ok(json)
     }
