@@ -1,6 +1,7 @@
-use crate::oidc::prelude::*;
 use serde::{Deserialize, Serialize};
 use url::Url;
+
+use crate::oidc::prelude::*;
 
 /// An identifier representing the issuer of a [`Credential`][crate::credential::Credential].
 ///

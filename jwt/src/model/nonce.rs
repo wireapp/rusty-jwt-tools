@@ -1,5 +1,3 @@
-use std::fmt::Formatter;
-
 use serde::{Deserialize, Serialize};
 
 use crate::prelude::*;

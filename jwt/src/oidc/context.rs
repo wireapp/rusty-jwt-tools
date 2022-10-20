@@ -1,6 +1,7 @@
-use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use url::Url;
+
+use crate::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(untagged)]

@@ -1,8 +1,8 @@
-use crate::oidc::prelude::*;
-use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use url::Url;
+
+use crate::oidc::prelude::*;
+use crate::prelude::*;
 
 #[cfg_attr(test, derive(Default))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
