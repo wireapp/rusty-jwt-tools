@@ -1,13 +1,12 @@
 use ::std::collections::BTreeMap;
+
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
 /*pub use identity_credential::{
     credential::{Credential as VerifiableCredential, CredentialBuilder as VerifiableCredentialBuilder},
     presentation::{Presentation as VerifiablePresentation, PresentationBuilder as VerifiablePresentationBuilder},
 };*/
-use serde::ser::SerializeStruct;
-use serde::{Deserialize, Serialize, Serializer};
-use serde_json::Value;
-use url::Url;
-
 mod context;
 mod credential;
 mod datetime;
@@ -43,14 +42,13 @@ pub struct CredentialSubject {
 
 #[cfg(test)]
 pub mod tests {
-    use super::prelude::*;
-    use super::*;
-    use crate::oidc::proof::{ProofPurpose, ProofValue};
     use serde_json::{json, Value};
-    use std::time::SystemTime;
+    use url::Url;
     use wasm_bindgen_test::*;
 
-    use crate::test_utils::*;
+    use crate::oidc::proof::{ProofPurpose, ProofValue};
+
+    use super::prelude::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

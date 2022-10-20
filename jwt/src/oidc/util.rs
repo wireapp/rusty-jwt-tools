@@ -1,5 +1,4 @@
-use crate::error::{RustyJwtError, RustyJwtResult};
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]

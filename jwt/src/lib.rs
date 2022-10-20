@@ -17,6 +17,7 @@ mod dpop;
 mod error;
 mod introspect;
 mod jkt;
+mod jwe;
 mod jwk;
 mod jwt;
 mod model;
@@ -26,6 +27,7 @@ mod oidc;
 pub mod prelude {
     pub use dpop::{Dpop, Htm, Htu};
     pub use error::{RustyJwtError, RustyJwtResult};
+    pub use jwe::alg::JweAlgorithm;
     pub use model::{
         alg::{HashAlgorithm, JwsAlgorithm, JwsEcAlgorithm, JwsEdAlgorithm},
         client_id::QualifiedClientId,

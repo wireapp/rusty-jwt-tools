@@ -1,6 +1,7 @@
-use crate::oidc::prelude::*;
 use serde::{Deserialize, Serialize};
 use url::Url;
+
+use crate::oidc::prelude::*;
 
 #[cfg_attr(test, derive(Default))]
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]

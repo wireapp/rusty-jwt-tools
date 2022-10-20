@@ -20,10 +20,10 @@ pub mod utils;
 #[template]
 #[export]
 #[rstest(
-key,
-case::Ed25519($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::Ed25519)),
-case::P256($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P256)),
-case::P384($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P384))
+    key,
+    case::Ed25519($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::Ed25519)),
+    case::P256($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P256)),
+    case::P384($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P384))
 )]
 #[allow(non_snake_case)]
 pub fn all_keys(key: JwtKey) {}
@@ -312,3 +312,34 @@ impl Ciphersuite {
 #[rstest(hash, case::SHA256(HashAlgorithm::SHA256), case::SHA384(HashAlgorithm::SHA384))]
 #[allow(non_snake_case)]
 pub fn all_hash(hash: HashAlgorithm) {}
+
+#[template]
+#[export]
+#[rstest(
+    key,
+    case::AES128($ crate::test_utils::JweKey::new(JweAlgorithm::AES128GCM)),
+    case::AES256($ crate::test_utils::JweKey::new(JweAlgorithm::AES256GCM)),
+)]
+#[allow(non_snake_case)]
+pub fn all_cipher(key: JweKey) {}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct JweKey {
+    pub alg: JweAlgorithm,
+    pub value: Vec<u8>,
+}
+
+impl JweKey {
+    pub fn new(alg: JweAlgorithm) -> Self {
+        let key = Self::rand_key(alg.key_length());
+        Self { alg, value: key }
+    }
+
+    fn rand_key(size: usize) -> Vec<u8> {
+        use rand::{RngCore as _, SeedableRng as _};
+        let mut key = vec![0u8; size];
+        let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
+        rng.fill_bytes(&mut key);
+        key
+    }
+}

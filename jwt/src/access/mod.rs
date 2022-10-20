@@ -1,7 +1,7 @@
-use crate::jkt::JktConfirmation;
-use crate::jwt::new_jti;
 use jwt_simple::prelude::*;
 
+use crate::jkt::JktConfirmation;
+use crate::jwt::new_jti;
 use crate::prelude::*;
 
 pub mod generate;

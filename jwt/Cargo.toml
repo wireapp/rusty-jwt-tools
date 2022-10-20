@@ -29,6 +29,9 @@ chrono = "0.4"
 either = { version = "1.8", features = ["serde"] }
 time = { version = "0.3", features = ["serde", "serde-well-known", "wasm-bindgen"] }
 json-patch = "0.2"
+biscuit = "0.6.0-beta1"
+rand = { version = "0.8", features = ["rand_chacha", "getrandom"] }
+rand_chacha = "0.3"
 
 [dependencies.jwt-simple]
 git = "https://github.com/beltram/rust-jwt-simple"
@@ -43,3 +46,6 @@ ed25519-compact = "2.0"
 fluvio-wasm-timer = "0.2.5"
 rand = "0.8"
 time = { version = "0.3", features = ["macros"] }
+
+[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
+josekit = "0.8"

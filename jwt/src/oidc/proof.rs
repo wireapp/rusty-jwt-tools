@@ -1,5 +1,6 @@
-use crate::oidc::prelude::*;
 use serde::{Deserialize, Serialize};
+
+use crate::oidc::prelude::*;
 
 /// A digital signature.
 ///

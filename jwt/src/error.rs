@@ -7,6 +7,12 @@ pub enum RustyJwtError {
     /// JWT error from `jwt-simple` crate
     #[error(transparent)]
     JwtSimpleError(#[from] jwt_simple::Error),
+    /// Error (de)encrypting a JWE with biscuit crate
+    #[error(transparent)]
+    JweError(#[from] biscuit::errors::Error),
+    /// Error generating random numbers
+    #[error(transparent)]
+    RandError(#[from] rand::Error),
     /// Elliptic curve error
     #[error("Elliptic curve error because {0}")]
     Sec1Error(sec1::Error),

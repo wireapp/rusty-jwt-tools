@@ -36,9 +36,10 @@ impl Default for Datetime {
 
 /// Wrapping `time` serializer to accommodate our newtype
 pub mod iso8601 {
-    use super::*;
     use serde::{Deserializer, Serializer};
     use time::format_description::well_known;
+
+    use super::*;
 
     // naively try to stick to 'xsd:datetime'
     pub(crate) const SERDE_CONFIG: well_known::iso8601::EncodedConfig = well_known::iso8601::Config::DEFAULT
