@@ -28,7 +28,8 @@ pub struct RustyCredential {
     #[serde(
         rename = "expirationDate",
         with = "iso8601::option",
-        skip_serializing_if = "Option::is_none"
+        skip_serializing_if = "Option::is_none",
+        default
     )]
     pub expiration_date: Option<Datetime>,
     /// Proof(s) used to verify a `Credential`

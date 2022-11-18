@@ -1,0 +1,25 @@
+{
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://ietf.org/2022/oauth/MlsClientCredential/v1"
+    ],
+    "id": "https://im.example.com/credentials/9829381",
+    "type": [
+        "VerifiableCredential",
+        "MlsClientIdCredential"
+    ],
+    "issuer": {
+        "id": "dns:im.example.com"
+    },
+    "issuanceDate": "2022-09-08T19:23:24Z",
+    "credentialSubject": {
+        "sub": "im:SvPfLlwBQi-6oddVRrkqpw/04c7@example.com"
+    },
+    "proof": {
+        "type": "Ed25519Signature2018",
+        "created": "2021-03-19T15:30:15Z",
+        "jws": "N8xYGopY8_2wJYuhFX5QMuvMBjzHPJqp06w73UL53BBdhxP9QxtqxTAk..jZrTdfr4kMkCOYhLoFG2L7roGZFmDzVSecfzNwf36lk",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "https://im.example.com/keys/Ed25519/sha256:uZx-Zx68PzlMsd2PgslEWBCF-BDyjMUdVDbZhnCZIls"
+    }
+}

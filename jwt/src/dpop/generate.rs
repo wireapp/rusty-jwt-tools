@@ -20,31 +20,9 @@ impl RustyJwtTools {
         client_id: QualifiedClientId,
     ) -> RustyJwtResult<String> {
         // TODO: is it up to us to validate the 'client_id' format or is it opaque to us ?
-        use crate::jwk::TryIntoJwk as _;
-
         let header = Self::new_dpop_header(alg);
         let claims = dpop.into_jwt_claims(nonce, client_id);
-        let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
-        match alg {
-            JwsAlgorithm::Ed25519 => {
-                let mut kp = Ed25519KeyPair::from_pem(kp.as_str())?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                Ok(kp.sign_with_header(claims, header)?)
-            }
-            JwsAlgorithm::P256 => {
-                let mut kp = ES256KeyPair::from_pem(kp.as_str())?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                Ok(kp.sign_with_header(claims, header)?)
-            }
-            JwsAlgorithm::P384 => {
-                let mut kp = ES384KeyPair::from_pem(kp.as_str())?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                Ok(kp.sign_with_header(claims, header)?)
-            }
-        }
+        Self::generate_jwt(alg, header, claims, kp)
     }
 
     fn new_dpop_header(alg: JwsAlgorithm) -> JWTHeader {
