@@ -5,6 +5,7 @@ use crate::oidc::prelude::*;
 
 #[cfg_attr(test, derive(Default))]
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+/// Verifiable credential
 pub struct RustyCredential {
     /// The JSON-LD context(s) applicable to the `Credential`.
     #[serde(rename = "@context")]

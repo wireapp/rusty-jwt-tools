@@ -2,12 +2,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
+/// A JSON object or array, yikes
 pub struct ObjectOrArray<T: Serialize + for<'a> Deserialize<'a>> {
     #[serde(with = "either::serde_untagged")]
-    pub inner: either::Either<T, Vec<T>>,
+    inner: either::Either<T, Vec<T>>,
 }
 
 impl<T: Serialize + for<'a> Deserialize<'a>> ObjectOrArray<T> {
+    /// When an array, is it empty
     pub fn is_empty(&self) -> bool {
         match &self.inner {
             either::Left(_) => false,

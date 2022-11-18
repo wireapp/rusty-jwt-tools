@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(transparent)]
+/// A Datetime to use in a Verifiable Presentation/Credential
 pub struct Datetime(time::OffsetDateTime);
 
 impl From<time::OffsetDateTime> for Datetime {
@@ -49,20 +50,24 @@ pub mod iso8601 {
         })
         .encode();
 
+    /// serde serializer
     pub fn serialize<S: Serializer>(datetime: &Datetime, serializer: S) -> Result<S::Ok, S::Error> {
         // time::serde::iso8601::serialize(&datetime.0, serializer)
         time::serde::rfc3339::serialize(&datetime.0, serializer)
         // datetime.0.format(&well_known::Iso8601::<SERDE_CONFIG>).unwrap().serialize(serializer)
     }
 
+    /// serde deserializer
     pub fn deserialize<'a, D: Deserializer<'a>>(deserializer: D) -> Result<Datetime, D::Error> {
         // time::serde::iso8601::deserialize(deserializer).map(Datetime)
         time::serde::rfc3339::deserialize(deserializer).map(Datetime)
     }
 
+    /// serde (de)serializer for an optional [Datetime]
     pub mod option {
         use super::*;
 
+        /// serde serializer
         pub fn serialize<S: Serializer>(option: &Option<Datetime>, serializer: S) -> Result<S::Ok, S::Error> {
             // option.as_ref().map(|odt| odt.0.format(&well_known::Iso8601::<SERDE_CONFIG>)).transpose().unwrap().serialize(serializer)
             // time::serde::iso8601::option::serialize(&option.as_ref().map(|d| d.0), serializer)

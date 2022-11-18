@@ -8,10 +8,13 @@ use crate::oidc::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Proof {
     #[serde(rename = "type")]
+    /// Proof's type
     pub typ: String,
     #[serde(flatten)]
+    /// Proof's value
     pub value: ProofValue,
     #[serde(rename = "verificationMethod")]
+    /// Proof's verification method
     pub method: String,
     /// When the proof was generated.
     #[serde(with = "iso8601::option", skip_serializing_if = "Option::is_none")]
@@ -31,6 +34,7 @@ pub struct Proof {
 }
 
 impl Proof {
+    /// Proof type with an Ed25519 signature
     pub const ED25519_TYPE: &'static str = "Ed25519Signature2018";
 }
 

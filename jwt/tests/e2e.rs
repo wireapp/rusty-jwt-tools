@@ -47,7 +47,7 @@ fn e2e_test() {
         // Wire app generates a DPoP JWT token
         let client_dpop = RustyJwtTools::generate_dpop_token(alg, key.clone(), dpop, nonce.clone(), alice).unwrap();
 
-        println!("1. generate dpop:\nhttps://jwt.io/#id_token={}\n", client_dpop);
+        println!("1. generate dpop:\nhttps://jwt.io/#id_token={client_dpop}\n");
 
         // wire-server now validates the 'client_dpop' and generates an access token
         let access_token = RustyJwtTools::generate_access_token(
@@ -63,7 +63,7 @@ fn e2e_test() {
         )
         .unwrap();
 
-        println!("2. generate access token:\nhttps://jwt.io/#id_token={}\n", access_token);
+        println!("2. generate access token:\nhttps://jwt.io/#id_token={access_token}\n");
 
         // now acme server will verify the access token
         let backend_pk = match alg {

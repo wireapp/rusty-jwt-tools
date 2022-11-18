@@ -1,82 +1,57 @@
-use ::std::collections::BTreeMap;
+use jwt_simple::prelude::*;
+use serde_json::json;
+use url::Url;
 
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use rusty_jwt_tools::prelude::*;
 
-/*pub use identity_credential::{
-    credential::{Credential as VerifiableCredential, CredentialBuilder as VerifiableCredentialBuilder},
-    presentation::{Presentation as VerifiablePresentation, PresentationBuilder as VerifiablePresentationBuilder},
-};*/
-pub mod context;
-pub mod credential;
-pub mod datetime;
-pub mod id;
-pub mod issuer;
-pub mod presentation;
-pub mod proof;
-pub mod util;
+#[test]
+fn verifiable_presentation_credential() {
+    let keys: Vec<(JwsAlgorithm, Pem, Pem, HashAlgorithm)> = vec![
+        (
+            JwsAlgorithm::P256,
+            ES256KeyPair::generate().to_pem().unwrap().into(),
+            ES256KeyPair::generate().to_pem().unwrap().into(),
+            HashAlgorithm::SHA256,
+        ),
+        (
+            JwsAlgorithm::P384,
+            ES384KeyPair::generate().to_pem().unwrap().into(),
+            ES384KeyPair::generate().to_pem().unwrap().into(),
+            HashAlgorithm::SHA384,
+        ),
+        (
+            JwsAlgorithm::Ed25519,
+            Ed25519KeyPair::generate().to_pem().into(),
+            Ed25519KeyPair::generate().to_pem().into(),
+            HashAlgorithm::SHA256,
+        ),
+    ];
 
-/// exports
-pub mod prelude {
-    pub use super::{
-        context::Context,
-        credential::RustyCredential,
-        datetime::{iso8601, Datetime},
-        id::Id,
-        issuer::{Issuer, IssuerData},
-        presentation::RustyPresentation,
-        proof::{Proof, ProofPurpose, ProofValue},
-        util::ObjectOrArray,
-        CredentialSubject, JsonObject,
-    };
-}
+    for (alg, key, _, hash_alg) in keys {
+        println!("# {:?} - {:?}", alg, hash_alg);
 
-/// A JSON object preserving alphabetic order
-pub type JsonObject = BTreeMap<String, Value>;
-
-#[cfg_attr(test, derive(Default))]
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-/// see https://w3c.github.io/vc-data-model/#credential-subject
-pub struct CredentialSubject {
-    /// Arbitrary data
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub extra_claims: Option<Value>,
-}
-
-#[cfg(test)]
-pub mod tests {
-    use serde_json::{json, Value};
-    use url::Url;
-    use wasm_bindgen_test::*;
-
-    use crate::oidc::proof::{ProofPurpose, ProofValue};
-
-    use super::prelude::*;
-
-    wasm_bindgen_test_configure!(run_in_browser);
-
-    #[wasm_bindgen_test]
-    #[test]
-    fn should_serialize_sample() {
-        let expected = serde_json::from_str::<Value>(include_str!("../../tests/resources/sample-oidc.json")).unwrap();
         let credential_1 = RustyCredential {
             context: vec![
                 Context::CREDENTIAL.try_into().unwrap(),
                 "https://openid.net/2014/openid-connect-core/v1".try_into().unwrap(),
                 "https://www.w3.org/2006/vcard/ns".try_into().unwrap(),
             ]
-            .into(),
+                .into(),
             id: Some(Url::parse("https://idp.example.com/credentials/1872").unwrap()),
             types: vec![
                 "VerifiableCredential".to_string(),
                 "ImUserIdentityCredential".to_string(),
             ]
-            .into(),
+                .into(),
+            credential_subject: CredentialSubject {
+                extra_claims: None,
+            },
             issuer: Issuer::Obj(IssuerData {
-                id: "dns:idp.example.com".into(),
+                id: "dns:idp.example.com".parse().unwrap(),
                 properties: None,
             }),
             issuance_date: time::macros::datetime!(2022-06-19 15:30:16 UTC).into(),
+            expiration_date: Some(time::macros::datetime!(2023-06-19 15:30:16 UTC).into()),
             proof: Some(Proof {
                 typ: Proof::ED25519_TYPE.to_string(),
                 created: Some(time::macros::datetime!(2022-06-19 15:30:15 UTC).into()),
@@ -87,21 +62,25 @@ pub mod tests {
                 expires: None,
                 challenge: None,
             }),
-            ..Default::default()
         };
+
         let credential_2 = RustyCredential {
             context: vec![
                 Context::CREDENTIAL.try_into().unwrap(),
                 "https://ietf.org/2022/oauth/MlsClientCredential/v1".try_into().unwrap(),
             ]
-            .into(),
+                .into(),
             id: Some(Url::parse("https://im.example.com/credentials/9829381").unwrap()),
             types: vec!["VerifiableCredential".to_string(), "MlsClientIdCredential".to_string()].into(),
+            credential_subject: CredentialSubject {
+                extra_claims: None
+            },
             issuer: Issuer::Obj(IssuerData {
-                id: "dns:im.example.com".into(),
+                id: "dns:im.example.com".parse().unwrap(),
                 properties: None,
             }),
             issuance_date: time::macros::datetime!(2022-09-08 19:23:24 UTC).into(),
+            expiration_date: Some(time::macros::datetime!(2023-09-08 19:23:24 UTC).into()),
             proof: Some(Proof {
                 typ: Proof::ED25519_TYPE.to_string(),
                 created: Some(time::macros::datetime!(2021-03-19 15:30:15 UTC).into()),
@@ -112,8 +91,8 @@ pub mod tests {
                 expires: None,
                 challenge: None,
             }),
-            ..Default::default()
         };
+
         let patch = json!([
             { "op": "replace", "path": "/verifiableCredential/0/credentialSubject", "value": {
                 "sub": "im:%40a_smith@example.com",
@@ -128,9 +107,10 @@ pub mod tests {
                 "sub": "im:SvPfLlwBQi-6oddVRrkqpw/04c7@example.com"
             } },
         ]);
-        let actual = RustyPresentation {
-            id: "urn:uuid:3978344f-8596-4c3a-a978-8fcaba3903c5".into(),
-            holder: "im:SvPfLlwBQi-6oddVRrkqpw/04c7@example.com".into(),
+
+        let presentation = RustyPresentation {
+            id: "urn:uuid:3978344f-8596-4c3a-a978-8fcaba3903c5".parse().unwrap(),
+            holder: "im:SvPfLlwBQi-6oddVRrkqpw/04c7@example.com".parse().unwrap(),
             context: vec![Context::CREDENTIAL.try_into().unwrap()].into(),
             types: vec!["VerifiablePresentation".to_string()].into(),
             verifiable_credential: vec![credential_1, credential_2].into(),
@@ -146,37 +126,26 @@ pub mod tests {
             }),
             extra: Some(patch),
         };
-        let actual = actual.try_json_serialize().unwrap();
-        assert_eq!(actual, expected);
-    }
+        let vp = presentation.try_json_serialize().unwrap();
+        // println!("1. verifiable presentation:\n{}\n", serde_json::to_string_pretty(&vp).unwrap());
 
-    #[wasm_bindgen_test]
-    #[test]
-    fn should_merge_extra_claims() {
-        let patch = json!([
-            { "op": "add", "path": "/extra", "value": {
-                "str": "a",
-                "array": ["a"],
-                "json": {
-                    "a": "b"
-                }
-            } },
-        ]);
-        let presentation = RustyPresentation {
-            extra: Some(patch),
-            ..Default::default()
+        let nonce: BackendNonce = "WE88EvOBzbqGerznM+2P/AadVf7374y0cH19sDSZA2A".into(); // generated by wire-server
+        let challenge: AcmeChallenge = "okAJ33Ym/XS2qmmhhh7aWSbBlYy4Ttm1EysqW8I/9ng".to_string().into(); // generated by ACME server
+        let alice = QualifiedClientId::try_new("SvPfLlwBQi-6oddVRrkqpw", 6699, "wire.com").unwrap();
+        let htu: Htu = "https://wire.example.com/client/token".try_into().unwrap();
+        let htm = Htm::Post;
+        let dpop = Dpop {
+            htu: htu.clone(),
+            htm,
+            challenge: challenge.clone(),
+            extra_claims: Some(vp),
         };
-        let json = presentation.try_json_serialize().unwrap();
-        let actual = json.as_object().unwrap().get("extra").unwrap();
-        assert_eq!(
-            actual,
-            &json!({
-                "str": "a",
-                "array": ["a"],
-                "json": {
-                    "a": "b"
-                }
-            })
-        );
+
+        let client_dpop = RustyJwtTools::generate_dpop_token(alg, key.clone(), dpop, nonce.clone(), alice).unwrap();
+
+        // println!("2. dpop:\nhttps://jwt.io/#id_token={client_dpop}\n");
+        println!("https://jwt.io/#id_token={client_dpop}\n");
+
+        println!("---------------------------------------------------------------------\n");
     }
 }

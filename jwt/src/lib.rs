@@ -35,6 +35,17 @@ pub mod prelude {
         pem::Pem,
         pk::AnyPublicKey,
     };
+    pub use oidc::{
+        context::Context,
+        credential::RustyCredential,
+        datetime::{iso8601, Datetime},
+        id::Id,
+        issuer::{Issuer, IssuerData},
+        presentation::RustyPresentation,
+        proof::{Proof, ProofPurpose, ProofValue},
+        util::ObjectOrArray,
+        CredentialSubject, JsonObject,
+    };
 
     pub use super::RustyJwtTools;
     use super::*;

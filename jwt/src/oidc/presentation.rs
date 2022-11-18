@@ -6,6 +6,7 @@ use crate::prelude::*;
 
 #[cfg_attr(test, derive(Default))]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// see https://w3c.github.io/vc-data-model/#presentations
 pub struct RustyPresentation {
     /// The JSON-LD context(s) applicable to the `Presentation`.
     #[serde(rename = "@context")]
@@ -31,6 +32,7 @@ pub struct RustyPresentation {
 }
 
 impl RustyPresentation {
+    /// JSON serialize adding [extra] fields with Json Patch
     pub fn try_json_serialize(mut self) -> RustyJwtResult<Value> {
         // we do not serialize 'extra' anyway
         let extra = std::mem::take(&mut self.extra);
