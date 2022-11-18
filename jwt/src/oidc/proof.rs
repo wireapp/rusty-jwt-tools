@@ -17,10 +17,10 @@ pub struct Proof {
     /// Proof's verification method
     pub method: String,
     /// When the proof was generated.
-    #[serde(with = "iso8601::option", skip_serializing_if = "Option::is_none")]
+    #[serde(with = "iso8601::option", skip_serializing_if = "Option::is_none", default)]
     pub created: Option<Datetime>,
     /// When the proof expires.
-    #[serde(with = "iso8601::option", skip_serializing_if = "Option::is_none")]
+    #[serde(with = "iso8601::option", skip_serializing_if = "Option::is_none", default)]
     pub expires: Option<Datetime>,
     /// Challenge from a proof requester to mitigate replay attacks.
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -32,10 +32,7 @@ json-patch = "0.2"
 biscuit = "0.6.0-beta1"
 rand = { version = "0.8", features = ["rand_chacha", "getrandom"] }
 rand_chacha = "0.3"
-
-[dependencies.jwt-simple]
-git = "https://github.com/beltram/rust-jwt-simple"
-branch = "master"
+jwt-simple = "0.10.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
