@@ -5,7 +5,12 @@ A cli to prototype JWTs and tryout this project.
 ## Installation
 
 ```bash
-cargo install https://github.com/wireapp/rusty-jwt-tools
+cargo install --git https://github.com/wireapp/rusty-jwt-tools.git
+```
+
+To update do:
+```bash
+cargo install --force --git https://github.com/wireapp/rusty-jwt-tools.git
 ```
 
 ## Generate PEM KeyPairs
