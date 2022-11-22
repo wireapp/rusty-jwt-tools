@@ -1,4 +1,5 @@
 use jwt_simple::prelude::*;
+use std::fmt::Formatter;
 
 use crate::prelude::*;
 
@@ -149,5 +150,15 @@ pub enum HashAlgorithm {
 impl HashAlgorithm {
     pub fn values() -> [Self; 2] {
         [Self::SHA256, Self::SHA384]
+    }
+}
+
+impl std::fmt::Display for HashAlgorithm {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            HashAlgorithm::SHA256 => "SHA-256",
+            HashAlgorithm::SHA384 => "SHA-384",
+        };
+        write!(f, "{name}")
     }
 }

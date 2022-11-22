@@ -59,15 +59,16 @@ struct AnyEcPublicKey(JwsEcAlgorithm, Vec<u8>);
 
 impl TryIntoJwk for AnyEcPublicKey {
     fn try_into_jwk(self) -> RustyJwtResult<Jwk> {
-        let (x, y) = match self.0 {
+        let Self(alg, bytes) = self;
+        let (x, y) = match alg {
             JwsEcAlgorithm::P256 => {
-                let point = p256::EncodedPoint::from_bytes(self.1).map_err(RustyJwtError::Sec1Error)?;
+                let point = p256::EncodedPoint::from_bytes(bytes).map_err(RustyJwtError::Sec1Error)?;
                 let x = RustyJwk::base64_url_encode(point.x().ok_or(RustyJwtError::ImplementationError)?);
                 let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
                 (x, y)
             }
             JwsEcAlgorithm::P384 => {
-                let point = p384::EncodedPoint::from_bytes(self.1).map_err(RustyJwtError::Sec1Error)?;
+                let point = p384::EncodedPoint::from_bytes(bytes).map_err(RustyJwtError::Sec1Error)?;
                 let x = RustyJwk::base64_url_encode(point.x().ok_or(RustyJwtError::ImplementationError)?);
                 let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
                 (x, y)
@@ -76,8 +77,8 @@ impl TryIntoJwk for AnyEcPublicKey {
         Ok(Jwk {
             common: RustyJwk::common_parameters(),
             algorithm: AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
-                key_type: self.0.kty(),
-                curve: self.0.curve(),
+                key_type: alg.kty(),
+                curve: alg.curve(),
                 x,
                 y,
             }),

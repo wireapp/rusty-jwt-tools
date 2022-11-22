@@ -16,10 +16,10 @@ mod access;
 mod dpop;
 mod error;
 mod introspect;
-mod jkt;
+pub mod jkt;
 mod jwe;
-mod jwk;
-mod jwt;
+pub mod jwk;
+pub mod jwt;
 mod model;
 mod oidc;
 

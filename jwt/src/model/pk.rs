@@ -51,14 +51,14 @@ impl AnyPublicKey<'_> {
     where
         T: Serialize + DeserializeOwned,
     {
-        let alg = self.0;
-        if let Some(jwk) = self.1 {
+        let Self(alg, jwk, pk) = self;
+        if let Some(jwk) = jwk {
             match alg {
                 JwsAlgorithm::P256 => ES256PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
                 JwsAlgorithm::P384 => ES384PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
                 JwsAlgorithm::Ed25519 => Ed25519PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
             }
-        } else if let Some(pk) = self.2 {
+        } else if let Some(pk) = pk {
             match alg {
                 JwsAlgorithm::P256 => ES256PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
                 JwsAlgorithm::P384 => ES384PublicKey::from_pem(pk)?.verify_token::<T>(token, options),

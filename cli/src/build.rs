@@ -7,17 +7,20 @@ use std::{fs, path::PathBuf};
 
 #[derive(Debug, Parser)]
 pub struct BuildJwt {
-    /// JSON claims
+    /// path to file with json claims
     claims: Option<PathBuf>,
-    /// Signature key in PEM format
+    /// path to file with signature key in PEM format
     #[arg(short = 'k', long)]
     key: PathBuf,
-    /// Verifiable Presentation.
+    /// path to file with Verifiable Presentation.
     #[arg(short = 'p', long)]
     vp: Option<PathBuf>,
-    /// List of Verifiable Credentials
+    /// path to file with Verifiable Credentials. Appended to presentation
     #[arg(short = 'c', long)]
     vc: Vec<PathBuf>,
+    /// expiration in days
+    #[arg(short = 'e', long, default_value_t = 90)]
+    expires: u64,
 }
 
 impl BuildJwt {
@@ -34,12 +37,11 @@ impl BuildJwt {
             json_claims.as_object_mut().unwrap().insert("vp".to_string(), vp);
         }
 
-        let duration = Duration::from_days(90);
-        let claims = Claims::with_custom_claims(json_claims, duration);
+        let expires = Duration::from_days(self.expires);
+        let claims = Claims::with_custom_claims(json_claims, expires);
 
         let jwt = RustyJwtTools::generate_jwt(alg, header, claims, kp).unwrap();
 
-        // println!("https://jwt.io/#id_token={jwt}\n");
         println!("{}", jwt);
         Ok(())
     }

@@ -1,14 +1,21 @@
+//! Generic Jwt utilities
+
 use jwt_simple::prelude::*;
 use serde::de::DeserializeOwned;
 
 use crate::jkt::JktConfirmation;
 use crate::prelude::*;
 
+/// Global trait to verify a Jwt token
 #[derive(Debug, Clone)]
 pub struct Verify<'a> {
+    /// client_id
     pub client_id: QualifiedClientId<'a>,
+    /// nonce
     pub backend_nonce: Option<&'a BackendNonce>,
+    /// leeway
     pub leeway: u16,
+    /// cnf
     pub cnf: Option<&'a JktConfirmation>,
 }
 
@@ -27,6 +34,7 @@ impl From<&Verify<'_>> for VerificationOptions {
 
 /// Verifies JWT token standard headers
 pub trait VerifyJwtHeader {
+    /// Verifies a Jwt token header
     fn verify_jwt_header(&self) -> RustyJwtResult<JwsAlgorithm>;
 }
 
@@ -38,6 +46,7 @@ impl VerifyJwtHeader for TokenMetadata {
     }
 }
 
+/// Verifies a Jwt token
 pub trait VerifyJwt {
     /// Verifies the JWT token given a JWK
     ///
@@ -89,6 +98,7 @@ impl VerifyJwt for &str {
     }
 }
 
+/// Tries mapping 'jwt-simple' errors
 pub fn jwt_error_mapping(e: jwt_simple::Error) -> RustyJwtError {
     let reason = e.to_string();
     // since `jwt_simple` returns [anyhow::Error] which we can't pattern match against

@@ -1,21 +1,28 @@
+//! Everything related to JWK
+
 use jwt_simple::prelude::*;
 
 use crate::prelude::*;
 
-pub mod ecdsa;
-pub mod eddsa;
+mod ecdsa;
+mod eddsa;
 
+/// From json to JWK
 pub trait TryIntoJwk {
+    /// str -> JWK
     fn try_into_jwk(self) -> RustyJwtResult<Jwk>;
 }
 
+/// From JWK to json
 pub trait TryFromJwk
 where
     Self: Sized,
 {
+    /// JWK -> str
     fn try_from_jwk(jwk: &Jwk) -> RustyJwtResult<Self>;
 }
 
+/// JWK utilities
 pub struct RustyJwk;
 
 impl RustyJwk {

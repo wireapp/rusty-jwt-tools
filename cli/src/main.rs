@@ -1,9 +1,10 @@
 use clap::{Parser, Subcommand};
 
 pub mod build;
+pub mod jwk;
 pub mod parse;
 pub mod pem;
-pub mod verify;
+pub mod utils;
 
 /// Simple program to greet a person
 #[derive(Debug, Parser)]
@@ -32,10 +33,10 @@ enum Commands {
         #[command(flatten)]
         delegate: parse::ParseJwt,
     },
-    /// Verify a JWT
-    JwtVerify {
+    /// Parse (debug) a PEM key into JWK (with thumbprint)
+    JwkParse {
         #[command(flatten)]
-        delegate: parse::ParseJwt,
+        delegate: jwk::ParseJwk,
     },
 }
 
@@ -44,7 +45,7 @@ fn main() -> anyhow::Result<()> {
     match cli.cmd {
         Commands::JwtBuild { delegate } => delegate.execute()?,
         Commands::JwtParse { delegate } => delegate.execute()?,
-        Commands::JwtVerify { delegate } => delegate.execute()?,
+        Commands::JwkParse { delegate } => delegate.execute()?,
     };
     Ok(())
 }

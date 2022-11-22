@@ -1,3 +1,5 @@
+//! JWK thumbprint
+
 use jwt_simple::prelude::*;
 use serde_json::{json, Value};
 use sha2::Digest;
@@ -11,6 +13,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[cfg_attr(test, derive(Default))]
 pub struct JktConfirmation {
+    /// JWK thumbprint
     #[serde(rename = "jkt")]
     pub jkt: String,
 }
