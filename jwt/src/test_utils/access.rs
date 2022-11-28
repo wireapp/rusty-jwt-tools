@@ -7,19 +7,32 @@ pub struct TestAccess {
     pub challenge: Option<AcmeChallenge>,
     #[serde(rename = "cnf", skip_serializing_if = "Option::is_none")]
     pub cnf: Option<JktConfirmation>,
+    #[serde(rename = "proof", skip_serializing_if = "Option::is_none")]
+    pub proof: Option<String>,
+    #[serde(rename = "client_id", skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<QualifiedClientId<'static>>,
+    #[serde(rename = "api_version", skip_serializing_if = "Option::is_none")]
+    pub api_version: Option<u32>,
+    #[serde(rename = "scope", skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
 }
 
 impl From<Ciphersuite> for TestAccess {
     fn from(ciphersuite: Ciphersuite) -> Self {
         let access = Access::default();
+        let proof = DpopBuilder::from(ciphersuite.key.clone()).build();
         Self {
             challenge: Some(access.challenge),
             cnf: Some(ciphersuite.to_jwk_thumbprint()),
+            proof: Some(proof),
+            client_id: Some(QualifiedClientId::default()),
+            api_version: Some(Access::WIRE_SERVER_API_VERSION),
+            scope: Some(Access::DEFAULT_SCOPE.to_string()),
         }
     }
 }
 
-/// Helper to build a DPoP token with errors
+/// Helper to build an Access token with errors
 pub struct AccessBuilder {
     pub alg: String,
     pub typ: Option<&'static str>,
@@ -31,15 +44,17 @@ pub struct AccessBuilder {
     pub jti: Option<String>,
     pub iat: Option<UnixTimeStamp>,
     pub exp: Option<UnixTimeStamp>,
+    pub issuer: Option<Htu>,
 }
 
 impl From<Ciphersuite> for AccessBuilder {
     fn from(ciphersuite: Ciphersuite) -> Self {
         let iat = now();
         let exp = iat + Duration::from_days(2);
+        let proof = DpopBuilder::from(ciphersuite.key.clone());
         Self {
             alg: ciphersuite.key.alg.to_string(),
-            typ: Some("dpop+jwt"),
+            typ: Some("at+jwt"),
             access: TestAccess::from(ciphersuite.clone()),
             jwk: Some(ciphersuite.key.to_jwk()),
             ciphersuite,
@@ -48,6 +63,7 @@ impl From<Ciphersuite> for AccessBuilder {
             jti: Some(uuid::Uuid::new_v4().to_string()),
             iat: Some(iat),
             exp: Some(exp),
+            issuer: proof.dpop.htu,
         }
     }
 }
@@ -87,6 +103,7 @@ impl AccessBuilder {
         claims.jwt_id = self.jti.clone();
         claims.issued_at = self.iat;
         claims.expires_at = self.exp;
+        claims.issuer = self.issuer.as_ref().map(|iss| iss.to_string());
         claims
     }
 }

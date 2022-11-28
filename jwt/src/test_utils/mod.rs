@@ -36,6 +36,7 @@ pub struct JwtKey {
     pub sk: Pem,
     /// PublicKey
     pub pk: Pem,
+    /// Algorithm
     pub alg: JwsAlgorithm,
 }
 

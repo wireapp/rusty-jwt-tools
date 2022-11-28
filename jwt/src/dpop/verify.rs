@@ -35,7 +35,8 @@ pub trait VerifyDpop {
         jwk: &Jwk,
         client_id: QualifiedClientId,
         backend_nonce: &BackendNonce,
-        htm: Htm,
+        challenge: Option<&AcmeChallenge>,
+        htm: Option<Htm>,
         htu: &Htu,
         max_expiration: u64,
         leeway: u16,
@@ -49,7 +50,8 @@ impl VerifyDpop for &str {
         jwk: &Jwk,
         client_id: QualifiedClientId,
         backend_nonce: &BackendNonce,
-        htm: Htm,
+        challenge: Option<&AcmeChallenge>,
+        htm: Option<Htm>,
         htu: &Htu,
         max_expiration: u64,
         leeway: u16,
@@ -63,11 +65,18 @@ impl VerifyDpop for &str {
         };
 
         let claims = (*self).verify_jwt::<Dpop>(&pk, max_expiration, None, verify)?;
-        if htm != claims.custom.htm {
-            return Err(RustyJwtError::DpopHtmMismatch);
+        if let Some(expected_htm) = htm {
+            if expected_htm != claims.custom.htm {
+                return Err(RustyJwtError::DpopHtmMismatch);
+            }
         }
         if htu != &claims.custom.htu {
             return Err(RustyJwtError::DpopHtuMismatch);
+        }
+        if let Some(chal) = challenge {
+            if chal != &claims.custom.challenge {
+                return Err(RustyJwtError::DpopChallengeMismatch);
+            }
         }
         Ok(claims)
     }

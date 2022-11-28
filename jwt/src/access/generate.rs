@@ -54,39 +54,56 @@ impl RustyJwtTools {
     ) -> RustyJwtResult<String> {
         let header = Token::decode_metadata(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
-        let claims = dpop_proof.verify_client_dpop(
+        let proof_claims = dpop_proof.verify_client_dpop(
             alg,
             jwk,
             client_id,
             &backend_nonce,
-            method,
+            None,
+            Some(method),
             &uri,
             max_expiration,
             max_skew_secs,
         )?;
         Self::access_token(
             alg,
+            dpop_proof,
+            proof_claims,
             backend_keys,
-            claims.custom.challenge,
             client_id,
             backend_nonce,
-            claims.custom.extra_claims,
             hash_algorithm,
         )
     }
 
     fn access_token(
         alg: JwsAlgorithm,
+        proof: &str,
+        proof_claims: JWTClaims<Dpop>,
         backend_keys: Pem,
-        challenge: AcmeChallenge,
         client_id: QualifiedClientId,
         nonce: BackendNonce,
-        extra_claims: Option<Value>,
         hash: HashAlgorithm,
     ) -> RustyJwtResult<String> {
         let header = Self::new_access_header(alg);
 
         let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
+        // build claims given the JWK thumbprint which requires knowing the algorithm and being in
+        // a branch. This simply factorizes this piece of code
+        let claims = |cnf: JktConfirmation| {
+            // TODO: should be acme server authorization URI but wait for final decision
+            let audience = proof_claims.custom.htu.clone();
+            Access {
+                challenge: proof_claims.custom.challenge,
+                cnf,
+                proof: proof.to_string(),
+                client_id: client_id.to_subject(),
+                api_version: Access::WIRE_SERVER_API_VERSION,
+                scope: Access::DEFAULT_SCOPE.to_string(),
+                extra_claims: proof_claims.custom.extra_claims,
+            }
+            .into_jwt_claims(client_id, nonce, proof_claims.custom.htu, audience)
+        };
         Ok(match alg {
             JwsAlgorithm::P256 => {
                 let mut kp = ES256KeyPair::from_pem(backend_keys.as_str())
@@ -94,13 +111,7 @@ impl RustyJwtTools {
                 let jwk = kp.public_key().try_into_jwk()?;
                 let cnf = JktConfirmation::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                let claims = Access {
-                    challenge,
-                    cnf,
-                    extra_claims,
-                }
-                .into_jwt_claims(client_id, nonce);
-                kp.sign_with_header(claims, header)?
+                kp.sign_with_header(claims(cnf), header)?
             }
             JwsAlgorithm::P384 => {
                 let mut kp = ES384KeyPair::from_pem(backend_keys.as_str())
@@ -108,13 +119,7 @@ impl RustyJwtTools {
                 let jwk = kp.public_key().try_into_jwk()?;
                 let cnf = JktConfirmation::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                let claims = Access {
-                    challenge,
-                    cnf,
-                    extra_claims,
-                }
-                .into_jwt_claims(client_id, nonce);
-                kp.sign_with_header(claims, header)?
+                kp.sign_with_header(claims(cnf), header)?
             }
             JwsAlgorithm::Ed25519 => {
                 let mut kp = Ed25519KeyPair::from_pem(backend_keys.as_str())
@@ -122,13 +127,7 @@ impl RustyJwtTools {
                 let jwk = kp.public_key().try_into_jwk()?;
                 let cnf = JktConfirmation::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                let claims = Access {
-                    challenge,
-                    cnf,
-                    extra_claims,
-                }
-                .into_jwt_claims(client_id, nonce);
-                kp.sign_with_header(claims, header)?
+                kp.sign_with_header(claims(cnf), header)?
             }
         })
     }
@@ -136,7 +135,7 @@ impl RustyJwtTools {
     fn new_access_header(alg: JwsAlgorithm) -> JWTHeader {
         let mut header = JWTHeader::default();
         header.algorithm = alg.to_string();
-        header.signature_type = Some(Dpop::TYP.to_string());
+        header.signature_type = Some(Access::TYP.to_string());
         header
     }
 }
@@ -161,7 +160,7 @@ mod tests {
             fn header_should_have_jwt_typ(ciphersuite: Ciphersuite) {
                 let token = access_token(ciphersuite.into()).unwrap();
                 let header = Token::decode_metadata(token.as_str()).unwrap();
-                assert_eq!(header.signature_type(), Some(Dpop::TYP))
+                assert_eq!(header.signature_type(), Some(Access::TYP))
             }
 
             #[apply(all_ciphersuites)]
@@ -240,6 +239,7 @@ mod tests {
             #[test]
             fn should_have_ed25519_jwk(key: JwtEdKey) {
                 let params = Params::from(Ciphersuite {
+                    #[allow(clippy::redundant_clone)]
                     key: JwtKey::from(key.clone()),
                     hash: HashAlgorithm::SHA256,
                 });
@@ -289,6 +289,47 @@ mod tests {
 
             #[apply(all_ciphersuites)]
             #[test]
+            fn should_have_dpop_token_as_proof(ciphersuite: Ciphersuite) {
+                let challenge = AcmeChallenge::rand();
+                let dpop = DpopBuilder::from(ciphersuite.key.clone()).build();
+                let params = Params::from(ciphersuite.clone());
+                let backend_key = params.backend_keys.clone();
+
+                let token = access_token_with_dpop(&dpop, params).unwrap();
+
+                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
+                let claims = backend_key.claims::<Access>(&token);
+                assert_eq!(claims.custom.proof, dpop);
+            }
+
+            #[apply(all_ciphersuites)]
+            #[test]
+            fn should_have_iss_as_proofs_htu(ciphersuite: Ciphersuite) {
+                // should contain a 'iss' claim that is equal to dpop 'htu' claim
+                let issuer = "https://a.com/";
+                let dpop = DpopBuilder {
+                    dpop: TestDpop {
+                        htu: Some(issuer.try_into().unwrap()),
+                        ..Default::default()
+                    },
+                    ..ciphersuite.key.clone().into()
+                }
+                .build();
+                let params = Params {
+                    uri: issuer.try_into().unwrap(),
+                    ..ciphersuite.clone().into()
+                };
+                let backend_key = params.backend_keys.clone();
+
+                let token = access_token_with_dpop(&dpop, params).unwrap();
+
+                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
+                let claims = backend_key.claims::<Access>(&token);
+                assert_eq!(claims.issuer.unwrap().as_str(), issuer);
+            }
+
+            #[apply(all_ciphersuites)]
+            #[test]
             fn should_have_dpop_challenge(ciphersuite: Ciphersuite) {
                 let challenge = AcmeChallenge::rand();
                 let dpop = DpopBuilder {
@@ -309,7 +350,7 @@ mod tests {
 
             #[apply(all_ciphersuites)]
             #[test]
-            fn should_have_client_id(ciphersuite: Ciphersuite) {
+            fn should_have_sub_and_client_id(ciphersuite: Ciphersuite) {
                 let sub = QualifiedClientId::alice();
                 let dpop = DpopBuilder {
                     sub: Some(sub),
@@ -325,6 +366,7 @@ mod tests {
                 let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.subject, Some(sub.to_subject()));
+                assert_eq!(claims.custom.client_id, sub.to_subject());
             }
 
             #[apply(all_ciphersuites)]
@@ -338,6 +380,30 @@ mod tests {
                 let claims = backend_key.claims::<Access>(&token);
                 assert!(claims.jwt_id.is_some());
                 assert!(uuid::Uuid::try_parse(&claims.jwt_id.unwrap()).is_ok());
+            }
+
+            #[apply(all_ciphersuites)]
+            #[test]
+            fn should_have_api_version(ciphersuite: Ciphersuite) {
+                let params = Params::from(ciphersuite.clone());
+                let backend_key = params.backend_keys.clone();
+                let token = access_token(params).unwrap();
+
+                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
+                let claims = backend_key.claims::<Access>(&token);
+                assert_eq!(claims.custom.api_version, Access::WIRE_SERVER_API_VERSION);
+            }
+
+            #[apply(all_ciphersuites)]
+            #[test]
+            fn should_have_scope(ciphersuite: Ciphersuite) {
+                let params = Params::from(ciphersuite.clone());
+                let backend_key = params.backend_keys.clone();
+                let token = access_token(params).unwrap();
+
+                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
+                let claims = backend_key.claims::<Access>(&token);
+                assert_eq!(claims.custom.scope, Access::DEFAULT_SCOPE);
             }
 
             #[apply(all_ciphersuites)]
@@ -390,7 +456,13 @@ mod tests {
                 let token = access_token(params).unwrap();
                 let claims = jwt_claims(token);
 
+                assert!(claims.get("proof").unwrap().as_str().is_some());
+                assert!(claims.get("client_id").unwrap().as_str().is_some());
+                assert!(claims.get("iss").unwrap().as_str().is_some());
                 assert!(claims.get("sub").unwrap().as_str().is_some());
+                assert!(claims.get("aud").unwrap().as_str().is_some());
+                assert!(claims.get("scope").unwrap().as_str().is_some());
+                assert!(claims.get("api_version").unwrap().as_u64().is_some());
                 assert!(claims.get("jti").unwrap().as_str().is_some());
                 assert!(claims.get("nonce").unwrap().as_str().is_some());
                 assert!(claims.get("chal").unwrap().as_str().is_some());
@@ -496,6 +568,30 @@ mod tests {
 
         #[apply(all_ciphersuites)]
         #[test]
+        fn alg(ciphersuite: Ciphersuite) {
+            // should fail when 'alg' is not supported
+            for alg in JwsAlgorithm::UNSUPPORTED {
+                let dpop = DpopBuilder {
+                    alg: alg.to_string(),
+                    ..ciphersuite.key.clone().into()
+                };
+                let params = ciphersuite.clone().into();
+                let result = access_token_with_dpop(&dpop.build(), params);
+                assert!(matches!(result.unwrap_err(), RustyJwtError::UnsupportedAlgorithm));
+            }
+
+            // should be valid
+            let dpop = DpopBuilder {
+                alg: ciphersuite.key.alg.to_string(),
+                ..ciphersuite.key.clone().into()
+            };
+            let params = ciphersuite.into();
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(result.is_ok());
+        }
+
+        #[apply(all_ciphersuites)]
+        #[test]
         fn jwk(ciphersuite: Ciphersuite) {
             // should fail when 'jwk' header absent
             let dpop = DpopBuilder {
@@ -516,44 +612,15 @@ mod tests {
         #[test]
         fn jwk_and_alg(ciphersuite: Ciphersuite) {
             // should fail when 'jwk' is not of the 'alg' type
-            let others = ciphersuite.key.reverse_algorithms().map(|a| a.to_string());
-            for alg in others {
+            for alg in ciphersuite.key.reverse_algorithms() {
                 let dpop = DpopBuilder {
-                    alg,
+                    alg: alg.to_string(),
                     ..ciphersuite.key.clone().into()
                 };
                 let params = ciphersuite.clone().into();
                 let result = access_token_with_dpop(&dpop.build(), params);
                 assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
             }
-        }
-
-        #[apply(all_ciphersuites)]
-        #[test]
-        fn alg(ciphersuite: Ciphersuite) {
-            let unsupported = &[
-                "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES512",
-            ]
-            .map(|a| a.to_string());
-            // should fail when 'alg' is not supported
-            for alg in unsupported {
-                let dpop = DpopBuilder {
-                    alg: alg.clone(),
-                    ..ciphersuite.key.clone().into()
-                };
-                let params = ciphersuite.clone().into();
-                let result = access_token_with_dpop(&dpop.build(), params);
-                assert!(matches!(result.unwrap_err(), RustyJwtError::UnsupportedAlgorithm));
-            }
-
-            // should be valid
-            let dpop = DpopBuilder {
-                alg: ciphersuite.key.alg.to_string(),
-                ..ciphersuite.key.clone().into()
-            };
-            let params = ciphersuite.into();
-            let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(result.is_ok());
         }
 
         #[apply(all_ciphersuites)]
@@ -622,13 +689,13 @@ mod tests {
             // should succeed when uri and JWT's 'htu' match
             let dpop = DpopBuilder {
                 dpop: TestDpop {
-                    htu: Some("https://a.com".try_into().unwrap()),
+                    htu: Some("https://a.com/".try_into().unwrap()),
                     ..Default::default()
                 },
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                uri: "https://a.com".try_into().unwrap(),
+                uri: "https://a.com/".try_into().unwrap(),
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
@@ -637,13 +704,13 @@ mod tests {
             // should fail when uri and JWT's 'htu' mismatch
             let dpop = DpopBuilder {
                 dpop: TestDpop {
-                    htu: Some("https://a.com".try_into().unwrap()),
+                    htu: Some("https://a.com/".try_into().unwrap()),
                     ..Default::default()
                 },
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                uri: "https://b.com".try_into().unwrap(),
+                uri: "https://b.com/".try_into().unwrap(),
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
@@ -733,7 +800,7 @@ mod tests {
         #[apply(all_ciphersuites)]
         #[test]
         fn backend_nonce(ciphersuite: Ciphersuite) {
-            // should succeed when backend_nonce and JWT's 'nonce' match
+            // should succeed when backend_nonce and Dpop 'nonce' match
             let nonce = BackendNonce::rand();
             let dpop = DpopBuilder {
                 nonce: Some(nonce.clone()),
@@ -746,7 +813,7 @@ mod tests {
             let result = access_token_with_dpop(&dpop.build(), params);
             assert!(result.is_ok());
 
-            // JWT's 'nonce' is absent
+            // Dpop 'nonce' is absent
             let dpop = DpopBuilder {
                 nonce: None,
                 ..ciphersuite.key.clone().into()
@@ -758,7 +825,7 @@ mod tests {
             let result = access_token_with_dpop(&dpop.build(), params);
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "nonce"));
 
-            // should fail when backend_nonce and JWT's 'nonce' mismatch
+            // should fail when backend_nonce and Dpop 'nonce' mismatch
             let dpop = DpopBuilder {
                 nonce: Some(BackendNonce::rand()),
                 ..ciphersuite.key.clone().into()
@@ -994,7 +1061,9 @@ mod tests {
             backend_nonce,
             ..
         } = params.clone();
-        let dpop = RustyJwtTools::generate_dpop_token(dpop_alg, key.kp, dpop, backend_nonce, client_id).unwrap();
+        let expiry = Duration::from_days(1);
+        let dpop =
+            RustyJwtTools::generate_dpop_token(dpop_alg, key.kp, dpop, backend_nonce, client_id, expiry).unwrap();
         access_token_with_dpop(&dpop, params)
     }
 

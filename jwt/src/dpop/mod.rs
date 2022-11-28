@@ -39,20 +39,17 @@ pub struct Dpop {
 impl Dpop {
     /// JWT header 'typ'
     pub const TYP: &'static str = "dpop+jwt";
-    /// JWT claim 'exp' (expiration) in seconds (90 days by default)
-    ///
-    /// Specified in [RFC 7519 Section 4.1.4: JSON Web Token (JWT)][1]
-    ///
-    /// [1]: https://tools.ietf.org/html/rfc7519#section-4.1.4
-    pub const EXP: u64 = 3600 * 24 * 90; // 90 days
 
     /// Create JWT claims (a JSON object) from DPoP fields
-    pub fn into_jwt_claims(self, nonce: BackendNonce, client_id: QualifiedClientId) -> JWTClaims<Self> {
-        let exp = Duration::from_secs(Self::EXP);
-        let mut claims = Claims::with_custom_claims(self, exp);
-        claims.jwt_id = Some(new_jti());
-        claims.nonce = Some(nonce.to_string());
-        claims.subject = Some(client_id.to_subject());
-        claims
+    pub fn into_jwt_claims(
+        self,
+        nonce: BackendNonce,
+        client_id: QualifiedClientId,
+        expiry: Duration,
+    ) -> JWTClaims<Self> {
+        Claims::with_custom_claims(self, expiry)
+            .with_jwt_id(new_jti())
+            .with_nonce(nonce.to_string())
+            .with_subject(client_id.to_subject())
     }
 }
