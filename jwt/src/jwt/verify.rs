@@ -117,6 +117,10 @@ pub fn jwt_error_mapping(e: jwt_simple::Error) -> RustyJwtError {
         r if r.starts_with("missing field `htm`") => RustyJwtError::MissingTokenClaim("htm"),
         r if r.starts_with("missing field `htu`") => RustyJwtError::MissingTokenClaim("htu"),
         r if r.starts_with("missing field `cnf`") => RustyJwtError::MissingTokenClaim("cnf"),
+        r if r.starts_with("missing field `proof`") => RustyJwtError::MissingTokenClaim("proof"),
+        r if r.starts_with("missing field `api_version`") => RustyJwtError::MissingTokenClaim("api_version"),
+        r if r.starts_with("missing field `client_id`") => RustyJwtError::MissingTokenClaim("client_id"),
+        r if r.starts_with("missing field `scope`") => RustyJwtError::MissingTokenClaim("scope"),
         _ => RustyJwtError::InvalidToken(reason),
     }
 }

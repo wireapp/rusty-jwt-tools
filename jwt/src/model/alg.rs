@@ -52,6 +52,14 @@ impl TryFrom<&str> for JwsAlgorithm {
     }
 }
 
+#[cfg(test)]
+impl JwsAlgorithm {
+    /// Utility for listing all the JWA signature schemes not supported by this crate
+    pub const UNSUPPORTED: [&'static str; 10] = [
+        "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES512",
+    ];
+}
+
 /// Supported elliptic curve algorithms
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum JwsEcAlgorithm {

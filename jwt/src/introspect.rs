@@ -65,8 +65,9 @@ mod tests {
         let htu = Htu::default();
         let htm = Htm::default();
         let backend_keys = key.create_another();
+        let expiry = Duration::from_days(1);
 
-        let dpop = RustyJwtTools::generate_dpop_token(key.alg, key.kp, dpop, nonce.clone(), client_id).unwrap();
+        let dpop = RustyJwtTools::generate_dpop_token(key.alg, key.kp, dpop, nonce.clone(), client_id, expiry).unwrap();
 
         let access_token = RustyJwtTools::generate_access_token(
             &dpop,

@@ -43,6 +43,12 @@ impl TryFrom<&str> for Htu {
     }
 }
 
+impl ToString for Htu {
+    fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use wasm_bindgen_test::*;

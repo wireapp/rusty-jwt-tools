@@ -15,7 +15,7 @@ impl RustyJwtToolsFfi {
     pub extern "C" fn generate_dpop_access_token(
         dpop_proof: *const c_char,
         user: *const c_char,
-        client_id: u16,
+        client_id: u64,
         domain: *const c_char,
         backend_nonce: *const c_char,
         uri: *const c_char,

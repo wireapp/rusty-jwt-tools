@@ -103,6 +103,12 @@ pub enum RustyJwtError {
     /// see [crate::client_id::QualifiedClientId]
     #[error("Supplied client identifier is invalid")]
     InvalidClientId,
+    /// Verified a token with an unsupported wire-server API version
+    #[error("Verified a token with an unsupported wire-server API version")]
+    UnsupportedApiVersion,
+    /// Verified a token with an unsupported scope
+    #[error("Verified a token with an unsupported scope")]
+    UnsupportedScope,
     /// We have done something terribly wrong
     #[error("We have done something terribly wrong and it needs to be fixed")]
     ImplementationError,
