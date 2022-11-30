@@ -9,6 +9,7 @@ use crate::prelude::*;
 /// [1]: https://tools.ietf.org/html/rfc7231#section-4
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[cfg_attr(test, derive(Default))]
+#[serde(rename_all = "UPPERCASE")]
 pub enum Htm {
     /// HTTP POST method
     #[cfg_attr(test, default)]
@@ -56,6 +57,12 @@ pub mod tests {
     #[wasm_bindgen_test]
     fn should_accept_post() {
         assert!(Htm::try_from(b"POST".as_slice()).is_ok());
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_be_serialized_uppercase() {
+        assert_eq!(serde_json::to_value(&Htm::Post).unwrap(), serde_json::json!("POST"));
     }
 
     #[test]
