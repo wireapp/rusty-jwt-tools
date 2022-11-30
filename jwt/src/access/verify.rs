@@ -852,7 +852,6 @@ mod tests {
             }
 
             // should succeed when 'alg' supported
-            let jwk = ciphersuite.key.to_jwk();
             let proof = DpopBuilder {
                 alg: ciphersuite.key.alg.to_string(),
                 ..ciphersuite.key.clone().into()
@@ -880,8 +879,7 @@ mod tests {
                 assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
             }
 
-            // should succeed when 'alg' matches 'alg'
-            let jwk = ciphersuite.key.to_jwk();
+            // should succeed when 'alg' matches JWK's 'alg'
             let alg = ciphersuite.key.alg.to_string();
             let proof = DpopBuilder {
                 alg,
