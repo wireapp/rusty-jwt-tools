@@ -8,8 +8,8 @@ pub use dpop::*;
 pub use jwk::*;
 pub use utils::*;
 
-use crate::jkt::JktConfirmation;
 use crate::jwk::TryIntoJwk;
+use crate::jwk_thumbprint::JwkThumbprint;
 use crate::{dpop::Dpop, prelude::*};
 
 pub mod access;
@@ -303,8 +303,8 @@ impl Ciphersuite {
         }
     }
 
-    pub fn to_jwk_thumbprint(&self) -> JktConfirmation {
-        JktConfirmation::generate(&self.key.to_jwk(), self.hash).unwrap()
+    pub fn to_jwk_thumbprint(&self) -> JwkThumbprint {
+        JwkThumbprint::generate(&self.key.to_jwk(), self.hash).unwrap()
     }
 }
 

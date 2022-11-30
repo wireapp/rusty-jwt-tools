@@ -3,7 +3,7 @@ use jwt_simple::prelude::*;
 use crate::{
     access::Access,
     introspect::RustyIntrospect,
-    jkt::JktConfirmation,
+    jwk_thumbprint::JwkThumbprint,
     jwt::{Verify, VerifyJwt, VerifyJwtHeader},
     prelude::*,
 };
@@ -96,7 +96,7 @@ impl RustyJwtTools {
 
         let pk = AnyPublicKey::from((alg, backend_pk));
 
-        let expected_cnf = JktConfirmation::generate(jwk, hash)?;
+        let expected_cnf = JwkThumbprint::generate(jwk, hash)?;
         let claims = access_token.verify_jwt::<Access>(&pk, max_expiration, Some(&expected_cnf), verify)?;
 
         // verify the JWK in access token represents the same key as the one supplied

@@ -2,7 +2,7 @@ use crate::utils::*;
 use clap::Parser;
 use console::style;
 use jwt_simple::prelude::*;
-use rusty_jwt_tools::jkt::JktConfirmation;
+use rusty_jwt_tools::jwk_thumbprint::JwkThumbprint;
 use rusty_jwt_tools::prelude::*;
 use serde_json::Value;
 use std::{fs, path::PathBuf};
@@ -56,10 +56,10 @@ impl ParseJwt {
 
         // JWK thumbprint
         let cnf = claims.custom.get("cnf");
-        let jkt = cnf.and_then(|c| serde_json::from_value::<JktConfirmation>(c.clone()).ok());
-        if let Some(jkt) = jkt {
-            let expected_jkt = JktConfirmation::generate(jwk, hash_alg).unwrap();
-            if jkt == expected_jkt {
+        let kid = cnf.and_then(|c| serde_json::from_value::<JwkThumbprint>(c.clone()).ok());
+        if let Some(kid) = kid {
+            let expected_kid = JwkThumbprint::generate(jwk, hash_alg).unwrap();
+            if kid == expected_kid {
                 println!("- {}: ✅ ", style("JWK thumbprint").green());
             } else {
                 println!("- {}: ❌ ", style("JWK thumbprint").green());

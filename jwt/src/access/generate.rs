@@ -1,8 +1,8 @@
 use crate::{
     access::Access,
     dpop::{VerifyDpop, VerifyDpopTokenHeader},
-    jkt::JktConfirmation,
     jwk::TryIntoJwk,
+    jwk_thumbprint::JwkThumbprint,
     prelude::*,
 };
 use jwt_simple::{prelude::*, token::Token};
@@ -88,7 +88,7 @@ impl RustyJwtTools {
         let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
         // build claims given the JWK thumbprint which requires knowing the algorithm and being in
         // a branch. This simply factorizes this piece of code
-        let claims = |cnf: JktConfirmation| {
+        let claims = |cnf: JwkThumbprint| {
             // TODO: should be acme server authorization URI but wait for final decision
             let audience = proof_claims.custom.htu.clone();
             Access {
@@ -107,7 +107,7 @@ impl RustyJwtTools {
                 let mut kp = ES256KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES256 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                let cnf = JktConfirmation::generate(&jwk, hash)?;
+                let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 kp.sign_with_header(claims(cnf), header)?
             }
@@ -115,7 +115,7 @@ impl RustyJwtTools {
                 let mut kp = ES384KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES384 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                let cnf = JktConfirmation::generate(&jwk, hash)?;
+                let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 kp.sign_with_header(claims(cnf), header)?
             }
@@ -123,7 +123,7 @@ impl RustyJwtTools {
                 let mut kp = Ed25519KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ED25519 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                let cnf = JktConfirmation::generate(&jwk, hash)?;
+                let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 kp.sign_with_header(claims(cnf), header)?
             }
@@ -277,7 +277,7 @@ mod tests {
                 let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
 
-                let expected_cnf = JktConfirmation::generate(jwk, ciphersuite.hash).unwrap();
+                let expected_cnf = JwkThumbprint::generate(jwk, ciphersuite.hash).unwrap();
                 assert_eq!(claims.custom.cnf, expected_cnf);
             }
         }
@@ -466,7 +466,7 @@ mod tests {
                 assert!(claims.get("iat").unwrap().as_u64().is_some());
                 assert!(claims.get("exp").unwrap().as_u64().is_some());
                 let cnf = claims.get("cnf").unwrap().as_object().unwrap();
-                assert!(cnf.get("jkt").unwrap().as_str().is_some());
+                assert!(cnf.get("kid").unwrap().as_str().is_some());
             }
         }
     }

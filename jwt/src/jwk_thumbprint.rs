@@ -12,18 +12,18 @@ use crate::prelude::*;
 /// [2]: https://www.rfc-editor.org/rfc/rfc7800.html
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[cfg_attr(test, derive(Default))]
-pub struct JktConfirmation {
+pub struct JwkThumbprint {
     /// JWK thumbprint
-    #[serde(rename = "jkt")]
-    pub jkt: String,
+    #[serde(rename = "kid")]
+    pub kid: String,
 }
 
-impl JktConfirmation {
+impl JwkThumbprint {
     /// generates a base64 encoded hash of a JWK
     pub fn generate(jwk: &Jwk, alg: HashAlgorithm) -> RustyJwtResult<Self> {
         let json = Self::compute_json(jwk);
         let json = serde_json::to_vec(&json)?;
-        let jkt = match alg {
+        let kid = match alg {
             HashAlgorithm::SHA256 => {
                 let mut hasher = sha2::Sha256::new();
                 hasher.update(json);
@@ -37,7 +37,7 @@ impl JktConfirmation {
                 base64::encode_config(hash, base64::URL_SAFE_NO_PAD)
             }
         };
-        Ok(Self { jkt })
+        Ok(Self { kid })
     }
 
     /// Filters out some JWK fields and lexicographically order them as per [RFC 7638 Section 3.2][1]
@@ -93,8 +93,8 @@ mod tests {
                 e: "AQAB".to_string(),
             }),
         };
-        let thumbprint = JktConfirmation::generate(&jwk, HashAlgorithm::SHA256).unwrap();
-        assert_eq!(&thumbprint.jkt, "NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs")
+        let thumbprint = JwkThumbprint::generate(&jwk, HashAlgorithm::SHA256).unwrap();
+        assert_eq!(&thumbprint.kid, "NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs")
     }
 
     mod test_vectors {
@@ -113,11 +113,11 @@ mod tests {
                     e,
                 }),
             };
-            let thumbprint = JktConfirmation::generate(&jwk, hash).unwrap();
+            let thumbprint = JwkThumbprint::generate(&jwk, hash).unwrap();
             match hash {
-                HashAlgorithm::SHA256 => assert_eq!(&thumbprint.jkt, "e-HDhEsEb24hxthgVnPrRXb1IBrsRzMkzrKqFfUTmqE"),
+                HashAlgorithm::SHA256 => assert_eq!(&thumbprint.kid, "e-HDhEsEb24hxthgVnPrRXb1IBrsRzMkzrKqFfUTmqE"),
                 HashAlgorithm::SHA384 => assert_eq!(
-                    &thumbprint.jkt,
+                    &thumbprint.kid,
                     "EcgQUf2ct-84eLYyH0o-leu6RJ46Lq_5jlCCEa5RlAPVcLXgHoh4Q0RnwFqRuk3y"
                 ),
             }
@@ -137,11 +137,11 @@ mod tests {
                     y,
                 }),
             };
-            let thumbprint = JktConfirmation::generate(&jwk, hash).unwrap();
+            let thumbprint = JwkThumbprint::generate(&jwk, hash).unwrap();
             match hash {
-                HashAlgorithm::SHA256 => assert_eq!(&thumbprint.jkt, "ESpNh4PQZO3u7Q1laesYlhHQfV7LBZKdKGfyyCY2YTU"),
+                HashAlgorithm::SHA256 => assert_eq!(&thumbprint.kid, "ESpNh4PQZO3u7Q1laesYlhHQfV7LBZKdKGfyyCY2YTU"),
                 HashAlgorithm::SHA384 => assert_eq!(
-                    &thumbprint.jkt,
+                    &thumbprint.kid,
                     "tdNAT4Jr8cRlkxmgtYcum6EAGLWl6AXsflQs5izMSCY9gsFTD-cd5j1_vmev5_2X"
                 ),
             }
@@ -161,11 +161,11 @@ mod tests {
                     y,
                 }),
             };
-            let thumbprint = JktConfirmation::generate(&jwk, hash).unwrap();
+            let thumbprint = JwkThumbprint::generate(&jwk, hash).unwrap();
             match hash {
-                HashAlgorithm::SHA256 => assert_eq!(&thumbprint.jkt, "sBSdg6mJ9HqH-gMhbVsd6FYFm2Kl3-axd82pYlzxUFY"),
+                HashAlgorithm::SHA256 => assert_eq!(&thumbprint.kid, "sBSdg6mJ9HqH-gMhbVsd6FYFm2Kl3-axd82pYlzxUFY"),
                 HashAlgorithm::SHA384 => assert_eq!(
-                    &thumbprint.jkt,
+                    &thumbprint.kid,
                     "SDannkEbVekJlQtvocnp8oF38WVF23gEXj3tDqQnVlzJdinp2vgT-W-wbBN_wksO"
                 ),
             }
@@ -183,11 +183,11 @@ mod tests {
                     x,
                 }),
             };
-            let thumbprint = JktConfirmation::generate(&jwk, hash).unwrap();
+            let thumbprint = JwkThumbprint::generate(&jwk, hash).unwrap();
             match hash {
-                HashAlgorithm::SHA256 => assert_eq!(&thumbprint.jkt, "UIaMEN16usO38HgRukG-HKGibaUtiITH5opS1qbnQiU"),
+                HashAlgorithm::SHA256 => assert_eq!(&thumbprint.kid, "UIaMEN16usO38HgRukG-HKGibaUtiITH5opS1qbnQiU"),
                 HashAlgorithm::SHA384 => assert_eq!(
-                    &thumbprint.jkt,
+                    &thumbprint.kid,
                     "Ow8bJ-FJVEMr6XcEDsio9IYfeq8OpvIgJnsE-7vQs2rdk_sWnp4gGjxMxAqcEjMy"
                 ),
             }
@@ -218,8 +218,8 @@ mod tests {
             algorithm: jwk.algorithm,
         };
         assert_eq!(
-            JktConfirmation::generate(&minimal, ciphersuite.hash).unwrap(),
-            JktConfirmation::generate(&maximal, ciphersuite.hash).unwrap(),
+            JwkThumbprint::generate(&minimal, ciphersuite.hash).unwrap(),
+            JwkThumbprint::generate(&maximal, ciphersuite.hash).unwrap(),
         )
     }
 
@@ -236,7 +236,7 @@ mod tests {
                 e: "AQAB".to_string(),
             }),
         };
-        let json = JktConfirmation::compute_json(&jwk);
+        let json = JwkThumbprint::compute_json(&jwk);
         assert_eq!(
             json,
             json!({
