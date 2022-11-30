@@ -38,17 +38,8 @@ impl Default for Datetime {
 /// Wrapping `time` serializer to accommodate our newtype
 pub mod iso8601 {
     use serde::{Deserializer, Serializer};
-    use time::format_description::well_known;
 
     use super::*;
-
-    // naively try to stick to 'xsd:datetime'
-    pub(crate) const SERDE_CONFIG: well_known::iso8601::EncodedConfig = well_known::iso8601::Config::DEFAULT
-        .set_year_is_six_digits(false)
-        .set_time_precision(well_known::iso8601::TimePrecision::Second {
-            decimal_digits: std::num::NonZeroU8::new(0),
-        })
-        .encode();
 
     /// serde serializer
     pub fn serialize<S: Serializer>(datetime: &Datetime, serializer: S) -> Result<S::Ok, S::Error> {

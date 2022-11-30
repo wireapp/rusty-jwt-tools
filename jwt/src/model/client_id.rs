@@ -1,6 +1,3 @@
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt::Formatter;
-use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -70,19 +67,21 @@ impl<'a> QualifiedClientId<'a> {
     }
 }
 
-impl<'a> Serialize for QualifiedClientId<'a> {
+#[cfg(test)]
+impl<'a> serde::Serialize for QualifiedClientId<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: Serializer,
+        S: serde::Serializer,
     {
         serializer.serialize_str(&self.to_subject())
     }
 }
 
-impl<'a, 'de> Deserialize<'de> for QualifiedClientId<'a> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+#[cfg(test)]
+impl<'a, 'de> serde::Deserialize<'de> for QualifiedClientId<'a> {
+    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
     where
-        D: Deserializer<'de>,
+        D: serde::Deserializer<'de>,
     {
         todo!()
     }
@@ -109,6 +108,7 @@ impl QualifiedClientId<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr as _;
 
     mod constructor {
         use super::*;

@@ -1,5 +1,4 @@
 #![doc = include_str ! ("../../README.md")]
-#![allow(dead_code, unused_imports, unused_variables)]
 #![deny(missing_docs)]
 #![allow(clippy::single_component_path_imports)]
 extern crate core;

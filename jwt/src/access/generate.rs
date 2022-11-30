@@ -1,13 +1,11 @@
-use jwt_simple::{prelude::*, token::Token};
-use serde_json::Value;
-
-use crate::jkt::JktConfirmation;
-use crate::jwk::TryIntoJwk;
 use crate::{
     access::Access,
     dpop::{VerifyDpop, VerifyDpopTokenHeader},
+    jkt::JktConfirmation,
+    jwk::TryIntoJwk,
     prelude::*,
 };
+use jwt_simple::{prelude::*, token::Token};
 
 impl RustyJwtTools {
     /// Validate the provided [dpop_proof] DPoP proof JWT from the client, and if valid, return an
@@ -290,7 +288,6 @@ mod tests {
             #[apply(all_ciphersuites)]
             #[test]
             fn should_have_dpop_token_as_proof(ciphersuite: Ciphersuite) {
-                let challenge = AcmeChallenge::rand();
                 let dpop = DpopBuilder::from(ciphersuite.key.clone()).build();
                 let params = Params::from(ciphersuite.clone());
                 let backend_key = params.backend_keys.clone();
