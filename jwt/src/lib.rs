@@ -15,7 +15,7 @@ mod access;
 mod dpop;
 mod error;
 mod introspect;
-pub mod jkt;
+pub mod jwk_thumbprint;
 mod jwe;
 pub mod jwk;
 pub mod jwt;

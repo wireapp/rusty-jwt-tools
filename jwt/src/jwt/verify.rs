@@ -3,7 +3,7 @@
 use jwt_simple::prelude::*;
 use serde::de::DeserializeOwned;
 
-use crate::jkt::JktConfirmation;
+use crate::jwk_thumbprint::JwkThumbprint;
 use crate::prelude::*;
 
 /// Global trait to verify a Jwt token
@@ -16,7 +16,7 @@ pub struct Verify<'a> {
     /// leeway
     pub leeway: u16,
     /// cnf
-    pub cnf: Option<&'a JktConfirmation>,
+    pub cnf: Option<&'a JwkThumbprint>,
 }
 
 impl From<&Verify<'_>> for VerificationOptions {
@@ -60,7 +60,7 @@ pub trait VerifyJwt {
         &self,
         key: &AnyPublicKey,
         max_expiration: u64,
-        cnf: Option<&JktConfirmation>,
+        cnf: Option<&JwkThumbprint>,
         verify: Verify,
     ) -> RustyJwtResult<JWTClaims<T>>
     where
@@ -72,7 +72,7 @@ impl VerifyJwt for &str {
         &self,
         key: &AnyPublicKey<'_>,
         max_expiration: u64,
-        cnf: Option<&JktConfirmation>,
+        cnf: Option<&JwkThumbprint>,
         verify: Verify,
     ) -> RustyJwtResult<JWTClaims<T>>
     where

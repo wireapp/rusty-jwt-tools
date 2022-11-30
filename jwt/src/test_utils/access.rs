@@ -1,4 +1,4 @@
-use crate::{access::Access, jkt::JktConfirmation, test_utils::*};
+use crate::{access::Access, jwk_thumbprint::JwkThumbprint, test_utils::*};
 
 /// Same as [Dpop] but all fields are optional to simulate missing fields
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
@@ -6,7 +6,7 @@ pub struct TestAccess {
     #[serde(rename = "chal", skip_serializing_if = "Option::is_none")]
     pub challenge: Option<AcmeChallenge>,
     #[serde(rename = "cnf", skip_serializing_if = "Option::is_none")]
-    pub cnf: Option<JktConfirmation>,
+    pub cnf: Option<JwkThumbprint>,
     #[serde(rename = "proof", skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
     #[serde(rename = "client_id", skip_serializing_if = "Option::is_none")]
