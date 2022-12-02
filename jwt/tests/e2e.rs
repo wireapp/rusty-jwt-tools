@@ -7,6 +7,12 @@ use rusty_jwt_tools::prelude::*;
 fn e2e_test() {
     let keys: Vec<(JwsAlgorithm, Pem, Pem, HashAlgorithm)> = vec![
         (
+            JwsAlgorithm::Ed25519,
+            Ed25519KeyPair::generate().to_pem().into(),
+            Ed25519KeyPair::generate().to_pem().into(),
+            HashAlgorithm::SHA256,
+        ),
+        (
             JwsAlgorithm::P256,
             ES256KeyPair::generate().to_pem().unwrap().into(),
             ES256KeyPair::generate().to_pem().unwrap().into(),
@@ -17,12 +23,6 @@ fn e2e_test() {
             ES384KeyPair::generate().to_pem().unwrap().into(),
             ES384KeyPair::generate().to_pem().unwrap().into(),
             HashAlgorithm::SHA384,
-        ),
-        (
-            JwsAlgorithm::Ed25519,
-            Ed25519KeyPair::generate().to_pem().into(),
-            Ed25519KeyPair::generate().to_pem().into(),
-            HashAlgorithm::SHA256,
         ),
     ];
 
@@ -56,7 +56,9 @@ fn e2e_test() {
         let client_dpop =
             RustyJwtTools::generate_dpop_token(alg, key.clone(), dpop, nonce.clone(), alice, expiry).unwrap();
 
-        println!("1. generate dpop:\nhttps://jwt.io/#id_token={client_dpop}\n");
+        println!(
+            "1. generate dpop:\nclient signature key:\n{key}\nDpop token:\nhttps://jwt.io/#id_token={client_dpop}\n"
+        );
 
         // wire-server now validates the 'client_dpop' and generates an access token
         let access_token = RustyJwtTools::generate_access_token(
@@ -72,10 +74,10 @@ fn e2e_test() {
         )
         .unwrap();
 
-        println!("2. generate access token:\nhttps://jwt.io/#id_token={access_token}\n");
+        println!("2. generate access token:\nwire-server signature key:\n{backend_keys}\naccess token:\nhttps://jwt.io/#id_token={access_token}\n");
 
         // now acme server will verify the access token
-        let backend_pk = match alg {
+        let backend_pk: Pem = match alg {
             JwsAlgorithm::P256 => ES256KeyPair::from_pem(backend_keys.as_str())
                 .unwrap()
                 .public_key()
@@ -98,10 +100,15 @@ fn e2e_test() {
             challenge,
             leeway,
             max_expiration,
-            backend_pk,
+            backend_pk.clone(),
             hash_alg,
         );
-        println!("3. access token verified '{}'\n", verify.is_ok());
+        println!("3. verify access token\nwire-server public signature key:\n{backend_pk}");
+        if verify.is_ok() {
+            println!("✅ access token verified");
+        } else {
+            println!("❌ access token invalid");
+        }
         results.push(verify);
         println!("---------------------------------------------------------------------\n");
     }

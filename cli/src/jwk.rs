@@ -1,9 +1,9 @@
-use crate::{pem::parse_pem, utils::*};
+use crate::{pem::parse_key_pair_pem, utils::*};
 use clap::Parser;
 use console::style;
 use jwt_simple::prelude::*;
 use rusty_jwt_tools::{jwk::TryIntoJwk, prelude::*};
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 pub struct ParseJwk {
@@ -13,8 +13,11 @@ pub struct ParseJwk {
 
 impl ParseJwk {
     pub fn execute(self) -> anyhow::Result<()> {
-        let key = self.get_key().trim().to_string();
-        let (alg, pem) = parse_pem(key);
+        let key = read_file(self.key.as_ref())
+            .unwrap_or_else(read_stdin)
+            .trim()
+            .to_string();
+        let (alg, pem) = parse_key_pair_pem(key);
 
         let jwk = match alg {
             JwsAlgorithm::P256 => {
@@ -38,25 +41,5 @@ impl ParseJwk {
         println!("- JWK thumbprint with {} : {}", hash_alg, style(&jwk_thumbprint).cyan());
 
         Ok(())
-    }
-
-    fn get_key(&self) -> String {
-        if let Some(key) = self.key.as_ref() {
-            if key.exists() {
-                fs::read_to_string(key).unwrap()
-            } else {
-                panic!("Key file does not exist")
-            }
-        } else {
-            use std::io::BufRead as _;
-
-            let stdin = std::io::stdin();
-            let mut key = vec![];
-            for line in stdin.lock().lines() {
-                let line = line.expect("Could not read line from standard in");
-                key.push(line);
-            }
-            key.join("")
-        }
     }
 }
