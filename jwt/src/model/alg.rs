@@ -1,5 +1,6 @@
 use jwt_simple::prelude::*;
 use std::fmt::Formatter;
+use std::str::FromStr;
 
 use crate::prelude::*;
 
@@ -168,5 +169,17 @@ impl std::fmt::Display for HashAlgorithm {
             HashAlgorithm::SHA384 => "SHA-384",
         };
         write!(f, "{name}")
+    }
+}
+
+impl FromStr for HashAlgorithm {
+    type Err = RustyJwtError;
+
+    fn from_str(s: &str) -> RustyJwtResult<Self> {
+        Ok(match s {
+            "SHA-256" => Self::SHA256,
+            "SHA-384" => Self::SHA384,
+            _ => return Err(RustyJwtError::ImplementationError),
+        })
     }
 }

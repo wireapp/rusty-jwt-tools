@@ -1,9 +1,9 @@
-use crate::pem::parse_pem;
+use crate::{pem::parse_key_pair_pem, utils::*};
 use clap::Parser;
 use jwt_simple::prelude::*;
 use rusty_jwt_tools::prelude::*;
 use serde_json::Value;
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 pub struct BuildJwt {
@@ -25,7 +25,7 @@ pub struct BuildJwt {
 
 impl BuildJwt {
     pub fn execute(self) -> anyhow::Result<()> {
-        let (alg, kp) = self.get_key();
+        let (alg, kp) = parse_key_pair_pem(read_file(Some(&self.key)).unwrap());
 
         let mut header = JWTHeader::default();
         header.algorithm = alg.to_string();
@@ -47,45 +47,12 @@ impl BuildJwt {
     }
 
     fn get_json_claims(&self) -> Value {
-        let claims = if let Some(claims) = self.claims.as_ref() {
-            if claims.exists() {
-                fs::read_to_string(claims).unwrap()
-            } else {
-                panic!("Claims file does not exist")
-            }
-        } else {
-            use std::io::BufRead as _;
-
-            let stdin = std::io::stdin();
-            let mut claims = vec![];
-            for line in stdin.lock().lines() {
-                let line = line.expect("Could not read line from standard in");
-                claims.push(line);
-            }
-            claims.join("")
-        };
+        let claims = read_file(self.claims.as_ref()).unwrap_or_else(read_stdin);
         serde_json::from_str::<Value>(&claims).unwrap()
     }
 
-    fn get_key(&self) -> (JwsAlgorithm, Pem) {
-        let key = if self.key.exists() {
-            fs::read_to_string(self.key.clone()).unwrap()
-        } else {
-            panic!("Key file does not exist")
-        };
-        parse_pem(key)
-    }
-
     fn get_vp(&self) -> Option<RustyPresentation> {
-        self.vp
-            .as_ref()
-            .map(|path| {
-                if path.exists() {
-                    fs::read_to_string(path).unwrap()
-                } else {
-                    panic!("Verifiable presentation file does not exist")
-                }
-            })
+        read_file(self.vp.as_ref())
             .map(|p| serde_json::from_str::<RustyPresentation>(&p).expect("Invalid Verifiable Presentation"))
             .map(|mut p| {
                 if !self.get_vc().is_empty() {
@@ -99,13 +66,7 @@ impl BuildJwt {
         if !self.vc.is_empty() {
             self.vc
                 .iter()
-                .map(|path| {
-                    if path.exists() {
-                        fs::read_to_string(path).unwrap()
-                    } else {
-                        panic!("Verifiable credential file does not exist")
-                    }
-                })
+                .map(|path| read_file(Some(path)).unwrap())
                 .map(|c| serde_json::from_str(&c).expect("Invalid Verifiable Credential"))
                 .collect()
         } else {

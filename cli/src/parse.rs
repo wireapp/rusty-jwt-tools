@@ -5,7 +5,7 @@ use jwt_simple::prelude::*;
 use rusty_jwt_tools::jwk_thumbprint::JwkThumbprint;
 use rusty_jwt_tools::prelude::*;
 use serde_json::Value;
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 pub struct ParseJwt {
@@ -15,7 +15,10 @@ pub struct ParseJwt {
 
 impl ParseJwt {
     pub fn execute(self) -> anyhow::Result<()> {
-        let jwt = self.get_jwt().trim().to_string();
+        let jwt = read_file(self.jwt.as_ref())
+            .unwrap_or_else(read_stdin)
+            .trim()
+            .to_string();
 
         let metadata = Token::decode_metadata(&jwt).unwrap();
 
@@ -89,25 +92,5 @@ impl ParseJwt {
         println!("- rest of claims \n{}", style(&json_claims).magenta());
 
         Ok(())
-    }
-
-    fn get_jwt(&self) -> String {
-        if let Some(jwt) = self.jwt.as_ref() {
-            if jwt.exists() {
-                fs::read_to_string(jwt).unwrap()
-            } else {
-                panic!("Jwt file does not exist")
-            }
-        } else {
-            use std::io::BufRead as _;
-
-            let stdin = std::io::stdin();
-            let mut jwt = vec![];
-            for line in stdin.lock().lines() {
-                let line = line.expect("Could not read line from standard in");
-                jwt.push(line);
-            }
-            jwt.join("")
-        }
     }
 }
