@@ -63,7 +63,7 @@ impl AccessVerify {
         if verification.is_ok() {
             println!("✅ access token is valid");
         } else {
-            println!("❌ access token is not valid because {:?}", verification.unwrap_err());
+            panic!("❌ access token is not valid because {:?}", verification.unwrap_err());
         }
 
         Ok(())
