@@ -28,7 +28,7 @@ oauth2 = "4.2"
 chrono = "0.4"
 either = { version = "1.8", features = ["serde"] }
 time = { version = "0.3", features = ["serde", "serde-well-known", "wasm-bindgen"] }
-json-patch = "0.2"
+json-patch = "0.3"
 biscuit = "0.6.0-beta1"
 rand = { version = "0.8", features = ["rand_chacha", "getrandom"] }
 rand_chacha = "0.3"
