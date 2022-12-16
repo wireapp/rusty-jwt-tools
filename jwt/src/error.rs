@@ -85,7 +85,7 @@ pub enum RustyJwtError {
     /// DPoP token 'nonce' claim mismatches with the expected [crate::prelude::BackendNonce]
     #[error("DPoP token 'nonce' claim mismatches with the expected backend_nonce")]
     DpopNonceMismatch,
-    /// DPoP token 'chal' claim mismatches with the expected [crate::prelude::AcmeChallenge]
+    /// DPoP token 'chal' claim mismatches with the expected [crate::prelude::AcmeNonce]
     #[error("DPoP token 'chal' claim mismatches with the expected challenge")]
     DpopChallengeMismatch,
     /// DPoP token 'htu' claim mismatches with the expected uri

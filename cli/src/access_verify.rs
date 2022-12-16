@@ -46,8 +46,8 @@ impl AccessVerify {
             .trim()
             .to_string();
 
-        let client_id: QualifiedClientId = self.client_id.as_str().try_into().expect("Invalid 'client_id'");
-        let challenge: AcmeChallenge = self.challenge.into();
+        let client_id: ClientId = self.client_id.as_str().try_into().expect("Invalid 'client_id'");
+        let challenge: AcmeNonce = self.challenge.into();
         let (_, backend_pk) = parse_public_key_pem(read_file(Some(&self.key)).unwrap());
 
         let verification = RustyJwtTools::verify_access_token(

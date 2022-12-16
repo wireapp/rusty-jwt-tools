@@ -46,7 +46,7 @@ impl AccessGenerate {
             JwsAlgorithm::Ed25519 => Ed25519KeyPair::generate().to_pem().into(),
         };
 
-        let challenge: AcmeChallenge = self.challenge.into();
+        let challenge: AcmeNonce = self.challenge.into();
         let htm = Htm::Post;
         let htu: Htu = self.htu.as_str().try_into().unwrap();
 
@@ -57,11 +57,11 @@ impl AccessGenerate {
             extra_claims: None,
         };
         let nonce: BackendNonce = self.nonce.into();
-        let client_id: QualifiedClientId = self.client_id.as_str().try_into().expect("Invalid 'client_id'");
-        let expiry = Duration::from_secs(self.expiry);
+        let client_id: ClientId = self.client_id.as_str().try_into().expect("Invalid 'client_id'");
+        let expiry = core::time::Duration::from_secs(self.expiry);
 
         let client_dpop_token =
-            RustyJwtTools::generate_dpop_token(alg, client_kp, dpop, nonce.clone(), client_id.clone(), expiry)
+            RustyJwtTools::generate_dpop_token(dpop, client_id, nonce.clone(), expiry, alg, &client_kp)
                 .expect("Failed generating client Dpop token");
 
         let leeway: u16 = 5;

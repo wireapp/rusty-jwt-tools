@@ -1,5 +1,9 @@
 name: Rust compile & test
 
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
 on: [push]
 
 jobs:
@@ -90,7 +94,6 @@ jobs:
         run: |
           wasm-pack build --dev --target web jwt
 
-
   wasm-test:
     runs-on: ubuntu-latest
     env:
@@ -107,3 +110,15 @@ jobs:
       - name: Run tests (wasm)
         run: |
           wasm-pack test --headless --chrome jwt
+
+  hack:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo/hack (verify features compile in isolation)
+        run: cargo hack check --each-feature --no-dev-deps

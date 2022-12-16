@@ -6,8 +6,9 @@ impl RustyJwtTools {
     pub fn generate_jwt<T>(
         alg: JwsAlgorithm,
         header: JWTHeader,
-        claims: JWTClaims<T>,
-        kp: Pem,
+        claims: Option<JWTClaims<T>>,
+        kp: &Pem,
+        with_jwk: bool,
     ) -> RustyJwtResult<String>
     where
         T: Serialize,
@@ -15,7 +16,13 @@ impl RustyJwtTools {
     {
         use crate::jwk::TryIntoJwk as _;
 
-        let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
+        let with_jwk = |jwk: Jwk| {
+            if with_jwk {
+                KeyMetadata::default().with_public_key(jwk)
+            } else {
+                KeyMetadata::default()
+            }
+        };
         match alg {
             JwsAlgorithm::Ed25519 => {
                 let mut kp = Ed25519KeyPair::from_pem(kp.as_str())?;

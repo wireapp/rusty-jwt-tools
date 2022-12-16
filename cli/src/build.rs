@@ -27,8 +27,10 @@ impl BuildJwt {
     pub fn execute(self) -> anyhow::Result<()> {
         let (alg, kp) = parse_key_pair_pem(read_file(Some(&self.key)).unwrap());
 
-        let mut header = JWTHeader::default();
-        header.algorithm = alg.to_string();
+        let header = JWTHeader {
+            algorithm: alg.to_string(),
+            ..Default::default()
+        };
 
         let mut json_claims = self.get_json_claims();
 
@@ -40,7 +42,7 @@ impl BuildJwt {
         let expires = Duration::from_days(self.expires);
         let claims = Claims::with_custom_claims(json_claims, expires);
 
-        let jwt = RustyJwtTools::generate_jwt(alg, header, claims, kp).unwrap();
+        let jwt = RustyJwtTools::generate_jwt(alg, header, Some(claims), &kp, true).unwrap();
 
         println!("{}", jwt);
         Ok(())
