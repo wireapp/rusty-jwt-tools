@@ -29,8 +29,8 @@ pub mod prelude {
     pub use jwe::alg::JweAlgorithm;
     pub use model::{
         alg::{HashAlgorithm, JwsAlgorithm, JwsEcAlgorithm, JwsEdAlgorithm},
-        client_id::QualifiedClientId,
-        nonce::{AcmeChallenge, BackendNonce},
+        client_id::ClientId,
+        nonce::{AcmeNonce, BackendNonce},
         pem::Pem,
         pk::AnyPublicKey,
     };

@@ -30,7 +30,7 @@ pub struct Dpop {
     pub htu: Htu,
     /// ACME server nonce
     #[serde(rename = "chal")]
-    pub challenge: AcmeChallenge,
+    pub challenge: AcmeNonce,
     /// Allows passing extra arbitrary data which will end up in DPoP token claims
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub extra_claims: Option<serde_json::Value>,
@@ -44,9 +44,10 @@ impl Dpop {
     pub fn into_jwt_claims(
         self,
         nonce: BackendNonce,
-        client_id: QualifiedClientId,
-        expiry: Duration,
+        client_id: ClientId,
+        expiry: core::time::Duration,
     ) -> JWTClaims<Self> {
+        let expiry = coarsetime::Duration::from_secs(expiry.as_secs());
         Claims::with_custom_claims(self, expiry)
             .with_jwt_id(new_jti())
             .with_nonce(nonce.to_string())

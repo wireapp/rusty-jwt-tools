@@ -4,13 +4,13 @@ use crate::{access::Access, jwk_thumbprint::JwkThumbprint, test_utils::*};
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
 pub struct TestAccess {
     #[serde(rename = "chal", skip_serializing_if = "Option::is_none")]
-    pub challenge: Option<AcmeChallenge>,
+    pub challenge: Option<AcmeNonce>,
     #[serde(rename = "cnf", skip_serializing_if = "Option::is_none")]
     pub cnf: Option<JwkThumbprint>,
     #[serde(rename = "proof", skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
     #[serde(rename = "client_id", skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<QualifiedClientId<'static>>,
+    pub client_id: Option<ClientId<'static>>,
     #[serde(rename = "api_version", skip_serializing_if = "Option::is_none")]
     pub api_version: Option<u32>,
     #[serde(rename = "scope", skip_serializing_if = "Option::is_none")]
@@ -25,7 +25,7 @@ impl From<Ciphersuite> for TestAccess {
             challenge: Some(access.challenge),
             cnf: Some(ciphersuite.to_jwk_thumbprint()),
             proof: Some(proof),
-            client_id: Some(QualifiedClientId::default()),
+            client_id: Some(ClientId::default()),
             api_version: Some(Access::WIRE_SERVER_API_VERSION),
             scope: Some(Access::DEFAULT_SCOPE.to_string()),
         }
@@ -39,7 +39,7 @@ pub struct AccessBuilder {
     pub access: TestAccess,
     pub jwk: Option<Jwk>,
     pub ciphersuite: Ciphersuite,
-    pub sub: Option<QualifiedClientId<'static>>,
+    pub sub: Option<ClientId<'static>>,
     pub nonce: Option<BackendNonce>,
     pub jti: Option<String>,
     pub iat: Option<UnixTimeStamp>,
@@ -58,7 +58,7 @@ impl From<Ciphersuite> for AccessBuilder {
             access: TestAccess::from(ciphersuite.clone()),
             jwk: Some(ciphersuite.key.to_jwk()),
             ciphersuite,
-            sub: Some(QualifiedClientId::default()),
+            sub: Some(ClientId::default()),
             nonce: Some(BackendNonce::default()),
             jti: Some(uuid::Uuid::new_v4().to_string()),
             iat: Some(iat),
@@ -74,25 +74,26 @@ impl AccessBuilder {
         match self.ciphersuite.key.alg {
             JwsAlgorithm::P256 => ES256KeyPair::from_pem(kp)
                 .unwrap()
-                .sign_with_header(self.claims(), self.header())
+                .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
             JwsAlgorithm::P384 => ES384KeyPair::from_pem(kp)
                 .unwrap()
-                .sign_with_header(self.claims(), self.header())
+                .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
             JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(kp)
                 .unwrap()
-                .sign_with_header(self.claims(), self.header())
+                .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
         }
     }
 
     fn header(&self) -> JWTHeader {
-        let mut header = JWTHeader::default();
-        header.algorithm = self.alg.clone();
-        header.signature_type = self.typ.map(|s| s.to_string());
-        header.public_key = self.jwk.clone();
-        header
+        JWTHeader {
+            algorithm: self.alg.clone(),
+            signature_type: self.typ.map(|s| s.to_string()),
+            public_key: self.jwk.clone(),
+            ..Default::default()
+        }
     }
 
     fn claims(&self) -> JWTClaims<TestAccess> {

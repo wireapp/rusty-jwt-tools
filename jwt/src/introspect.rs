@@ -55,19 +55,20 @@ mod tests {
     fn should_have_valid_response() {
         let hash = HashAlgorithm::SHA256;
         let key = JwtKey::new_key(JwsAlgorithm::P256);
-        let challenge = AcmeChallenge::rand();
+        let challenge = AcmeNonce::rand();
         let dpop = Dpop {
             challenge,
             ..Default::default()
         };
         let nonce = BackendNonce::rand();
-        let client_id = QualifiedClientId::alice();
+        let client_id = ClientId::alice();
         let htu = Htu::default();
         let htm = Htm::default();
         let backend_keys = key.create_another();
-        let expiry = Duration::from_days(1);
+        let expiry = Duration::from_days(1).into();
 
-        let dpop = RustyJwtTools::generate_dpop_token(key.alg, key.kp, dpop, nonce.clone(), client_id, expiry).unwrap();
+        let dpop =
+            RustyJwtTools::generate_dpop_token(dpop, client_id, nonce.clone(), expiry, key.alg, &key.kp).unwrap();
 
         let access_token = RustyJwtTools::generate_access_token(
             &dpop,

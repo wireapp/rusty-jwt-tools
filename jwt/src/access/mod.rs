@@ -17,7 +17,7 @@ mod verify;
 pub struct Access {
     /// ACME server nonce
     #[serde(rename = "chal")]
-    pub challenge: AcmeChallenge,
+    pub challenge: AcmeNonce,
     /// Hash of the JWK, see [JwkThumbprint]
     #[serde(rename = "cnf")]
     pub cnf: JwkThumbprint,
@@ -57,7 +57,7 @@ impl Access {
 
     pub fn into_jwt_claims(
         self,
-        client_id: QualifiedClientId,
+        client_id: ClientId,
         nonce: BackendNonce,
         issuer: Htu,
         audience: Htu,

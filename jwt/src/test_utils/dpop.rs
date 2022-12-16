@@ -10,7 +10,7 @@ pub struct TestDpop {
     #[serde(rename = "htu", skip_serializing_if = "Option::is_none")]
     pub htu: Option<Htu>,
     #[serde(rename = "chal", skip_serializing_if = "Option::is_none")]
-    pub challenge: Option<AcmeChallenge>,
+    pub challenge: Option<AcmeNonce>,
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub extra_claims: Option<serde_json::Value>,
 }
@@ -34,7 +34,7 @@ pub struct DpopBuilder {
     pub dpop: TestDpop,
     pub jwk: Option<Jwk>,
     pub key: JwtKey,
-    pub sub: Option<QualifiedClientId<'static>>,
+    pub sub: Option<ClientId<'static>>,
     pub nonce: Option<BackendNonce>,
     pub jti: Option<String>,
     pub iat: Option<UnixTimeStamp>,
@@ -51,7 +51,7 @@ impl From<JwtKey> for DpopBuilder {
             dpop: TestDpop::default(),
             jwk: Some(key.to_jwk()),
             key,
-            sub: Some(QualifiedClientId::default()),
+            sub: Some(ClientId::default()),
             nonce: Some(BackendNonce::default()),
             jti: Some(uuid::Uuid::new_v4().to_string()),
             iat: Some(iat),
@@ -66,25 +66,26 @@ impl DpopBuilder {
         match self.key.alg {
             JwsAlgorithm::P256 => ES256KeyPair::from_pem(kp)
                 .unwrap()
-                .sign_with_header(self.claims(), self.header())
+                .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
             JwsAlgorithm::P384 => ES384KeyPair::from_pem(kp)
                 .unwrap()
-                .sign_with_header(self.claims(), self.header())
+                .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
             JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(kp)
                 .unwrap()
-                .sign_with_header(self.claims(), self.header())
+                .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
         }
     }
 
     fn header(&self) -> JWTHeader {
-        let mut header = JWTHeader::default();
-        header.algorithm = self.alg.clone();
-        header.signature_type = self.typ.map(|s| s.to_string());
-        header.public_key = self.jwk.clone();
-        header
+        JWTHeader {
+            algorithm: self.alg.clone(),
+            signature_type: self.typ.map(|s| s.to_string()),
+            public_key: self.jwk.clone(),
+            ..Default::default()
+        }
     }
 
     fn claims(&self) -> JWTClaims<TestDpop> {

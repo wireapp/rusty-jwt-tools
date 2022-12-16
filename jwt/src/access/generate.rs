@@ -30,7 +30,7 @@ impl RustyJwtTools {
     /// * `dpop_proof` - JWS Compact Serialization format. Note that the proof consists of three runs
     /// of base64url characters (header, claims, signature) separated by period characters.
     /// ex: b"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" (whitespace in the example is not included in the actual proof)
-    /// * `client_id` - see [QualifiedClientId]
+    /// * `client_id` - see [ClientId]
     /// * `backend_nonce` - The most recent DPoP nonce provided by the backend to the current client ex: hex!("b62551e728771515234fac0b04b2008d")
     /// * `uri` - The HTTPS URI on the backend for the DPoP auth token endpoint ex: "https://wire.example.com/clients/authtoken"
     /// * `method` - The HTTPS method used on the backend for the DPoP auth token endpoint ex: b"POST"
@@ -41,7 +41,7 @@ impl RustyJwtTools {
     #[allow(clippy::too_many_arguments)]
     pub fn generate_access_token(
         dpop_proof: &str,
-        client_id: QualifiedClientId,
+        client_id: ClientId,
         backend_nonce: BackendNonce,
         uri: Htu,
         method: Htm,
@@ -79,7 +79,7 @@ impl RustyJwtTools {
         proof: &str,
         proof_claims: JWTClaims<Dpop>,
         backend_keys: Pem,
-        client_id: QualifiedClientId,
+        client_id: ClientId,
         nonce: BackendNonce,
         hash: HashAlgorithm,
     ) -> RustyJwtResult<String> {
@@ -109,7 +109,7 @@ impl RustyJwtTools {
                 let jwk = kp.public_key().try_into_jwk()?;
                 let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(claims(cnf), header)?
+                kp.sign_with_header(Some(claims(cnf)), header)?
             }
             JwsAlgorithm::P384 => {
                 let mut kp = ES384KeyPair::from_pem(backend_keys.as_str())
@@ -117,7 +117,7 @@ impl RustyJwtTools {
                 let jwk = kp.public_key().try_into_jwk()?;
                 let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(claims(cnf), header)?
+                kp.sign_with_header(Some(claims(cnf)), header)?
             }
             JwsAlgorithm::Ed25519 => {
                 let mut kp = Ed25519KeyPair::from_pem(backend_keys.as_str())
@@ -125,16 +125,17 @@ impl RustyJwtTools {
                 let jwk = kp.public_key().try_into_jwk()?;
                 let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(claims(cnf), header)?
+                kp.sign_with_header(Some(claims(cnf)), header)?
             }
         })
     }
 
     fn new_access_header(alg: JwsAlgorithm) -> JWTHeader {
-        let mut header = JWTHeader::default();
-        header.algorithm = alg.to_string();
-        header.signature_type = Some(Access::TYP.to_string());
-        header
+        JWTHeader {
+            algorithm: alg.to_string(),
+            signature_type: Some(Access::TYP.to_string()),
+            ..Default::default()
+        }
     }
 }
 
@@ -236,9 +237,9 @@ mod tests {
             #[apply(all_ed_keys)]
             #[test]
             fn should_have_ed25519_jwk(key: JwtEdKey) {
+                #[allow(clippy::redundant_clone)]
                 let params = Params::from(Ciphersuite {
-                    #[allow(clippy::redundant_clone)]
-                    key: JwtKey::from(key.clone()),
+                    key: key.clone().into(),
                     hash: HashAlgorithm::SHA256,
                 });
                 let backend_kp = params.backend_keys.clone();
@@ -328,7 +329,7 @@ mod tests {
             #[apply(all_ciphersuites)]
             #[test]
             fn should_have_dpop_challenge(ciphersuite: Ciphersuite) {
-                let challenge = AcmeChallenge::rand();
+                let challenge = AcmeNonce::rand();
                 let dpop = DpopBuilder {
                     dpop: TestDpop {
                         challenge: Some(challenge.clone()),
@@ -348,7 +349,7 @@ mod tests {
             #[apply(all_ciphersuites)]
             #[test]
             fn should_have_sub_and_client_id(ciphersuite: Ciphersuite) {
-                let sub = QualifiedClientId::alice();
+                let sub = ClientId::alice();
                 let dpop = DpopBuilder {
                     sub: Some(sub),
                     ..ciphersuite.key.clone().into()
@@ -501,7 +502,7 @@ mod tests {
         #[test]
         fn should_fail_when_invalid(ciphersuite: Ciphersuite) {
             let params = Params {
-                backend_keys: rand_str(30).into(),
+                backend_keys: rand_base64_str(30).into(),
                 ..ciphersuite.clone().into()
             };
             let result = access_token(params);
@@ -645,11 +646,11 @@ mod tests {
         fn sub(ciphersuite: Ciphersuite) {
             // should succeed when client_id and JWT's 'sub' match
             let dpop = DpopBuilder {
-                sub: Some(QualifiedClientId::alice()),
+                sub: Some(ClientId::alice()),
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                client_id: QualifiedClientId::alice(),
+                client_id: ClientId::alice(),
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
@@ -661,7 +662,7 @@ mod tests {
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                client_id: QualifiedClientId::bob(),
+                client_id: ClientId::bob(),
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
@@ -669,11 +670,11 @@ mod tests {
 
             // should fail when client_id and JWT's 'sub' mismatch
             let dpop = DpopBuilder {
-                sub: Some(QualifiedClientId::alice()),
+                sub: Some(ClientId::alice()),
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                client_id: QualifiedClientId::bob(),
+                client_id: ClientId::bob(),
                 ..ciphersuite.into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
@@ -841,7 +842,7 @@ mod tests {
             // should succeed when 'chal' (ACME challenge) claim is present in dpop token
             let dpop = DpopBuilder {
                 dpop: TestDpop {
-                    challenge: Some(AcmeChallenge::rand()),
+                    challenge: Some(AcmeNonce::rand()),
                     ..Default::default()
                 },
                 ..ciphersuite.key.clone().into()
@@ -1020,7 +1021,7 @@ mod tests {
         pub dpop_alg: JwsAlgorithm,
         pub key: JwtKey,
         pub dpop: Dpop,
-        pub client_id: QualifiedClientId<'a>,
+        pub client_id: ClientId<'a>,
         pub backend_nonce: BackendNonce,
         pub uri: Htu,
         pub method: Htm,
@@ -1037,7 +1038,7 @@ mod tests {
                 dpop_alg: ciphersuite.key.alg,
                 key: ciphersuite.key,
                 dpop: Dpop::default(),
-                client_id: QualifiedClientId::default(),
+                client_id: ClientId::default(),
                 backend_nonce: BackendNonce::default(),
                 uri: Htu::default(),
                 method: Htm::default(),
@@ -1058,9 +1059,9 @@ mod tests {
             backend_nonce,
             ..
         } = params.clone();
-        let expiry = Duration::from_days(1);
+        let expiry = Duration::from_days(1).into();
         let dpop =
-            RustyJwtTools::generate_dpop_token(dpop_alg, key.kp, dpop, backend_nonce, client_id, expiry).unwrap();
+            RustyJwtTools::generate_dpop_token(dpop, client_id, backend_nonce, expiry, dpop_alg, &key.kp).unwrap();
         access_token_with_dpop(&dpop, params)
     }
 
