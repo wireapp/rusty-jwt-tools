@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// Unique user handle
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct QualifiedClientId<'a> {
+pub struct ClientId<'a> {
     /// base64url encoded UUIDv4 unique user identifier
     pub user: Uuid,
     /// the client number assigned by the backend in hex
@@ -13,7 +13,7 @@ pub struct QualifiedClientId<'a> {
     pub domain: &'a str,
 }
 
-impl<'a> TryFrom<&'a str> for QualifiedClientId<'a> {
+impl<'a> TryFrom<&'a str> for ClientId<'a> {
     type Error = RustyJwtError;
 
     fn try_from(client_id: &'a str) -> RustyJwtResult<Self> {
@@ -28,7 +28,7 @@ impl<'a> TryFrom<&'a str> for QualifiedClientId<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a [u8]> for QualifiedClientId<'a> {
+impl<'a> TryFrom<&'a [u8]> for ClientId<'a> {
     type Error = RustyJwtError;
 
     fn try_from(client_id: &'a [u8]) -> RustyJwtResult<Self> {
@@ -36,7 +36,7 @@ impl<'a> TryFrom<&'a [u8]> for QualifiedClientId<'a> {
     }
 }
 
-impl<'a> QualifiedClientId<'a> {
+impl<'a> ClientId<'a> {
     #[cfg(test)]
     pub const DEFAULT_USER: Uuid = uuid::uuid!("4af3df2e-5c01-422f-baa1-d75546b92aa7");
 
@@ -68,7 +68,7 @@ impl<'a> QualifiedClientId<'a> {
 }
 
 #[cfg(test)]
-impl<'a> serde::Serialize for QualifiedClientId<'a> {
+impl<'a> serde::Serialize for ClientId<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -78,7 +78,7 @@ impl<'a> serde::Serialize for QualifiedClientId<'a> {
 }
 
 #[cfg(test)]
-impl<'a, 'de> serde::Deserialize<'de> for QualifiedClientId<'a> {
+impl<'a, 'de> serde::Deserialize<'de> for ClientId<'a> {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -88,14 +88,14 @@ impl<'a, 'de> serde::Deserialize<'de> for QualifiedClientId<'a> {
 }
 
 #[cfg(test)]
-impl Default for QualifiedClientId<'_> {
+impl Default for ClientId<'_> {
     fn default() -> Self {
-        QualifiedClientId::try_new(Self::DEFAULT_USER.to_string(), 1223, "example.com").unwrap()
+        ClientId::try_new(Self::DEFAULT_USER.to_string(), 1223, "example.com").unwrap()
     }
 }
 
 #[cfg(test)]
-impl QualifiedClientId<'_> {
+impl ClientId<'_> {
     pub fn alice() -> Self {
         Self::try_new("e1299f1d-180e-4339-b7c7-2715e1e6897f", 1234, "wire.com").unwrap()
     }
@@ -118,10 +118,10 @@ mod tests {
             let client = 6699;
             let domain = "wire.com";
             let user = uuid::uuid!("4af3df2e-5c01-422f-baa1-d75546b92aa7").to_string();
-            let client_id = QualifiedClientId::try_new(&user, client, domain).unwrap();
+            let client_id = ClientId::try_new(&user, client, domain).unwrap();
             assert_eq!(
                 client_id,
-                QualifiedClientId {
+                ClientId {
                     user: Uuid::from_str(&user).unwrap(),
                     client,
                     domain
@@ -131,7 +131,7 @@ mod tests {
 
         #[test]
         fn constructor_should_fail_when_user_not_uuid() {
-            let client_id = QualifiedClientId::try_new("abcd", 6699, "wire.com");
+            let client_id = ClientId::try_new("abcd", 6699, "wire.com");
             assert!(matches!(client_id.unwrap_err(), RustyJwtError::InvalidClientId))
         }
     }
@@ -143,7 +143,7 @@ mod tests {
         fn to_subject_should_succeed() {
             let user = "4af3df2e-5c01-422f-baa1-d75546b92aa7";
             let domain = "wire.com";
-            let client_id = QualifiedClientId::try_new(user, u64::MAX, domain).unwrap();
+            let client_id = ClientId::try_new(user, u64::MAX, domain).unwrap();
             let base64_user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
             let hex_client = "ffffffffffffffff";
             assert_eq!(
@@ -162,11 +162,11 @@ mod tests {
             let client = "1a2b";
             let domain = "wire.com";
             let subject = format!("im:wireapp:{user}/{client}@{domain}");
-            let parsed = QualifiedClientId::try_from(subject.as_str()).unwrap();
+            let parsed = ClientId::try_from(subject.as_str()).unwrap();
             assert_eq!(
                 parsed,
-                QualifiedClientId {
-                    user: Uuid::from_str(&QualifiedClientId::DEFAULT_USER.to_string()).unwrap(),
+                ClientId {
+                    user: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
                     client: 6699,
                     domain,
                 }
@@ -178,7 +178,7 @@ mod tests {
             let invalid_user = format!("{}abcd", "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc");
             let client = "1a2b";
             let subject = format!("im:wireapp:{invalid_user}/{client}@wire.com");
-            let parsed = QualifiedClientId::try_from(subject.as_str());
+            let parsed = ClientId::try_from(subject.as_str());
             assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
         }
 
@@ -187,7 +187,7 @@ mod tests {
             let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
             let invalid_client = "1g2g";
             let subject = format!("im:wireapp:{user}/{invalid_client}@wire.com");
-            let parsed = QualifiedClientId::try_from(subject.as_str());
+            let parsed = ClientId::try_from(subject.as_str());
             assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
         }
 
@@ -196,7 +196,7 @@ mod tests {
             let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
             let invalid_client = u128::MAX;
             let subject = format!("im:wireapp:{user}/{:x}@wire.com", invalid_client);
-            let parsed = QualifiedClientId::try_from(subject.as_str());
+            let parsed = ClientId::try_from(subject.as_str());
             assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
         }
     }

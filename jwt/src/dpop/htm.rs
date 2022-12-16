@@ -62,7 +62,7 @@ pub mod tests {
     #[test]
     #[wasm_bindgen_test]
     fn should_be_serialized_uppercase() {
-        assert_eq!(serde_json::to_value(&Htm::Post).unwrap(), serde_json::json!("POST"));
+        assert_eq!(serde_json::to_value(Htm::Post).unwrap(), serde_json::json!("POST"));
     }
 
     #[test]

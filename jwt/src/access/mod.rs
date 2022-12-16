@@ -57,7 +57,7 @@ impl Access {
 
     pub fn into_jwt_claims(
         self,
-        client_id: QualifiedClientId,
+        client_id: ClientId,
         nonce: BackendNonce,
         issuer: Htu,
         audience: Htu,

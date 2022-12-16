@@ -30,7 +30,7 @@ impl RustyJwtToolsFfi {
         let dpop = core::str::from_utf8(dpop);
         let user = unsafe { CStr::from_ptr(user).to_bytes() };
         let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
-        let client_id = QualifiedClientId::try_from_raw_parts(user, client_id, domain);
+        let client_id = ClientId::try_from_raw_parts(user, client_id, domain);
         let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() });
         let uri = unsafe { CStr::from_ptr(uri).to_bytes() }.try_into();
         let method = unsafe { CStr::from_ptr(method).to_bytes() }.try_into();

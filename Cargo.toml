@@ -1,5 +1,5 @@
 [workspace]
-members = ["jwt", "jwt-ffi", "cli"]
+members = ["e2e-identity", "jwt", "ffi", "cli", "acme"]
 resolver = "2"
 
 [patch.crates-io.biscuit]
@@ -9,4 +9,14 @@ branch = "feat/wasm"
 
 [patch.crates-io.jwt-simple]
 git = "https://github.com/beltram/rust-jwt-simple"
-branch = "master"
+branch = "wire"
+#path = "../rust-jwt-simple"
+
+#[patch.crates-io.testcontainers]
+#git = "https://github.com/beltram/testcontainers-rs"
+#branch = "dev"
+#path = "../testcontainers-rs/testcontainers"
+
+[patch.crates-io.rcgen]
+git = "https://github.com/wireapp/rcgen"
+tag = "v1.1.0-pre.core-crypto-0.6.0"

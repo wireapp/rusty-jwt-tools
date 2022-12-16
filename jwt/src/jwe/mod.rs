@@ -107,7 +107,7 @@ pub mod tests {
     use biscuit::jwe::Header;
     use rand::SeedableRng as _;
     use rand_chacha::ChaCha20Rng;
-    use serde_json::{json, Value};
+    use serde_json::Value;
     use wasm_bindgen_test::*;
 
     use helpers::*;
@@ -277,6 +277,7 @@ pub mod tests {
     #[cfg(not(target_family = "wasm"))]
     mod interop {
         use super::*;
+        use serde_json::json;
 
         // because josekit generates 32 bytes nonce for Key Wrapping whereas biscuit expects 12 bytes
         #[ignore]
@@ -329,7 +330,7 @@ pub mod tests {
                 JweAlgorithm::AES256GCM => josekit::jwe::A256GCMKW.decrypter_from_bytes(&key),
             }
             .unwrap();
-            let (payload, _) = josekit::jwt::decode_with_decrypter(&jwe, &decrypter).unwrap();
+            let (payload, _) = josekit::jwt::decode_with_decrypter(jwe, &decrypter).unwrap();
             Ok(payload.to_string())
         }
     }
