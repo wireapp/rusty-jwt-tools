@@ -6,16 +6,20 @@ use sha2::Digest;
 
 use crate::prelude::*;
 
-/// Represents a [JWK thumbprint][1] represented according to [JWT Proof-of-Possession Key Semantics][2]
+/// Represents a [JWK thumbprint][1] with it's according [URI][3] represented according to [JWT Proof-of-Possession Key Semantics][2]
 ///
 /// [1]: https://www.rfc-editor.org/rfc/rfc7638.html
 /// [2]: https://www.rfc-editor.org/rfc/rfc7800.html
+/// [3]: https://www.rfc-editor.org/rfc/rfc9278.html
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[cfg_attr(test, derive(Default))]
 pub struct JwkThumbprint {
     /// JWK thumbprint
     #[serde(rename = "kid")]
     pub kid: String,
+    /// JWK thumbprint uri
+    #[serde(rename = "uri")]
+    pub uri: String,
 }
 
 impl JwkThumbprint {
@@ -23,21 +27,35 @@ impl JwkThumbprint {
     pub fn generate(jwk: &Jwk, alg: HashAlgorithm) -> RustyJwtResult<Self> {
         let json = Self::compute_json(jwk);
         let json = serde_json::to_vec(&json)?;
-        let kid = match alg {
+        let (kid, uri) = match alg {
             HashAlgorithm::SHA256 => {
                 let mut hasher = sha2::Sha256::new();
                 hasher.update(json);
                 let hash = &hasher.finalize()[..];
-                base64::encode_config(hash, base64::URL_SAFE_NO_PAD)
+                let kid = base64::encode_config(hash, base64::URL_SAFE_NO_PAD);
+                let uri = Self::generate_uri(&kid, &alg);
+                (kid, uri)
             }
             HashAlgorithm::SHA384 => {
                 let mut hasher = sha2::Sha384::new();
                 hasher.update(json);
                 let hash = &hasher.finalize()[..];
-                base64::encode_config(hash, base64::URL_SAFE_NO_PAD)
+                let kid = base64::encode_config(hash, base64::URL_SAFE_NO_PAD);
+                let uri = Self::generate_uri(&kid, &alg);
+                (kid, uri)
             }
         };
-        Ok(Self { kid })
+        let res = Self { kid, uri };
+        Ok(res)
+    }
+
+    /// Generates JWK thumbprint uri.
+    pub fn generate_uri(jwk_kid: &str, hash_algorithm: &HashAlgorithm) -> String {
+        format!(
+            "urn:ietf:params:oauth:jwk-thumbprint:{}:{}",
+            hash_algorithm.to_string().to_ascii_lowercase(),
+            jwk_kid,
+        )
     }
 
     /// Filters out some JWK fields and lexicographically order them as per [RFC 7638 Section 3.2][1]
@@ -73,28 +91,45 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn rfc_test() {
-        let n = "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw".to_string();
-        let jwk = Jwk {
-            common: CommonParameters {
-                public_key_use: None,
-                key_operations: None,
-                algorithm: Some("RS256".to_string()),
-                key_id: Some("2011-04-29".to_string()),
-                x509_url: None,
-                x509_chain: None,
-                x509_sha1_fingerprint: None,
-                x509_sha256_fingerprint: None,
-            },
-            algorithm: AlgorithmParameters::RSA(RSAKeyParameters {
-                key_type: RSAKeyType::RSA,
-                n,
-                e: "AQAB".to_string(),
-            }),
-        };
-        let thumbprint = JwkThumbprint::generate(&jwk, HashAlgorithm::SHA256).unwrap();
-        assert_eq!(&thumbprint.kid, "NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs")
+    mod test_rfc {
+        use super::*;
+        #[test]
+        fn thumbprint_test() {
+            let jwk = generate_jwk();
+            let thumbprint = JwkThumbprint::generate(&jwk, HashAlgorithm::SHA256).unwrap();
+            assert_eq!(&thumbprint.kid, "NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs")
+        }
+
+        #[test]
+        fn uri_test() {
+            let jwk = generate_jwk();
+            let thumbprint = JwkThumbprint::generate(&jwk, HashAlgorithm::SHA256).unwrap();
+            assert_eq!(
+                &thumbprint.uri,
+                "urn:ietf:params:oauth:jwk-thumbprint:sha-256:NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs"
+            )
+        }
+
+        fn generate_jwk() -> Jwk {
+            let n = "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw".to_string();
+            Jwk {
+                common: CommonParameters {
+                    public_key_use: None,
+                    key_operations: None,
+                    algorithm: Some("RS256".to_string()),
+                    key_id: Some("2011-04-29".to_string()),
+                    x509_url: None,
+                    x509_chain: None,
+                    x509_sha1_fingerprint: None,
+                    x509_sha256_fingerprint: None,
+                },
+                algorithm: AlgorithmParameters::RSA(RSAKeyParameters {
+                    key_type: RSAKeyType::RSA,
+                    n,
+                    e: "AQAB".to_string(),
+                }),
+            }
+        }
     }
 
     mod test_vectors {
