@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 
+pub mod access_generate;
 pub mod access_verify;
 pub mod build;
 pub mod jwk;
@@ -44,6 +45,11 @@ enum Commands {
         #[command(flatten)]
         delegate: access_verify::AccessVerify,
     },
+    /// Generates a Dpop access token for testing purposes
+    GenerateAccess {
+        #[command(flatten)]
+        delegate: access_generate::AccessGenerate,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -53,6 +59,7 @@ fn main() -> anyhow::Result<()> {
         Commands::JwtParse { delegate } => delegate.execute()?,
         Commands::JwkParse { delegate } => delegate.execute()?,
         Commands::VerifyAccess { delegate } => delegate.execute()?,
+        Commands::GenerateAccess { delegate } => delegate.execute()?,
     };
     Ok(())
 }

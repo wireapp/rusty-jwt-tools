@@ -104,3 +104,23 @@ rusty-jwt-cli verify-access access-token.txt \
 ```
 
 *(you can also pipe the access-token like `cat access-token.txt | rusty-jwt-cli verify-access ...`)*
+
+### `generate-access`
+
+Prints a sample access token to stdout for testing purposes.
+
+Let's first generate a sample Ed25519 KeyPair in a file
+
+```bash
+openssl genpkey -algorithm ed25519 -outform PEM -out access-kp.pem
+```
+
+```bash
+rusty-jwt-cli generate-access \
+--challenge okAJ33Ym/XS2qmmhhh7aWSbBlYy4Ttm1EysqW8I/9ng \
+--nonce WE88EvOBzbqGerznM+2P/AadVf7374y0cH19sDSZA2A \
+--htu https://wire.example.com/clients/token \
+--client-id im:wireapp:YjQyNDE4YWVjYzdiNGZlYjk4NzhhNDk5YTdmMmU4NTM/211a945dca45eed1@wire.com \
+--expiry 300 \
+--key access-kp.pem
+```
