@@ -31,6 +31,5 @@ features = ["verify", "validate"]
 wasm-bindgen-test = "0.3"
 
 [features]
-# TODO: do not commit this
-default = ["docker"]
+default = []
 docker = ["dep:testcontainers", "dep:reqwest"]

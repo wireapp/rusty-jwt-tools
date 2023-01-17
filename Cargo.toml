@@ -5,17 +5,10 @@ resolver = "2"
 [patch.crates-io.biscuit]
 git = "https://github.com/beltram/biscuit"
 branch = "feat/wasm"
-#path = "../biscuit"
 
 [patch.crates-io.jwt-simple]
 git = "https://github.com/beltram/rust-jwt-simple"
 branch = "wire"
-#path = "../rust-jwt-simple"
-
-#[patch.crates-io.testcontainers]
-#git = "https://github.com/beltram/testcontainers-rs"
-#branch = "dev"
-#path = "../testcontainers-rs/testcontainers"
 
 [patch.crates-io.rcgen]
 git = "https://github.com/wireapp/rcgen"
