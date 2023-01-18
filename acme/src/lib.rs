@@ -16,7 +16,7 @@ pub mod prelude {
     pub use super::RustyAcme;
     use super::*;
     pub use account::AcmeAccount;
-    pub use chall::AcmeChall;
+    pub use chall::AcmeChallenge;
     pub use error::{RustyAcmeError, RustyAcmeResult};
     pub use identifier::AcmeIdentifier;
     pub use jws::AcmeJws;

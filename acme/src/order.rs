@@ -4,7 +4,7 @@ use rusty_jwt_tools::prelude::*;
 // Order creation
 impl RustyAcme {
     /// create a new order
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4
+    /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4).
     #[allow(clippy::too_many_arguments)]
     pub fn new_order_request(
         handle: String,
@@ -39,18 +39,18 @@ impl RustyAcme {
     }
 
     /// parse response from order creation
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4
+    /// [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
     pub fn new_order_response(response: serde_json::Value) -> RustyAcmeResult<AcmeOrder> {
         let order = serde_json::from_value::<AcmeOrder>(response)?;
         match order.status {
-            OrderStatus::Pending => {}
-            OrderStatus::Processing | OrderStatus::Valid | OrderStatus::Ready => {
+            AcmeOrderStatus::Pending => {}
+            AcmeOrderStatus::Processing | AcmeOrderStatus::Valid | AcmeOrderStatus::Ready => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "An order is not supposed to be 'processing | valid | ready' at this point. \
                     You should only be using this method after account creation, not after finalize",
                 ))
             }
-            OrderStatus::Invalid => return Err(AcmeOrderError::Invalid)?,
+            AcmeOrderStatus::Invalid => return Err(AcmeOrderError::Invalid)?,
         }
         order.verify()?;
         Ok(order)
@@ -60,7 +60,7 @@ impl RustyAcme {
 // Long poll order until ready
 impl RustyAcme {
     /// check an order status until it becomes ready
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4
+    /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
     pub fn check_order_request(
         order_url: url::Url,
         account: &AcmeAccount,
@@ -78,32 +78,32 @@ impl RustyAcme {
     }
 
     /// parse response from order check
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4
+    /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
     pub fn check_order_response(response: serde_json::Value) -> RustyAcmeResult<AcmeOrder> {
         let order = serde_json::from_value::<AcmeOrder>(response)?;
         match order.status {
-            OrderStatus::Ready => {}
-            OrderStatus::Pending => {
+            AcmeOrderStatus::Ready => {}
+            AcmeOrderStatus::Pending => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "An order is not supposed to be 'pending' at this point. \
                     It means you have forgotten to create authorizations",
                 ))
             }
-            OrderStatus::Processing => {
+            AcmeOrderStatus::Processing => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "An order is not supposed to be 'processing' at this point. \
                     You should not have called finalize yet ; in fact, you should only call finalize \
                     once this order turns 'ready'",
                 ))
             }
-            OrderStatus::Valid => {
+            AcmeOrderStatus::Valid => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "An order is not supposed to be 'valid' at this point. \
                     It means a certificate has already been delivered which defeats the purpose \
                     of using this method",
                 ))
             }
-            OrderStatus::Invalid => return Err(AcmeOrderError::Invalid)?,
+            AcmeOrderStatus::Invalid => return Err(AcmeOrderError::Invalid)?,
         }
         order.verify()?;
         Ok(order)
@@ -141,13 +141,13 @@ pub struct AcmeOrderRequest {
     pub not_after: Option<time::OffsetDateTime>,
 }
 
-/// For creating an order
-/// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4
+/// Result of an order creation
+/// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(test, derive(Clone))]
 #[serde(rename_all = "camelCase")]
 pub struct AcmeOrder {
-    pub status: OrderStatus,
+    pub status: AcmeOrderStatus,
     pub finalize: url::Url,
     pub identifiers: Vec<AcmeIdentifier>,
     pub authorizations: Vec<url::Url>,
@@ -200,7 +200,7 @@ impl Default for AcmeOrder {
         let now = time::OffsetDateTime::now_utc();
         let tomorrow = now + time::Duration::days(1);
         Self {
-            status: OrderStatus::Ready,
+            status: AcmeOrderStatus::Ready,
             finalize: "https://acme-server/acme/order/n8LovurSfUFeeGSzD8nuGQwOUeIfSjhs/finalize"
                 .parse()
                 .unwrap(),
@@ -217,10 +217,10 @@ impl Default for AcmeOrder {
     }
 }
 
-/// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6
+/// see [RFC 8555 Section 7.1.6](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6)
 #[derive(Debug, Copy, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum OrderStatus {
+pub enum AcmeOrderStatus {
     Pending,
     Ready,
     Processing,
@@ -342,7 +342,7 @@ mod tests {
         #[wasm_bindgen_test]
         fn should_succeed_when_pending() {
             let order = AcmeOrder {
-                status: OrderStatus::Pending,
+                status: AcmeOrderStatus::Pending,
                 ..Default::default()
             };
             let order = serde_json::to_value(&order).unwrap();
@@ -353,7 +353,7 @@ mod tests {
         #[wasm_bindgen_test]
         fn should_fail_when_not_pending() {
             let order = AcmeOrder {
-                status: OrderStatus::Ready,
+                status: AcmeOrderStatus::Ready,
                 ..Default::default()
             };
             let order = serde_json::to_value(&order).unwrap();
@@ -363,7 +363,7 @@ mod tests {
             ));
 
             let order = AcmeOrder {
-                status: OrderStatus::Processing,
+                status: AcmeOrderStatus::Processing,
                 ..Default::default()
             };
             let order = serde_json::to_value(&order).unwrap();
@@ -373,7 +373,7 @@ mod tests {
             ));
 
             let order = AcmeOrder {
-                status: OrderStatus::Valid,
+                status: AcmeOrderStatus::Valid,
                 ..Default::default()
             };
             let order = serde_json::to_value(&order).unwrap();
@@ -387,7 +387,7 @@ mod tests {
         #[wasm_bindgen_test]
         fn should_fail_when_invalid() {
             let order = AcmeOrder {
-                status: OrderStatus::Invalid,
+                status: AcmeOrderStatus::Invalid,
                 ..Default::default()
             };
             let order = serde_json::to_value(&order).unwrap();
@@ -405,7 +405,7 @@ mod tests {
         #[wasm_bindgen_test]
         fn should_succeed_when_ready() {
             let order = AcmeOrder {
-                status: OrderStatus::Ready,
+                status: AcmeOrderStatus::Ready,
                 ..Default::default()
             };
             let order = serde_json::to_value(&order).unwrap();
@@ -415,7 +415,11 @@ mod tests {
         #[test]
         #[wasm_bindgen_test]
         fn should_fail_when_not_pending() {
-            for status in [OrderStatus::Pending, OrderStatus::Processing, OrderStatus::Valid] {
+            for status in [
+                AcmeOrderStatus::Pending,
+                AcmeOrderStatus::Processing,
+                AcmeOrderStatus::Valid,
+            ] {
                 let order = AcmeOrder {
                     status,
                     ..Default::default()
@@ -432,7 +436,7 @@ mod tests {
         #[wasm_bindgen_test]
         fn should_fail_when_invalid() {
             let order = AcmeOrder {
-                status: OrderStatus::Invalid,
+                status: AcmeOrderStatus::Invalid,
                 ..Default::default()
             };
             let order = serde_json::to_value(&order).unwrap();

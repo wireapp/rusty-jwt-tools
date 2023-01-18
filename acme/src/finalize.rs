@@ -1,13 +1,14 @@
 use crate::{
     account::AcmeAccount,
     jws::AcmeJws,
-    order::{AcmeOrder, AcmeOrderError, OrderStatus},
+    order::{AcmeOrder, AcmeOrderError, AcmeOrderStatus},
     prelude::*,
 };
 
 use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
+    /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
     pub fn finalize_req(
         domains: Vec<String>,
         order: AcmeOrder,
@@ -46,6 +47,7 @@ impl RustyAcme {
         Ok(csr)
     }
 
+    /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
     pub fn finalize_response(response: serde_json::Value) -> RustyAcmeResult<AcmeFinalize> {
         let finalize = serde_json::from_value::<AcmeFinalize>(response)?;
         Ok(finalize)
@@ -76,14 +78,14 @@ pub struct AcmeFinalize {
 impl AcmeFinalize {
     pub fn verify(&self) -> RustyAcmeResult<()> {
         match self.order.status {
-            OrderStatus::Valid => {}
-            OrderStatus::Pending | OrderStatus::Processing | OrderStatus::Ready => {
+            AcmeOrderStatus::Valid => {}
+            AcmeOrderStatus::Pending | AcmeOrderStatus::Processing | AcmeOrderStatus::Ready => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "Finalize is not supposed to be 'pending | processing | ready' at this point. \
                     It means you have forgotten previous steps",
                 ))
             }
-            OrderStatus::Invalid => return Err(AcmeFinalizeError(AcmeOrderError::Invalid))?,
+            AcmeOrderStatus::Invalid => return Err(AcmeFinalizeError(AcmeOrderError::Invalid))?,
         }
         self.order.verify().map_err(|e| match e {
             RustyAcmeError::OrderError(e) => RustyAcmeError::FinalizeError(AcmeFinalizeError(e)),
@@ -101,7 +103,7 @@ impl Default for AcmeFinalize {
                 .parse()
                 .unwrap(),
             order: AcmeOrder {
-                status: OrderStatus::Valid,
+                status: AcmeOrderStatus::Valid,
                 ..Default::default()
             },
         }
@@ -150,7 +152,7 @@ mod tests {
         fn should_succeed_when_valid() {
             let finalize = AcmeFinalize {
                 order: AcmeOrder {
-                    status: OrderStatus::Valid,
+                    status: AcmeOrderStatus::Valid,
                     ..Default::default()
                 },
                 ..Default::default()
@@ -165,7 +167,7 @@ mod tests {
             let yesterday = time::OffsetDateTime::now_utc() - time::Duration::days(1);
             let finalize = AcmeFinalize {
                 order: AcmeOrder {
-                    status: OrderStatus::Valid,
+                    status: AcmeOrderStatus::Valid,
                     expires: Some(yesterday),
                     ..Default::default()
                 },
@@ -180,7 +182,11 @@ mod tests {
         #[test]
         #[wasm_bindgen_test]
         fn should_fail_when_status_not_valid() {
-            for status in [OrderStatus::Pending, OrderStatus::Processing, OrderStatus::Ready] {
+            for status in [
+                AcmeOrderStatus::Pending,
+                AcmeOrderStatus::Processing,
+                AcmeOrderStatus::Ready,
+            ] {
                 let finalize = AcmeFinalize {
                     order: AcmeOrder {
                         status,
@@ -200,7 +206,7 @@ mod tests {
         fn should_fail_when_status_invalid() {
             let finalize = AcmeFinalize {
                 order: AcmeOrder {
-                    status: OrderStatus::Invalid,
+                    status: AcmeOrderStatus::Invalid,
                     ..Default::default()
                 },
                 ..Default::default()

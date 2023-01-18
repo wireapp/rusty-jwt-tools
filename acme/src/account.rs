@@ -4,7 +4,7 @@ use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
     /// 5. Create a new acme account
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3
+    /// see [RFC 8555 Section 7.3](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3)
     pub fn new_account_request(
         directory: &AcmeDirectory,
         alg: JwsAlgorithm,
@@ -24,7 +24,7 @@ impl RustyAcme {
     }
 
     /// 6. parse the response from `POST /acme/new-account`
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3
+    /// see [RFC 8555 Section 7.3](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3)
     pub fn new_account_response(response: serde_json::Value) -> RustyAcmeResult<AcmeAccount> {
         let account = serde_json::from_value::<AcmeAccount>(response)
             .map_err(|_| RustyAcmeError::SmallstepImplementationError("Invalid account response"))?;
@@ -69,11 +69,11 @@ pub struct AcmeAccountRequest {
 }
 
 /// Account creation response
-/// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3
+/// see [RFC 8555 Section 7.3](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3)
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AcmeAccount {
-    pub status: AccountStatus,
+    pub status: AcmeAccountStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub orders: Option<url::Url>,
 }
@@ -110,9 +110,9 @@ impl AcmeAccount {
                 "Newly created account should have 'orders' url",
             ))?;
         match self.status {
-            AccountStatus::Valid => Ok(()),
-            AccountStatus::Deactivated => Err(AcmeAccountError::Deactivated)?,
-            AccountStatus::Revoked => Err(AcmeAccountError::Revoked)?,
+            AcmeAccountStatus::Valid => Ok(()),
+            AcmeAccountStatus::Deactivated => Err(AcmeAccountError::Deactivated)?,
+            AcmeAccountStatus::Revoked => Err(AcmeAccountError::Revoked)?,
         }
     }
 }
@@ -121,7 +121,7 @@ impl AcmeAccount {
 impl Default for AcmeAccount {
     fn default() -> Self {
         Self {
-            status: AccountStatus::Valid,
+            status: AcmeAccountStatus::Valid,
             orders: Some(
                 "https://acme-server/acme/account/muYiJmuJRn9u2L0tdI5bu11T7QqqPR1u/orders"
                     .parse()
@@ -131,10 +131,10 @@ impl Default for AcmeAccount {
     }
 }
 
-/// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6
+/// see [RFC 8555 Section 7.1.6](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6)
 #[derive(Debug, Copy, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum AccountStatus {
+pub enum AcmeAccountStatus {
     Valid,
     Deactivated,
     Revoked,
@@ -186,7 +186,7 @@ mod tests {
         #[wasm_bindgen_test]
         fn should_succeed_when_status_valid() {
             let account = AcmeAccount {
-                status: AccountStatus::Valid,
+                status: AcmeAccountStatus::Valid,
                 ..Default::default()
             };
             assert!(account.verify().is_ok());
@@ -196,7 +196,7 @@ mod tests {
         #[wasm_bindgen_test]
         fn should_fail_when_status_deactivated() {
             let account = AcmeAccount {
-                status: AccountStatus::Deactivated,
+                status: AcmeAccountStatus::Deactivated,
                 ..Default::default()
             };
             assert!(matches!(
@@ -209,7 +209,7 @@ mod tests {
         #[wasm_bindgen_test]
         fn should_fail_when_status_revoked() {
             let account = AcmeAccount {
-                status: AccountStatus::Revoked,
+                status: AcmeAccountStatus::Revoked,
                 ..Default::default()
             };
             assert!(matches!(

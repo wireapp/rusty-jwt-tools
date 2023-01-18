@@ -1,4 +1,4 @@
-/// /// Represent an identifier in an ACME Order
+/// Represent an identifier in an ACME Order
 #[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(test, derive(Clone))]
 #[serde(tag = "type", content = "value", rename_all = "camelCase")]

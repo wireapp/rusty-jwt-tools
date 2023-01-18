@@ -21,7 +21,7 @@ pub struct StepCaImage {
 
 impl StepCaImage {
     const NAME: &'static str = "smallstep/step-ca";
-    const TAG: &'static str = "latest";
+    const TAG: &'static str = "0.23.0";
     const CA_NAME: &'static str = "wire";
     pub const ACME_PROVISIONER_NAME: &'static str = "wire-acme";
     pub const PORT: u16 = 9000;
@@ -127,14 +127,12 @@ impl Image for StepCaImage {
     fn exec_after_start(&self, _cs: ContainerState) -> Vec<ExecCommand> {
         if self.is_builder {
             let cmd = format!("step ca provisioner add {} --type ACME", Self::ACME_PROVISIONER_NAME);
-            let ready_conditions = vec![WaitFor::seconds(1)];
-            vec![
-                ExecCommand { cmd, ready_conditions },
-                ExecCommand {
-                    cmd: "chmod +w /home/step/password".to_string(),
-                    ready_conditions: vec![WaitFor::seconds(1)],
-                },
-            ]
+            let ready_conditions = vec![WaitFor::seconds(2)];
+            let permission_cmd = ExecCommand {
+                cmd: "chmod +w /home/step/password".to_string(),
+                ready_conditions: vec![WaitFor::seconds(1)],
+            };
+            vec![ExecCommand { cmd, ready_conditions }, permission_cmd]
         } else {
             vec![]
         }

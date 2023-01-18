@@ -6,7 +6,7 @@ impl RustyAcme {
     const CERTIFICATE_END: &'static str = "-----END CERTIFICATE-----";
 
     /// For fetching the generated certificate
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2
+    /// see [RFC 8555 Section 7.4.2](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2)
     pub fn certificate_req(
         finalize: AcmeFinalize,
         account: AcmeAccount,
@@ -23,7 +23,7 @@ impl RustyAcme {
         Ok(req)
     }
 
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2
+    /// see [RFC 8555 Section 7.4.2](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2)
     pub fn certificate_response(response: String) -> RustyAcmeResult<Vec<String>> {
         response
             .split(Self::CERTIFICATE_BEGIN)

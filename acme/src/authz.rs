@@ -1,6 +1,6 @@
 use crate::{
     account::AcmeAccount,
-    chall::{AcmeChall, ChallType},
+    chall::{AcmeChallenge, AcmeChallengeType},
     jws::AcmeJws,
     prelude::*,
 };
@@ -8,7 +8,7 @@ use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
     /// create authorizations
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5
+    /// see [RFC 8555 Section 7.5](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5)
     pub fn new_authz_request(
         url: &url::Url,
         account: &AcmeAccount,
@@ -26,7 +26,7 @@ impl RustyAcme {
     }
 
     /// parse the response from `POST /acme/authz/{authz_id}`
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5
+    /// [RFC 8555 Section 7.5](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5)
     pub fn new_authz_response(response: serde_json::Value) -> RustyAcmeResult<AcmeAuthz> {
         let authz = serde_json::from_value::<AcmeAuthz>(response)?;
         match authz.status {
@@ -62,30 +62,34 @@ pub enum AcmeAuthzError {
     Deactivated,
 }
 
-/// For creating an authorization
-/// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5
+/// Result of an authorization creation
+/// see [RFC 8555 Section 7.5](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5)
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(test, derive(Clone))]
 #[serde(rename_all = "camelCase")]
 pub struct AcmeAuthz {
+    /// Should be pending for a newly created authorization
     pub status: AuthzStatus,
     #[serde(skip_serializing_if = "Option::is_none", with = "time::serde::rfc3339::option")]
+    /// Expiration time as [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339)
     pub expires: Option<time::OffsetDateTime>,
-    pub challenges: Vec<AcmeChall>,
+    /// Challenges to complete later
+    pub challenges: Vec<AcmeChallenge>,
+    /// DNS entry associated with those challenge
     pub identifier: AcmeIdentifier,
 }
 
 impl AcmeAuthz {
-    pub fn http_challenge(&self) -> Option<&AcmeChall> {
-        self.challenges.iter().find(|c| c.typ == ChallType::Http01)
+    pub fn http_challenge(&self) -> Option<&AcmeChallenge> {
+        self.challenges.iter().find(|c| c.typ == AcmeChallengeType::Http01)
     }
 
-    pub fn wire_http_challenge(&self) -> Option<&AcmeChall> {
-        self.challenges.iter().find(|c| c.typ == ChallType::WireHttp01)
+    pub fn wire_http_challenge(&self) -> Option<&AcmeChallenge> {
+        self.challenges.iter().find(|c| c.typ == AcmeChallengeType::WireHttp01)
     }
 
-    pub fn wire_oidc_challenge(&self) -> Option<&AcmeChall> {
-        self.challenges.iter().find(|c| c.typ == ChallType::WireOidc01)
+    pub fn wire_oidc_challenge(&self) -> Option<&AcmeChallenge> {
+        self.challenges.iter().find(|c| c.typ == AcmeChallengeType::WireOidc01)
     }
 
     pub fn verify(&self) -> RustyAcmeResult<()> {
@@ -111,9 +115,9 @@ impl Default for AcmeAuthz {
             status: AuthzStatus::Pending,
             expires: Some(time::OffsetDateTime::now_utc()),
             identifier: AcmeIdentifier::Dns("wire.com".to_string()),
-            challenges: vec![AcmeChall {
+            challenges: vec![AcmeChallenge {
                 status: None,
-                typ: ChallType::WireHttp01,
+                typ: AcmeChallengeType::WireHttp01,
                 url: "https://wire.com/acme/chall/prV_B7yEyA4".parse().unwrap(),
                 token: "DGyRejmCefe7v4NfDGDKfA".to_string(),
             }],
@@ -121,7 +125,7 @@ impl Default for AcmeAuthz {
     }
 }
 
-/// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6
+/// see [RFC 8555 Section 7.1.6](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6)
 #[derive(Debug, Copy, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthzStatus {
