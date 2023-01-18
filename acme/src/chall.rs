@@ -5,9 +5,9 @@ use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
     /// 17. parse the response from `POST /acme/challenge/{token}`
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1
+    /// see [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
     pub fn new_chall_request(
-        handle_chall: AcmeChall,
+        handle_chall: AcmeChallenge,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
         kp: &Pem,
@@ -23,14 +23,14 @@ impl RustyAcme {
     }
 
     /// 18. parse the response from `POST /acme/challenge/{token}`
-    /// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1
-    pub fn new_chall_response(response: serde_json::Value) -> RustyAcmeResult<AcmeChall> {
-        let chall = serde_json::from_value::<AcmeChall>(response)?;
+    /// [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
+    pub fn new_chall_response(response: serde_json::Value) -> RustyAcmeResult<AcmeChallenge> {
+        let chall = serde_json::from_value::<AcmeChallenge>(response)?;
         match chall.status {
-            Some(ChallStatus::Valid) => {}
-            Some(ChallStatus::Processing) => return Err(AcmeChallError::Processing)?,
-            Some(ChallStatus::Invalid) => return Err(AcmeChallError::Invalid)?,
-            Some(ChallStatus::Pending) => {
+            Some(AcmeChallengeStatus::Valid) => {}
+            Some(AcmeChallengeStatus::Processing) => return Err(AcmeChallError::Processing)?,
+            Some(AcmeChallengeStatus::Invalid) => return Err(AcmeChallError::Invalid)?,
+            Some(AcmeChallengeStatus::Pending) => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "A challenge is not supposed to be pending at this point. \
                     It must either be 'valid' or 'processing'.",
@@ -57,22 +57,26 @@ pub enum AcmeChallError {
 }
 
 /// For creating a challenge
-/// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1
+/// see [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AcmeChall {
+pub struct AcmeChallenge {
     #[serde(rename = "type")]
-    pub typ: ChallType,
+    /// Should be `wire-http-01` or `wire-oidc-01`
+    pub typ: AcmeChallengeType,
+    /// URL to call for the acme server to complete the challenge
     pub url: url::Url,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<ChallStatus>,
+    /// Should be `valid`
+    pub status: Option<AcmeChallengeStatus>,
+    /// The acme challenge value to store in the Dpop token
     pub token: String,
 }
 
-/// see https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6
+/// see [RFC 8555 Section 7.1.6](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6)
 #[derive(Debug, Copy, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum ChallStatus {
+pub enum AcmeChallengeStatus {
     Pending,
     Processing,
     Valid,
@@ -80,7 +84,7 @@ pub enum ChallStatus {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum ChallType {
+pub enum AcmeChallengeType {
     #[serde(rename = "http-01")]
     Http01,
     #[serde(rename = "dns-01")]
@@ -114,7 +118,7 @@ mod tests {
             "status": "pending",
             "token": "LoqXcYV8q5ONbJQxbmR7SCTNo3tiAXDfowyjxAjEuX0"
         });
-        assert!(serde_json::from_value::<AcmeChall>(rfc_sample).is_ok());
+        assert!(serde_json::from_value::<AcmeChallenge>(rfc_sample).is_ok());
 
         // dns challenge
         // see https://www.rfc-editor.org/rfc/rfc8555.html#section-8.4
@@ -124,25 +128,34 @@ mod tests {
             "status": "pending",
             "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
         });
-        assert!(serde_json::from_value::<AcmeChall>(rfc_sample).is_ok());
+        assert!(serde_json::from_value::<AcmeChallenge>(rfc_sample).is_ok());
     }
 
     #[test]
     #[wasm_bindgen_test]
     fn chall_type_should_deserialize_as_expected() {
         use serde_json::from_value as deser;
-        assert_eq!(deser::<ChallType>(json!("http-01")).unwrap(), ChallType::Http01);
-        assert_eq!(deser::<ChallType>(json!("dns-01")).unwrap(), ChallType::Dns01);
-        assert_eq!(deser::<ChallType>(json!("tls-alpn-01")).unwrap(), ChallType::TlsAlpn01);
         assert_eq!(
-            deser::<ChallType>(json!("wire-http-01")).unwrap(),
-            ChallType::WireHttp01
+            deser::<AcmeChallengeType>(json!("http-01")).unwrap(),
+            AcmeChallengeType::Http01
         );
         assert_eq!(
-            deser::<ChallType>(json!("wire-oidc-01")).unwrap(),
-            ChallType::WireOidc01
+            deser::<AcmeChallengeType>(json!("dns-01")).unwrap(),
+            AcmeChallengeType::Dns01
         );
-        assert!(deser::<ChallType>(json!("Http-01")).is_err());
-        assert!(deser::<ChallType>(json!("http01")).is_err());
+        assert_eq!(
+            deser::<AcmeChallengeType>(json!("tls-alpn-01")).unwrap(),
+            AcmeChallengeType::TlsAlpn01
+        );
+        assert_eq!(
+            deser::<AcmeChallengeType>(json!("wire-http-01")).unwrap(),
+            AcmeChallengeType::WireHttp01
+        );
+        assert_eq!(
+            deser::<AcmeChallengeType>(json!("wire-oidc-01")).unwrap(),
+            AcmeChallengeType::WireOidc01
+        );
+        assert!(deser::<AcmeChallengeType>(json!("Http-01")).is_err());
+        assert!(deser::<AcmeChallengeType>(json!("http01")).is_err());
     }
 }
