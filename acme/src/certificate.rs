@@ -41,6 +41,7 @@ impl RustyAcme {
         let certificate = format!("{}\n{certificate}\n{}", Self::CERTIFICATE_BEGIN, Self::CERTIFICATE_END);
         let pem = x509_parser::prelude::parse_x509_pem(certificate.as_bytes()).map(|(_, cert)| cert)?;
         let _certificate = pem.parse_x509()?;
+
         Ok(())
     }
 }

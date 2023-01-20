@@ -44,7 +44,7 @@ impl BuildJwt {
 
         let jwt = RustyJwtTools::generate_jwt(alg, header, Some(claims), &kp, true).unwrap();
 
-        println!("{}", jwt);
+        println!("{jwt}");
         Ok(())
     }
 

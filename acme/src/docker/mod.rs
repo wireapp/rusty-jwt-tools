@@ -1,15 +1,76 @@
 #![cfg(not(target_family = "wasm"))]
 
+pub mod dex;
+pub mod wiremock;
+
 use jwt_simple::reexports::rand;
 use reqwest::Client;
 use std::{collections::HashMap, path::PathBuf};
-use testcontainers::{
-    clients::Cli,
-    core::{ContainerState, ExecCommand, WaitFor},
-    Container, Image, ImageArgs, RunnableImage,
-};
+use testcontainers::{clients::Cli, core::WaitFor, Container, Image, RunnableImage};
 
 pub const NETWORK: &str = "wire";
+
+#[derive(Debug, Clone)]
+pub struct StepCaConfig {
+    pub sign_key: String,
+    pub issuer: String,
+    pub audience: String,
+    pub jwks_uri: String,
+}
+
+impl StepCaConfig {
+    fn cfg(self) -> serde_json::Value {
+        // see https://github.com/wireapp/smallstep-certificates/blob/b6019aeb7ffaae1c978c87760656980162e9b785/helm/values.yaml#L88-L100
+        let provisioner = StepCaImage::ACME_PROVISIONER;
+        let Self {
+            sign_key,
+            issuer,
+            audience,
+            jwks_uri,
+        } = self;
+        serde_json::json!({
+            "provisioners": [
+                {
+                    "type": "ACME",
+                    "name": provisioner,
+                    "forceCN": true,
+                    "claims": {
+                        "disableRenewal": false,
+                        "allowRenewalAfterExpiry": false
+                    },
+                    "options": {
+                        "oidc": {
+                            "provider": {
+                                "issuer": issuer,
+                                "authorization_endpoint": "https://authorization_endpoint.com",
+                                "token_endpoint": "https://token_endpoint.com",
+                                "jwks_uri": jwks_uri,
+                                "userinfo_endpoint": "https://userinfo_endpoint.com",
+                                "id_token_signing_alg_values_supported": [
+                                    "ES256",
+                                    "ES384",
+                                    "EdDSA"
+                                ]
+                            },
+                            "config": {
+                                "client-id": audience,
+                                "support-signing-algs": [
+                                    "ES256",
+                                    "ES384",
+                                    "EdDSA"
+                                ]
+                            }
+                        },
+                        "dpop": {
+                            "key": sign_key,
+                            "validation-exec-path": "/usr/local/bin/rusty-jwt-cli"
+                        }
+                    }
+                }
+            ]
+        })
+    }
+}
 
 #[derive(Debug)]
 pub struct StepCaImage {
@@ -20,13 +81,15 @@ pub struct StepCaImage {
 }
 
 impl StepCaImage {
-    const NAME: &'static str = "smallstep/step-ca";
-    const TAG: &'static str = "0.23.0";
+    const NAME: &'static str = "quay.io/wire/smallstep-acme";
+    const TAG: &'static str = "0.0.42-test.35";
+
     const CA_NAME: &'static str = "wire";
-    pub const ACME_PROVISIONER_NAME: &'static str = "wire-acme";
+    pub const ACME_PROVISIONER: &'static str = "acme";
+    pub const ACME_ADMIN: &'static str = "admin";
     pub const PORT: u16 = 9000;
 
-    pub fn run(docker: &Cli) -> (u16, Client, Container<StepCaImage>) {
+    pub fn run(docker: &Cli, stepca_cfg: StepCaConfig) -> (u16, Client, Container<StepCaImage>) {
         // We have to create an ACME provisioner at startup which is done in `exec_after_start`.
         // Since step-ca does not support hot reload of the configuration and we cannot
         // restart the process within the container with testcontainers cli, we will start a first
@@ -42,6 +105,16 @@ impl StepCaImage {
         drop(builder_container);
 
         let image: RunnableImage<Self> = Self::new(false, Some(host_volume.clone())).into();
+
+        // Alter the configuration by adding an ACME provisioner manually, waaaaay simpler than using the cli
+        let cfg_file = host_volume.join("config").join("ca.json");
+        let cfg_content = std::fs::read_to_string(&cfg_file).unwrap();
+        let mut cfg = serde_json::from_str::<serde_json::Value>(&cfg_content).unwrap();
+        cfg.as_object_mut()
+            .unwrap()
+            .insert("authority".to_string(), stepca_cfg.cfg());
+        std::fs::write(&cfg_file, serde_json::to_string_pretty(&cfg).unwrap()).unwrap();
+
         let image = image.with_network(NETWORK);
         let node = docker.run(image);
         let port = node.get_host_port_ipv4(Self::PORT);
@@ -78,12 +151,14 @@ impl StepCaImage {
         // required in Github action rootless container
         use std::os::unix::fs::PermissionsExt as _;
         std::fs::set_permissions(&host_volume, std::fs::Permissions::from_mode(0o777)).unwrap();
+
         let host_volume_str = host_volume.as_os_str().to_str().unwrap();
         Self {
             is_builder,
             volumes: HashMap::from_iter(vec![(host_volume_str.to_string(), "/home/step".to_string())]),
             env_vars: HashMap::from_iter(
                 vec![
+                    ("DOCKER_STEPCA_INIT_PROVISIONER_NAME", Self::CA_NAME),
                     ("DOCKER_STEPCA_INIT_NAME", Self::CA_NAME),
                     ("DOCKER_STEPCA_INIT_DNS_NAMES", "localhost,$(hostname -f)"),
                     ("DOCKER_STEPCA_INIT_ACME", "true"),
@@ -122,96 +197,6 @@ impl Image for StepCaImage {
 
     fn expose_ports(&self) -> Vec<u16> {
         vec![Self::PORT]
-    }
-
-    fn exec_after_start(&self, _cs: ContainerState) -> Vec<ExecCommand> {
-        if self.is_builder {
-            let cmd = format!("step ca provisioner add {} --type ACME", Self::ACME_PROVISIONER_NAME);
-            let ready_conditions = vec![WaitFor::seconds(2)];
-            let permission_cmd = ExecCommand {
-                cmd: "chmod +w /home/step/password".to_string(),
-                ready_conditions: vec![WaitFor::seconds(1)],
-            };
-            vec![ExecCommand { cmd, ready_conditions }, permission_cmd]
-        } else {
-            vec![]
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct WiremockImage {
-    pub volumes: HashMap<String, String>,
-    pub env_vars: HashMap<String, String>,
-    pub stubs_dir: PathBuf,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct WiremockArgs;
-
-impl ImageArgs for WiremockArgs {
-    fn into_iterator(self) -> Box<dyn Iterator<Item = String>> {
-        Box::new(vec!["/stubs".to_string(), "-p".to_string(), WiremockImage::PORT.to_string()].into_iter())
-    }
-}
-
-impl WiremockImage {
-    const NAME: &'static str = "ghcr.io/beltram/stubr";
-    const TAG: &'static str = "latest";
-    pub const PORT: u16 = 80;
-
-    pub fn run<'a>(docker: &'a Cli, host: &str, stubs: Vec<serde_json::Value>) -> Container<'a, WiremockImage> {
-        let instance = Self::default();
-        instance.write_stubs(stubs);
-        let image: RunnableImage<Self> = instance.into();
-        let image = image.with_container_name(host).with_network(NETWORK);
-        docker.run(image)
-    }
-
-    fn write_stubs(&self, stubs: Vec<serde_json::Value>) {
-        for stub in stubs {
-            let stub_name = format!("{}.json", rand_str());
-            let stub_content = serde_json::to_string_pretty(&stub).unwrap();
-            let stub_file = self.stubs_dir.join(stub_name);
-            std::fs::write(stub_file, stub_content).unwrap();
-        }
-    }
-}
-
-impl Image for WiremockImage {
-    type Args = WiremockArgs;
-
-    fn name(&self) -> String {
-        Self::NAME.to_string()
-    }
-
-    fn tag(&self) -> String {
-        Self::TAG.to_string()
-    }
-
-    fn ready_conditions(&self) -> Vec<WaitFor> {
-        vec![WaitFor::seconds(1)]
-    }
-
-    fn volumes(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
-        Box::new(self.volumes.iter())
-    }
-
-    fn expose_ports(&self) -> Vec<u16> {
-        vec![Self::PORT]
-    }
-}
-
-impl Default for WiremockImage {
-    fn default() -> Self {
-        let stubs_dir = std::env::temp_dir().join(rand_str());
-        std::fs::create_dir(&stubs_dir).unwrap();
-        let host_volume = stubs_dir.as_os_str().to_str().unwrap();
-        Self {
-            volumes: HashMap::from_iter(vec![(host_volume.to_string(), "/stubs".to_string())]),
-            env_vars: HashMap::default(),
-            stubs_dir,
-        }
     }
 }
 

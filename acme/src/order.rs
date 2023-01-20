@@ -7,8 +7,10 @@ impl RustyAcme {
     /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4).
     #[allow(clippy::too_many_arguments)]
     pub fn new_order_request(
+        display_name: String,
+        domain: String,
+        client_id: ClientId,
         handle: String,
-        client_id: String,
         expiry: core::time::Duration,
         directory: &AcmeDirectory,
         account: &AcmeAccount,
@@ -19,7 +21,7 @@ impl RustyAcme {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
 
-        let identifiers = vec![handle.parse()?, client_id.parse()?];
+        let identifiers = vec![AcmeIdentifier::try_new(display_name, domain, client_id, handle)?];
         let not_before = time::OffsetDateTime::now_utc();
         let not_after = not_before + expiry;
         let payload = AcmeOrderRequest {
@@ -204,7 +206,7 @@ impl Default for AcmeOrder {
             finalize: "https://acme-server/acme/order/n8LovurSfUFeeGSzD8nuGQwOUeIfSjhs/finalize"
                 .parse()
                 .unwrap(),
-            identifiers: vec!["wire.com".parse().unwrap()],
+            identifiers: vec![AcmeIdentifier::default()],
             authorizations: vec![
                 "https://acme-server/acme/wire-acme/authz/s8t8j1johmOCgsLbynUbXujO6pG7RbEd"
                     .parse()
@@ -241,11 +243,11 @@ mod tests {
 
         #[test]
         #[wasm_bindgen_test]
-        fn can_deserialize_rfc_sample_request() {
+        fn can_deserialize_sample_request() {
             let rfc_sample = json!({
                 "identifiers": [
-                  { "type": "dns", "value": "www.example.org" },
-                  { "type": "dns", "value": "example.org" }
+                  { "type": "wireapp-id", "value": "www.example.org" },
+                  { "type": "wireapp-id", "value": "example.org" }
                 ],
                 "notBefore": "2016-01-01T00:04:00+04:00",
                 "notAfter": "2016-01-08T00:04:00+04:00"
@@ -262,8 +264,8 @@ mod tests {
                 "notBefore": "2016-01-01T00:00:00Z",
                 "notAfter": "2016-01-08T00:00:00Z",
                 "identifiers": [
-                  { "type": "dns", "value": "www.example.org" },
-                  { "type": "dns", "value": "example.org" }
+                  { "type": "wireapp-id", "value": "www.example.org" },
+                  { "type": "wireapp-id", "value": "example.org" }
                 ],
                 "authorizations": [
                   "https://example.com/acme/authz/PAniVnsZcis",

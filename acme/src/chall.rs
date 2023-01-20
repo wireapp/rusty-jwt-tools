@@ -4,9 +4,10 @@ use crate::prelude::*;
 use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
-    /// 17. parse the response from `POST /acme/challenge/{token}`
+    /// client id challenge request to `POST /acme/challenge/{token}`
     /// see [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
-    pub fn new_chall_request(
+    pub fn dpop_chall_request(
+        access_token: String,
         handle_chall: AcmeChallenge,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
@@ -16,8 +17,30 @@ impl RustyAcme {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
 
-        // No payload required for chall
-        let payload = None::<serde_json::Value>;
+        let payload = Some(serde_json::json!({
+            "access_token": access_token,
+        }));
+
+        let req = AcmeJws::new(alg, previous_nonce, &handle_chall.url, Some(&acct_url), payload, kp)?;
+        Ok(req)
+    }
+
+    /// oidc challenge request to `POST /acme/challenge/{token}`
+    /// see [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
+    pub fn oidc_chall_request(
+        id_token: String,
+        handle_chall: AcmeChallenge,
+        account: &AcmeAccount,
+        alg: JwsAlgorithm,
+        kp: &Pem,
+        previous_nonce: String,
+    ) -> RustyAcmeResult<AcmeJws> {
+        // Extract the account URL from previous response which created a new account
+        let acct_url = account.acct_url()?;
+
+        let payload = Some(serde_json::json!({
+            "id_token": id_token,
+        }));
         let req = AcmeJws::new(alg, previous_nonce, &handle_chall.url, Some(&acct_url), payload, kp)?;
         Ok(req)
     }
@@ -92,8 +115,8 @@ pub enum AcmeChallengeType {
     #[serde(rename = "tls-alpn-01")]
     TlsAlpn01,
     /// Custom type for clientId challenge
-    #[serde(rename = "wire-http-01")]
-    WireHttp01,
+    #[serde(rename = "wire-dpop-01")]
+    WireDpop01,
     /// Custom type for handle + display name challenge
     #[serde(rename = "wire-oidc-01")]
     WireOidc01,
@@ -148,8 +171,8 @@ mod tests {
             AcmeChallengeType::TlsAlpn01
         );
         assert_eq!(
-            deser::<AcmeChallengeType>(json!("wire-http-01")).unwrap(),
-            AcmeChallengeType::WireHttp01
+            deser::<AcmeChallengeType>(json!("wire-dpop-01")).unwrap(),
+            AcmeChallengeType::WireDpop01
         );
         assert_eq!(
             deser::<AcmeChallengeType>(json!("wire-oidc-01")).unwrap(),

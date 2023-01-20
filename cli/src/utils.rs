@@ -33,7 +33,7 @@ pub fn read_file(file: Option<&PathBuf>) -> Option<String> {
         if f.exists() {
             std::fs::read_to_string(f).unwrap()
         } else {
-            panic!("File {:?} does not exist", f)
+            panic!("File {f:?} does not exist")
         }
     })
 }

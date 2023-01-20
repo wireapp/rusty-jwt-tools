@@ -30,7 +30,6 @@ impl AcmeJws {
         let is_empty_payload = payload.is_none();
         let claims = payload.map(Self::claims);
         let jwt = RustyJwtTools::generate_jwt(alg, header, claims, kp, with_jwk)?;
-        // println!("\n-> https://jwt.io/#id_token={jwt} \n");
         let (protected, jwt) = jwt.split_once('.').ok_or(RustyAcmeError::ImplementationError)?;
         let (payload, signature) = jwt.split_once('.').ok_or(RustyAcmeError::ImplementationError)?;
         if signature.contains('.') {

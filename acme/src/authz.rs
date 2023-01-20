@@ -84,8 +84,8 @@ impl AcmeAuthz {
         self.challenges.iter().find(|c| c.typ == AcmeChallengeType::Http01)
     }
 
-    pub fn wire_http_challenge(&self) -> Option<&AcmeChallenge> {
-        self.challenges.iter().find(|c| c.typ == AcmeChallengeType::WireHttp01)
+    pub fn wire_dpop_challenge(&self) -> Option<&AcmeChallenge> {
+        self.challenges.iter().find(|c| c.typ == AcmeChallengeType::WireDpop01)
     }
 
     pub fn wire_oidc_challenge(&self) -> Option<&AcmeChallenge> {
@@ -114,10 +114,10 @@ impl Default for AcmeAuthz {
         Self {
             status: AuthzStatus::Pending,
             expires: Some(time::OffsetDateTime::now_utc()),
-            identifier: AcmeIdentifier::Dns("wire.com".to_string()),
+            identifier: AcmeIdentifier::default(),
             challenges: vec![AcmeChallenge {
                 status: None,
-                typ: AcmeChallengeType::WireHttp01,
+                typ: AcmeChallengeType::WireDpop01,
                 url: "https://wire.com/acme/chall/prV_B7yEyA4".parse().unwrap(),
                 token: "DGyRejmCefe7v4NfDGDKfA".to_string(),
             }],
@@ -150,12 +150,12 @@ mod tests {
 
         #[test]
         #[wasm_bindgen_test]
-        fn can_deserialize_rfc_sample_response() {
+        fn can_deserialize_sample_response() {
             let rfc_sample = json!({
                 "status": "pending",
                 "expires": "2016-01-02T14:09:30Z",
                 "identifier": {
-                    "type": "dns",
+                    "type": "wireapp-id",
                     "value": "www.example.org"
                 },
                 "challenges": [
