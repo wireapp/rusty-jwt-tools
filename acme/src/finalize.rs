@@ -5,13 +5,13 @@ use crate::{
     prelude::*,
 };
 
+use crate::identifier::WireIdentifier;
 use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
     /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
     pub fn finalize_req(
-        domains: Vec<String>,
-        order: AcmeOrder,
+        mut order: AcmeOrder,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
         kp: &Pem,
@@ -20,16 +20,19 @@ impl RustyAcme {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
 
-        let csr = Self::generate_csr(alg, domains, kp)?;
+        let id = order.identifiers.pop().ok_or(RustyAcmeError::ImplementationError)?;
+        let csr = Self::generate_csr(alg, id.wire_identifier()?, kp)?;
         let payload = AcmeFinalizeRequest { csr };
-
         let req = AcmeJws::new(alg, previous_nonce, &order.finalize, Some(&acct_url), Some(payload), kp)?;
         Ok(req)
     }
 
-    fn generate_csr(alg: JwsAlgorithm, domains: Vec<String>, kp: &Pem) -> RustyAcmeResult<String> {
-        let mut params = rcgen::CertificateParams::new(domains);
-        params.distinguished_name = rcgen::DistinguishedName::new();
+    fn generate_csr(alg: JwsAlgorithm, identifier: WireIdentifier, kp: &Pem) -> RustyAcmeResult<String> {
+        let mut params = rcgen::CertificateParams::new(vec![]);
+        let mut dn = rcgen::DistinguishedName::new();
+        dn.push(rcgen::DnType::CommonName, identifier.name);
+        dn.push(rcgen::DnType::OrganizationName, identifier.domain.clone());
+        params.distinguished_name = dn;
         params.alg = match alg {
             JwsAlgorithm::Ed25519 => &rcgen::PKCS_ED25519,
             #[cfg(not(target_family = "wasm"))]
@@ -40,6 +43,10 @@ impl RustyAcme {
             JwsAlgorithm::P256 | JwsAlgorithm::P384 => return Err(RustyAcmeError::NotSupported),
         };
         params.key_pair = Some(rcgen::KeyPair::from_pem(kp.as_str())?);
+        params.subject_alt_names = vec![
+            rcgen::SanType::URI(identifier.client_id.to_lowercase()),
+            rcgen::SanType::URI(identifier.handle.to_lowercase()),
+        ];
 
         let cert = rcgen::Certificate::from_params(params)?;
         let csr = cert.serialize_request_der()?;
@@ -123,15 +130,15 @@ mod tests {
 
         #[test]
         #[wasm_bindgen_test]
-        fn can_deserialize_rfc_sample_response() {
+        fn can_deserialize_sample_response() {
             let rfc_sample = json!({
                 "status": "valid",
                 "expires": "2016-01-20T14:09:07.99Z",
                 "notBefore": "2016-01-01T00:00:00Z",
                 "notAfter": "2016-01-08T00:00:00Z",
                 "identifiers": [
-                    { "type": "dns", "value": "www.example.org" },
-                    { "type": "dns", "value": "example.org" }
+                    { "type": "wireapp-id", "value": "www.example.org" },
+                    { "type": "wireapp-id", "value": "example.org" }
                 ],
                 "authorizations": [
                     "https://example.com/acme/authz/PAniVnsZcis",

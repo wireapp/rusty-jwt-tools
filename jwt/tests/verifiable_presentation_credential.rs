@@ -28,7 +28,7 @@ fn verifiable_presentation_credential() {
     ];
 
     for (alg, key, _, hash_alg) in keys {
-        println!("# {:?} - {:?}", alg, hash_alg);
+        println!("# {alg:?} - {hash_alg:?}");
 
         let credential_1 = RustyCredential {
             context: vec![

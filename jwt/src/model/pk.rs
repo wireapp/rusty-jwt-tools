@@ -5,6 +5,7 @@ use crate::jwk::TryFromJwk;
 use crate::prelude::*;
 
 /// Abstraction over a public cryptographic key to upcast it in order to ease and factorize its usage with `jwt_simple`
+#[derive(Debug, Clone)]
 pub struct AnyPublicKey<'a>(JwsAlgorithm, Option<&'a Jwk>, Option<&'a Pem>);
 
 impl AnyPublicKey<'_> {
@@ -35,7 +36,7 @@ impl<'a> From<(JwsAlgorithm, &'a Pem)> for AnyPublicKey<'a> {
 impl PartialEq for AnyPublicKey<'_> {
     fn eq(&self, other: &Self) -> bool {
         if let Some((this, other)) = self.try_into_pem().ok().zip(other.try_into_pem().ok()) {
-            return this == other;
+            return this.as_str().trim() == other.as_str().trim();
         }
         false
     }

@@ -40,7 +40,8 @@ impl<'a> ClientId<'a> {
     #[cfg(test)]
     pub const DEFAULT_USER: Uuid = uuid::uuid!("4af3df2e-5c01-422f-baa1-d75546b92aa7");
 
-    const URI_PREFIX: &'static str = "im:wireapp:";
+    /// URI prefix for all subject URIs
+    pub const URI_PREFIX: &'static str = "impp:wireapp=";
 
     /// Constructor
     pub fn try_new(user: impl AsRef<str>, client: u64, domain: &'a str) -> RustyJwtResult<Self> {
@@ -148,7 +149,7 @@ mod tests {
             let hex_client = "ffffffffffffffff";
             assert_eq!(
                 &client_id.to_subject(),
-                &format!("im:wireapp:{base64_user}/{hex_client}@{domain}")
+                &format!("{}{base64_user}/{hex_client}@{domain}", ClientId::URI_PREFIX)
             );
         }
     }
@@ -161,7 +162,7 @@ mod tests {
             let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
             let client = "1a2b";
             let domain = "wire.com";
-            let subject = format!("im:wireapp:{user}/{client}@{domain}");
+            let subject = format!("{}{user}/{client}@{domain}", ClientId::URI_PREFIX);
             let parsed = ClientId::try_from(subject.as_str()).unwrap();
             assert_eq!(
                 parsed,
@@ -177,7 +178,16 @@ mod tests {
         fn parse_subject_should_fail_when_invalid_uuid_user() {
             let invalid_user = format!("{}abcd", "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc");
             let client = "1a2b";
-            let subject = format!("im:wireapp:{invalid_user}/{client}@wire.com");
+            let subject = format!("{}{invalid_user}/{client}@wire.com", ClientId::URI_PREFIX);
+            let parsed = ClientId::try_from(subject.as_str());
+            assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+        }
+
+        #[test]
+        fn parse_subject_should_fail_when_invalid_uri_prefix() {
+            let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
+            let client = "1a2b";
+            let subject = format!("impp:not:wireapp={user}/{client}@wire.com");
             let parsed = ClientId::try_from(subject.as_str());
             assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
         }
@@ -186,7 +196,7 @@ mod tests {
         fn parse_subject_should_fail_when_invalid_hex_client() {
             let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
             let invalid_client = "1g2g";
-            let subject = format!("im:wireapp:{user}/{invalid_client}@wire.com");
+            let subject = format!("{}{user}/{invalid_client}@wire.com", ClientId::URI_PREFIX);
             let parsed = ClientId::try_from(subject.as_str());
             assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
         }
@@ -195,7 +205,7 @@ mod tests {
         fn parse_subject_should_fail_when_client_too_large() {
             let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
             let invalid_client = u128::MAX;
-            let subject = format!("im:wireapp:{user}/{:x}@wire.com", invalid_client);
+            let subject = format!("{}{user}/{invalid_client:x}@wire.com", ClientId::URI_PREFIX);
             let parsed = ClientId::try_from(subject.as_str());
             assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
         }

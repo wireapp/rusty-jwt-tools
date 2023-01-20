@@ -26,7 +26,7 @@ pub struct AccessGenerate {
     htu: String,
     /// qualified wire client id
     ///
-    /// e.g. 'im:wireapp:ODM5NDJkOWRlYmI4NGNhZWIzNzdmM2JmNjYwNzJjNmI/7b52de7af952ba14@wire.com'
+    /// e.g. 'impp:wireapp=ODM5NDJkOWRlYmI4NGNhZWIzNzdmM2JmNjYwNzJjNmI/7b52de7af952ba14@wire.com'
     #[arg(short = 'i', long)]
     client_id: String,
     /// client dpop & access token expiration in seconds
@@ -84,7 +84,7 @@ impl AccessGenerate {
         )
         .unwrap();
 
-        println!("{}", access_token);
+        println!("{access_token}");
 
         Ok(())
     }
