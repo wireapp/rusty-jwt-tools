@@ -4,6 +4,7 @@ use crate::{
     order::{AcmeOrder, AcmeOrderError, AcmeOrderStatus},
     prelude::*,
 };
+use base64::Engine;
 
 use crate::identifier::WireIdentifier;
 use rusty_jwt_tools::prelude::*;
@@ -50,7 +51,7 @@ impl RustyAcme {
 
         let cert = rcgen::Certificate::from_params(params)?;
         let csr = cert.serialize_request_der()?;
-        let csr = base64::encode_config(csr, base64::URL_SAFE_NO_PAD);
+        let csr = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(csr);
         Ok(csr)
     }
 

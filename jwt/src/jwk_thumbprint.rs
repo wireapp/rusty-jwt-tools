@@ -1,5 +1,6 @@
 //! JWK thumbprint
 
+use base64::Engine;
 use jwt_simple::prelude::*;
 use serde_json::{json, Value};
 use sha2::Digest;
@@ -28,13 +29,13 @@ impl JwkThumbprint {
                 let mut hasher = sha2::Sha256::new();
                 hasher.update(json);
                 let hash = &hasher.finalize()[..];
-                base64::encode_config(hash, base64::URL_SAFE_NO_PAD)
+                base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(hash)
             }
             HashAlgorithm::SHA384 => {
                 let mut hasher = sha2::Sha384::new();
                 hasher.update(json);
                 let hash = &hasher.finalize()[..];
-                base64::encode_config(hash, base64::URL_SAFE_NO_PAD)
+                base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(hash)
             }
         };
         Ok(Self { kid })

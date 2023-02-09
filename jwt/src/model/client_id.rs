@@ -1,3 +1,4 @@
+use base64::Engine;
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -58,12 +59,14 @@ impl<'a> ClientId<'a> {
 
     /// Into JWT 'sub' claim
     pub fn to_subject(&self) -> String {
-        let user = base64::encode_config(self.user.as_simple().to_string(), base64::URL_SAFE_NO_PAD);
+        let user = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(self.user.as_simple().to_string());
         format!("{}{user}/{:x}@{}", Self::URI_PREFIX, self.client, self.domain)
     }
 
     fn parse_user(user: impl AsRef<[u8]>) -> RustyJwtResult<Uuid> {
-        let user = base64::decode_config(user, base64::URL_SAFE_NO_PAD).map_err(|_| RustyJwtError::InvalidClientId)?;
+        let user = base64::prelude::BASE64_URL_SAFE_NO_PAD
+            .decode(user)
+            .map_err(|_| RustyJwtError::InvalidClientId)?;
         Ok(Uuid::try_parse_ascii(&user)?)
     }
 }

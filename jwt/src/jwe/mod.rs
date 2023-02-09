@@ -104,6 +104,7 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use base64::Engine;
     use biscuit::jwe::Header;
     use rand::SeedableRng as _;
     use rand_chacha::ChaCha20Rng;
@@ -204,7 +205,7 @@ pub mod tests {
             let jwe = RustyJwtTools::jwe_encrypt(key.alg, key.value.clone(), b"a".to_vec(), &mut Some(rng)).unwrap();
             let jwe = Compact::<Empty, Empty>::new_encrypted(&jwe).unwrap_encrypted();
             let header = jwe.parts.get(0).unwrap().str();
-            let header = base64::decode_config(header, base64::URL_SAFE_NO_PAD).unwrap();
+            let header = base64::prelude::BASE64_URL_SAFE_NO_PAD.decode(header).unwrap();
             let header = serde_json::from_slice::<Value>(&header).unwrap();
             let header = header.as_object().unwrap();
             assert_eq!(header["enc"].as_str().unwrap(), &key.alg.to_string());
@@ -216,12 +217,14 @@ pub mod tests {
             match key.alg {
                 JweAlgorithm::AES128GCM | JweAlgorithm::AES256GCM => {
                     // https://datatracker.ietf.org/doc/html/rfc7518#section-4.7.1.1
-                    let iv = base64::decode_config(header["iv"].as_str().unwrap(), base64::URL_SAFE_NO_PAD).unwrap();
+                    let iv = base64::prelude::BASE64_URL_SAFE_NO_PAD
+                        .decode(header["iv"].as_str().unwrap())
+                        .unwrap();
                     // always 96 bits for AES-GCM
                     assert_eq!(iv.len(), 96 / 8);
                     // https://datatracker.ietf.org/doc/html/rfc7518#section-4.7.1.2
                     let tag = header["tag"].as_str().unwrap();
-                    let tag = base64::decode_config(tag, base64::URL_SAFE_NO_PAD).unwrap();
+                    let tag = base64::prelude::BASE64_URL_SAFE_NO_PAD.decode(tag).unwrap();
                     assert_eq!(tag.len(), key.alg.tag_len());
                 }
             }
@@ -287,7 +290,7 @@ pub mod tests {
             let payload = json!({"a": "b"});
             let jwe = josekit_encrypt(key.alg, key.value.clone(), payload.clone()).unwrap();
             let decrypted = RustyJwtTools::jwe_decrypt(key.alg, key.value, &jwe).unwrap();
-            let decrypted = base64::decode_config(decrypted, base64::URL_SAFE_NO_PAD).unwrap();
+            let decrypted = base64::prelude::BASE64_URL_SAFE_NO_PAD.decode(decrypted).unwrap();
             let decrypted = serde_json::from_slice::<Value>(&decrypted).unwrap();
             assert_eq!(payload, decrypted);
         }
