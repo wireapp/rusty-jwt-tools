@@ -1,3 +1,4 @@
+use base64::Engine;
 use jwt_simple::prelude::*;
 
 pub fn now() -> UnixTimeStamp {
@@ -9,7 +10,7 @@ pub fn now() -> UnixTimeStamp {
 pub fn rand_base64_str(size: usize) -> String {
     use rand::distributions::{Alphanumeric, DistString};
     let challenge: String = Alphanumeric.sample_string(&mut rand::thread_rng(), size);
-    base64::encode_config(challenge, base64::URL_SAFE_NO_PAD)
+    base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(challenge)
 }
 
 pub fn jwt_header(token: String) -> serde_json::Map<String, serde_json::Value> {
@@ -23,7 +24,7 @@ pub fn jwt_claims(token: String) -> serde_json::Map<String, serde_json::Value> {
 fn jwt_part(token: String, part: usize) -> serde_json::Map<String, serde_json::Value> {
     let parts = token.split('.').collect::<Vec<&str>>();
     let claims = parts.get(part).unwrap();
-    let claims = base64::decode(claims).unwrap();
+    let claims = base64::prelude::BASE64_STANDARD_NO_PAD.decode(claims).unwrap();
     let claims = serde_json::from_slice::<serde_json::Value>(claims.as_slice()).unwrap();
     claims.as_object().unwrap().to_owned()
 }

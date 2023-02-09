@@ -41,8 +41,9 @@ pub mod tests {
     use fluvio_wasm_timer::{SystemTime, UNIX_EPOCH};
     use wasm_bindgen_test::*;
 
-    use crate::jwk::TryFromJwk;
-    use crate::{dpop::*, jwk::RustyJwk, test_utils::*};
+    use crate::{dpop::*, jwk::RustyJwk, jwk::TryFromJwk, test_utils::*};
+    use base64::Engine;
+    use serde_json::{json, Value};
 
     wasm_bindgen_test_configure!(run_in_browser);
 
@@ -279,7 +280,6 @@ pub mod tests {
     }
 
     pub mod claims {
-        use serde_json::{json, Value};
 
         use super::*;
 
@@ -490,7 +490,7 @@ pub mod tests {
             .unwrap();
             let parts = token.split('.').collect::<Vec<&str>>();
             let claims = parts.get(1).unwrap();
-            let claims = base64::decode(claims).unwrap();
+            let claims = base64::prelude::BASE64_STANDARD_NO_PAD.decode(claims).unwrap();
             let claims = serde_json::from_slice::<Value>(claims.as_slice()).unwrap();
             let claims = claims.as_object().unwrap();
             assert_eq!(claims.get("string").unwrap().as_str(), Some("string"));
