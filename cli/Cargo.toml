@@ -8,7 +8,7 @@ license = "MPL-2.0"
 publish = false
 
 [dependencies]
-rusty-jwt-tools = { version = "0.1", path = "../jwt" }
+rusty-jwt-tools = { version = "0.2", path = "../jwt" }
 clap = { version = "4.0", features = ["derive"] }
 anyhow = "1.0"
 jwt-simple = "0.11.3"
