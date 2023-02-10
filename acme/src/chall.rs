@@ -8,7 +8,7 @@ impl RustyAcme {
     /// see [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
     pub fn dpop_chall_request(
         access_token: String,
-        handle_chall: AcmeChallenge,
+        dpop_chall: AcmeChallenge,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
         kp: &Pem,
@@ -21,7 +21,7 @@ impl RustyAcme {
             "access_token": access_token,
         }));
 
-        let req = AcmeJws::new(alg, previous_nonce, &handle_chall.url, Some(&acct_url), payload, kp)?;
+        let req = AcmeJws::new(alg, previous_nonce, &dpop_chall.url, Some(&acct_url), payload, kp)?;
         Ok(req)
     }
 
@@ -29,7 +29,7 @@ impl RustyAcme {
     /// see [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
     pub fn oidc_chall_request(
         id_token: String,
-        handle_chall: AcmeChallenge,
+        oidc_chall: AcmeChallenge,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
         kp: &Pem,
@@ -41,7 +41,7 @@ impl RustyAcme {
         let payload = Some(serde_json::json!({
             "id_token": id_token,
         }));
-        let req = AcmeJws::new(alg, previous_nonce, &handle_chall.url, Some(&acct_url), payload, kp)?;
+        let req = AcmeJws::new(alg, previous_nonce, &oidc_chall.url, Some(&acct_url), payload, kp)?;
         Ok(req)
     }
 
