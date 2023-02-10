@@ -14,7 +14,6 @@ pub mod test_utils;
 mod access;
 mod dpop;
 mod error;
-mod introspect;
 mod jwe;
 pub mod jwk;
 pub mod jwk_thumbprint;

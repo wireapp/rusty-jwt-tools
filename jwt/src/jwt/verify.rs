@@ -15,8 +15,6 @@ pub struct Verify<'a> {
     pub backend_nonce: Option<&'a BackendNonce>,
     /// leeway
     pub leeway: u16,
-    /// cnf
-    pub cnf: Option<&'a JwkThumbprint>,
 }
 
 impl From<&Verify<'_>> for VerificationOptions {
@@ -60,7 +58,8 @@ pub trait VerifyJwt {
         &self,
         key: &AnyPublicKey,
         max_expiration: u64,
-        cnf: Option<&JwkThumbprint>,
+        expected_cnf: Option<&JwkThumbprint>,
+        actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
         verify: Verify,
     ) -> RustyJwtResult<JWTClaims<T>>
     where
@@ -72,7 +71,8 @@ impl VerifyJwt for &str {
         &self,
         key: &AnyPublicKey<'_>,
         max_expiration: u64,
-        cnf: Option<&JwkThumbprint>,
+        expected_cnf: Option<&JwkThumbprint>,
+        actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
         verify: Verify,
     ) -> RustyJwtResult<JWTClaims<T>>
     where
@@ -88,8 +88,9 @@ impl VerifyJwt for &str {
             return Err(RustyJwtError::TokenLivesTooLong);
         }
 
-        if let Some(cnf) = cnf {
-            if Some(cnf) != verify.cnf {
+        if let Some((expected_cnf, actual_cnf)) = expected_cnf.zip(actual_cnf) {
+            let actual_cnf = actual_cnf(&claims);
+            if expected_cnf != actual_cnf {
                 return Err(RustyJwtError::InvalidJwkThumbprint);
             }
         }
