@@ -61,10 +61,9 @@ impl VerifyDpop for &str {
             client_id,
             backend_nonce: Some(backend_nonce),
             leeway,
-            cnf: None,
         };
 
-        let claims = (*self).verify_jwt::<Dpop>(&pk, max_expiration, None, verify)?;
+        let claims = (*self).verify_jwt::<Dpop>(&pk, max_expiration, None, None, verify)?;
         if let Some(expected_htm) = htm {
             if expected_htm != claims.custom.htm {
                 return Err(RustyJwtError::DpopHtmMismatch);

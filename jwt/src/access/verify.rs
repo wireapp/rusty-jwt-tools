@@ -2,7 +2,6 @@ use jwt_simple::prelude::*;
 
 use crate::{
     access::Access,
-    introspect::RustyIntrospect,
     jwk_thumbprint::JwkThumbprint,
     jwt::{Verify, VerifyJwt, VerifyJwtHeader},
     prelude::*,
@@ -84,20 +83,23 @@ impl RustyJwtTools {
         hash: HashAlgorithm,
     ) -> RustyJwtResult<()> {
         let pk = AnyPublicKey::from((alg, backend_pk));
-        let introspect_response = RustyIntrospect::introspect_response(access_token, pk, leeway)?;
+        // let introspect_response = RustyIntrospect::introspect_response(access_token, pk, leeway)?;
 
-        let actual_cnf = &introspect_response.extra_fields().cnf;
+        // let actual_cnf = &introspect_response.extra_fields().cnf;
         let verify = Verify {
-            cnf: Some(actual_cnf),
             leeway,
             client_id,
             backend_nonce: None,
         };
 
-        let pk = AnyPublicKey::from((alg, backend_pk));
-
         let expected_cnf = JwkThumbprint::generate(jwk, hash)?;
-        let claims = access_token.verify_jwt::<Access>(&pk, max_expiration, Some(&expected_cnf), verify)?;
+        let claims = access_token.verify_jwt::<Access>(
+            &pk,
+            max_expiration,
+            Some(&expected_cnf),
+            Some(|c| &c.custom.cnf),
+            verify,
+        )?;
 
         // verify the JWK in access token represents the same key as the one supplied
         if pk != AnyPublicKey::from((alg, jwk)) {

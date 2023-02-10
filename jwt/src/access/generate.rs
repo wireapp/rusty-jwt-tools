@@ -441,7 +441,6 @@ mod tests {
 
                 let parts = token.split('.').collect::<Vec<&str>>();
                 let claims = parts.get(1).unwrap();
-                println!("{}", claims);
                 let claims = base64::prelude::BASE64_STANDARD_NO_PAD.decode(claims).unwrap();
                 let claims = serde_json::from_slice::<Value>(claims.as_slice()).unwrap();
                 let claims = claims.as_object().unwrap();
