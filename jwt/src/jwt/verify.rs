@@ -10,7 +10,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Verify<'a> {
     /// client_id
-    pub client_id: ClientId<'a>,
+    pub client_id: &'a ClientId,
     /// nonce
     pub backend_nonce: Option<&'a BackendNonce>,
     /// leeway

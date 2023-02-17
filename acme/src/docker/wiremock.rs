@@ -30,6 +30,21 @@ impl WiremockImage {
         docker.run(image)
     }
 
+    /// Runs with a stub accepting anything
+    pub fn run_echo<'a>(docker: &'a Cli, host: &str) -> (Container<'a, WiremockImage>, String) {
+        let stub = serde_json::json!({
+           "request": {
+                "method": "GET"
+            },
+            "response": {
+                "status": 200
+            }
+        });
+        let node = Self::run(docker, host, vec![stub]);
+        let port = node.get_host_port_ipv4(Self::PORT);
+        (node, format!("http://localhost:{port}"))
+    }
+
     fn write_stubs(&self, stubs: Vec<serde_json::Value>) {
         for stub in stubs {
             let stub_name = format!("{}.json", super::rand_str());

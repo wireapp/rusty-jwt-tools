@@ -15,7 +15,7 @@ impl RustyJwtTools {
     /// * `expiry` - expiration. Once this duration has passed, the token is invalid
     pub fn generate_dpop_token(
         dpop: Dpop,
-        client_id: ClientId,
+        client_id: &ClientId,
         nonce: BackendNonce,
         expiry: core::time::Duration,
         alg: JwsAlgorithm,
@@ -55,7 +55,7 @@ pub mod tests {
         fn should_have_dpop_typ(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -71,7 +71,7 @@ pub mod tests {
         fn should_have_alg(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -87,7 +87,7 @@ pub mod tests {
         fn should_have_right_fields_naming(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -117,7 +117,7 @@ pub mod tests {
         fn should_have_ec_jwk(key: JwtEcKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg.into(),
@@ -151,7 +151,7 @@ pub mod tests {
         pub fn should_have_ed25519_jwk(key: JwtEdKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg.into(),
@@ -183,7 +183,7 @@ pub mod tests {
         pub fn should_verify_ec(key: JwtEcKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg.into(),
@@ -235,7 +235,7 @@ pub mod tests {
         pub fn should_verify_ed(key: JwtEdKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg.into(),
@@ -288,7 +288,7 @@ pub mod tests {
         fn should_have_right_fields_naming(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -310,7 +310,7 @@ pub mod tests {
         fn should_have_jti(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -331,7 +331,7 @@ pub mod tests {
             };
             let token = RustyJwtTools::generate_dpop_token(
                 dpop,
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -351,7 +351,7 @@ pub mod tests {
             };
             let token = RustyJwtTools::generate_dpop_token(
                 dpop,
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -366,7 +366,7 @@ pub mod tests {
         fn should_have_iat(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -388,7 +388,7 @@ pub mod tests {
             let expiry = Duration::from_days(90).into();
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 expiry,
                 key.alg,
@@ -411,7 +411,7 @@ pub mod tests {
             let nonce = BackendNonce::default();
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                ClientId::default(),
+                &ClientId::default(),
                 nonce.clone(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -435,7 +435,7 @@ pub mod tests {
             };
             let token = RustyJwtTools::generate_dpop_token(
                 dpop,
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -454,7 +454,7 @@ pub mod tests {
             let client_id = ClientId::try_new(ClientId::DEFAULT_USER.to_string(), 1223, "example.com").unwrap();
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
-                client_id,
+                &client_id,
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,
@@ -481,7 +481,7 @@ pub mod tests {
             };
             let token = RustyJwtTools::generate_dpop_token(
                 dpop,
-                ClientId::default(),
+                &ClientId::default(),
                 BackendNonce::default(),
                 Duration::from_days(1).into(),
                 key.alg,

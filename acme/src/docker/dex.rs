@@ -1,24 +1,57 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, net::SocketAddr, path::PathBuf};
+
 use testcontainers::{clients::Cli, core::WaitFor, Container, Image, RunnableImage};
+
+use crate::{docker::ldap::LdapCfg, docker::rand_str};
+
+pub struct DexServer<'a> {
+    pub uri: String,
+    pub node: Container<'a, DexImage>,
+    pub socket: SocketAddr,
+}
 
 #[derive(Debug)]
 pub struct DexImage {
     pub volumes: HashMap<String, String>,
     pub env_vars: HashMap<String, String>,
+    pub cfg_file: PathBuf,
 }
 
 impl DexImage {
     const NAME: &'static str = "dexidp/dex";
-    const TAG: &'static str = "latest";
+    const TAG: &'static str = "v2.35.3";
     pub const PORT: u16 = 5556;
 
-    pub fn run<'a>(docker: &'a Cli, host: &str) -> (u16, Container<'a, DexImage>) {
-        let instance = Self::default();
+    pub fn run(docker: &Cli, cfg: DexCfg, redirect_uri: String) -> DexServer {
+        let instance = Self::new(&cfg, &redirect_uri);
         let image: RunnableImage<Self> = instance.into();
-        let image = image.with_container_name(host).with_network(super::NETWORK);
+        let image = image
+            .with_container_name(&cfg.host)
+            .with_network(super::NETWORK)
+            .with_mapped_port((cfg.host_port, Self::PORT));
         let node = docker.run(image);
         let port = node.get_host_port_ipv4(Self::PORT);
-        (port, node)
+        let uri = format!("http://{}:{port}", cfg.host);
+
+        let ip = std::net::IpAddr::V4("127.0.0.1".parse().unwrap());
+        let socket = SocketAddr::new(ip, port);
+
+        DexServer { uri, socket, node }
+    }
+
+    pub fn new(cfg: &DexCfg, redirect_uri: &str) -> Self {
+        let host_vol = std::env::temp_dir().join(rand_str());
+        std::fs::create_dir(&host_vol).unwrap();
+        let host_cfg_file = host_vol.join("config.docker.yaml");
+
+        std::fs::write(&host_cfg_file, cfg.to_yaml(redirect_uri)).unwrap();
+
+        let host_vol_str = host_cfg_file.as_os_str().to_str().unwrap().to_string();
+        Self {
+            volumes: HashMap::from_iter(vec![(host_vol_str, "/etc/dex/config.docker.yaml".to_string())]),
+            env_vars: HashMap::new(),
+            cfg_file: host_cfg_file,
+        }
     }
 }
 
@@ -34,7 +67,8 @@ impl Image for DexImage {
     }
 
     fn ready_conditions(&self) -> Vec<WaitFor> {
-        vec![WaitFor::message_on_stderr("listening (http) on 0.0.0.0:5556")]
+        let msg = format!("listening (http) on 0.0.0.0:{}", Self::PORT);
+        vec![WaitFor::message_on_stderr(msg)]
     }
 
     fn volumes(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
@@ -46,23 +80,78 @@ impl Image for DexImage {
     }
 }
 
-impl Default for DexImage {
-    fn default() -> Self {
-        Self {
-            volumes: HashMap::from_iter(vec![]),
-            env_vars: HashMap::default(),
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct DexCfg {
+    pub client_id: String,
+    pub client_secret: String,
+    pub issuer: String,
+    pub ldap_host: String,
+    pub domain: String,
+    pub host_port: u16,
+    pub host: String,
 }
 
-#[test]
-fn test_dex() {
-    let docker = Cli::docker();
-    let (port, _dex) = DexImage::run(&docker, "dex");
+impl DexCfg {
+    pub fn to_yaml(&self, redirect_uri: &str) -> String {
+        let Self {
+            client_id,
+            client_secret,
+            issuer,
+            ldap_host,
+            domain,
+            ..
+        } = self;
+        let domain = LdapCfg::domain_to_ldif(domain);
+        format!(
+            r#"
+issuer: {issuer}
+storage:
+  type: memory
+web:
+  http: 0.0.0.0:5556
+logger:
+  level: "debug"
+  format: "text"
 
-    let uri = format!("http://localhost:{port}/dex/.well-known/openid-configuration");
+oauth2:
+  skipApprovalScreen: false
+  alwaysShowLoginScreen: false
 
-    let response = reqwest::blocking::get(uri).unwrap();
-    let body = response.json::<serde_json::Value>().unwrap();
-    println!("{}", serde_json::to_string_pretty(&body).unwrap());
+# expiry:
+#   deviceRequests: "5m"
+#   signingKeys: "6h"
+#   idTokens: "24h"
+#   refreshTokens:
+#     reuseInterval: "3s"
+#     validIfNotUsedFor: "2160h" # 90 days
+#     absoluteLifetime: "3960h" # 165 days
+
+connectors:
+- type: ldap
+  name: OpenLDAP
+  id: ldap
+  config:
+    host: {ldap_host}:389
+    insecureNoSSL: true
+    insecureSkipVerify: true
+    bindDN: cn=admin,{domain}
+    bindPW: admin
+    usernamePrompt: Email Address
+    userSearch:
+      baseDN: ou=People,{domain}
+      filter: "(objectClass=person)"
+      username: mail
+      idAttr: uid
+      emailAttr: mail
+      nameAttr: cn
+      preferredUsernameAttr: sn
+staticClients:
+- id: {client_id}
+  redirectURIs:
+  - '{redirect_uri}'
+  name: 'Example App'
+  secret: {client_secret}
+"#
+        )
+    }
 }

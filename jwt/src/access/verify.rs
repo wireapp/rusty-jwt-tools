@@ -36,7 +36,7 @@ impl RustyJwtTools {
     /// * `backend_pk` - PEM format for public key of the Wire backend
     pub fn verify_access_token(
         access_token: &str,
-        client_id: ClientId,
+        client_id: &ClientId,
         challenge: AcmeNonce,
         max_skew_secs: u16,
         max_expiration: u64,
@@ -75,7 +75,7 @@ impl RustyJwtTools {
         access_token: &str,
         alg: JwsAlgorithm,
         backend_pk: &Pem,
-        client_id: ClientId,
+        client_id: &ClientId,
         challenge: &AcmeNonce,
         max_expiration: u64,
         leeway: u16,
@@ -83,9 +83,6 @@ impl RustyJwtTools {
         hash: HashAlgorithm,
     ) -> RustyJwtResult<()> {
         let pk = AnyPublicKey::from((alg, backend_pk));
-        // let introspect_response = RustyIntrospect::introspect_response(access_token, pk, leeway)?;
-
-        // let actual_cnf = &introspect_response.extra_fields().cnf;
         let verify = Verify {
             leeway,
             client_id,
@@ -1333,16 +1330,16 @@ mod tests {
     }
 
     #[derive(Debug, Clone, Eq, PartialEq)]
-    struct Params<'a> {
+    struct Params {
         pub ciphersuite: Ciphersuite,
-        pub client_id: ClientId<'a>,
+        pub client_id: ClientId,
         pub challenge: AcmeNonce,
         pub leeway: u16,
         pub max_expiration: u64,
         pub backend_pk: Option<Pem>,
     }
 
-    impl From<Ciphersuite> for Params<'_> {
+    impl From<Ciphersuite> for Params {
         fn from(ciphersuite: Ciphersuite) -> Self {
             Self {
                 ciphersuite,
@@ -1367,7 +1364,7 @@ mod tests {
         let backend_pk = backend_pk.unwrap_or(ciphersuite.key.pk);
         RustyJwtTools::verify_access_token(
             access,
-            client_id,
+            &client_id,
             challenge,
             leeway,
             max_expiration,

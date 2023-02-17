@@ -1,9 +1,5 @@
-use crate::{
-    account::AcmeAccount,
-    chall::{AcmeChallenge, AcmeChallengeType},
-    jws::AcmeJws,
-    prelude::*,
-};
+use crate::chall::AcmeChallengeType;
+use crate::prelude::*;
 use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
@@ -37,7 +33,7 @@ impl RustyAcme {
             AuthzStatus::Expired => return Err(AcmeAuthzError::Expired)?,
             AuthzStatus::Valid => {
                 return Err(RustyAcmeError::ClientImplementationError(
-                    "An authorization is not supposed to be valid at this point. \
+                    "an authorization is not supposed to be valid at this point. \
                     You should only use this method to parse the response of an authorization creation.",
                 ))
             }
@@ -64,8 +60,7 @@ pub enum AcmeAuthzError {
 
 /// Result of an authorization creation
 /// see [RFC 8555 Section 7.5](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5)
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(test, derive(Clone))]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AcmeAuthz {
     /// Should be pending for a newly created authorization

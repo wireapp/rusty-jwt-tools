@@ -33,7 +33,7 @@ fn e2e_jwt() {
         };
 
         // Wire app generates a DPoP JWT token
-        let client_dpop = RustyJwtTools::generate_dpop_token(dpop, alice, nonce.clone(), expiry, alg, &key).unwrap();
+        let client_dpop = RustyJwtTools::generate_dpop_token(dpop, &alice, nonce.clone(), expiry, alg, &key).unwrap();
 
         println!(
             "1. generate dpop:\nclient signature key:\n{key}\nDpop token:\nhttps://jwt.io/#id_token={client_dpop}\n"
@@ -42,7 +42,7 @@ fn e2e_jwt() {
         // wire-server now validates the 'client_dpop' and generates an access token
         let access_token = RustyJwtTools::generate_access_token(
             &client_dpop,
-            alice,
+            &alice,
             nonce.clone(),
             htu.clone(),
             htm,
@@ -75,7 +75,7 @@ fn e2e_jwt() {
         .into();
         let verify = RustyJwtTools::verify_access_token(
             &access_token,
-            alice,
+            &alice,
             challenge,
             leeway,
             max_expiration,

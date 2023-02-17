@@ -11,8 +11,7 @@ impl RustyAcme {
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(test, derive(Clone))]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 /// See [RFC 8555 Section 7.1.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.1)
 pub struct AcmeDirectory {

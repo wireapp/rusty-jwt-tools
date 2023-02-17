@@ -1,6 +1,5 @@
-use crate::account::AcmeAccount;
-use crate::jws::AcmeJws;
 use crate::prelude::*;
+use jwt_simple::prelude::*;
 use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
@@ -27,19 +26,27 @@ impl RustyAcme {
 
     /// oidc challenge request to `POST /acme/challenge/{token}`
     /// see [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
+    #[allow(clippy::too_many_arguments)]
     pub fn oidc_chall_request(
         id_token: String,
         oidc_chall: AcmeChallenge,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
+        hash_alg: HashAlgorithm,
         kp: &Pem,
+        jwk: &Jwk,
         previous_nonce: String,
     ) -> RustyAcmeResult<AcmeJws> {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
 
+        let thumbprint = JwkThumbprint::generate(jwk, hash_alg)?.kid;
+        let chall_token = oidc_chall.token;
+        let keyauth = format!("{chall_token}.{thumbprint}");
+
         let payload = Some(serde_json::json!({
             "id_token": id_token,
+            "keyauth": keyauth,
         }));
         let req = AcmeJws::new(alg, previous_nonce, &oidc_chall.url, Some(&acct_url), payload, kp)?;
         Ok(req)
@@ -55,13 +62,13 @@ impl RustyAcme {
             Some(AcmeChallengeStatus::Invalid) => return Err(AcmeChallError::Invalid)?,
             Some(AcmeChallengeStatus::Pending) => {
                 return Err(RustyAcmeError::ClientImplementationError(
-                    "A challenge is not supposed to be pending at this point. \
+                    "a challenge is not supposed to be pending at this point. \
                     It must either be 'valid' or 'processing'.",
                 ))
             }
             None => {
                 return Err(RustyAcmeError::ClientImplementationError(
-                    "At this point a challenge is supposed to have a status",
+                    "at this point a challenge is supposed to have a status",
                 ))
             }
         }

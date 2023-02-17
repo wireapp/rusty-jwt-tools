@@ -29,7 +29,7 @@ pub enum RustyAcmeError {
     #[error("Requested functionality is not supported for the moment")]
     NotSupported,
     /// This library has been used the wrong way by users
-    #[error("This library has been used the wrong way by users")]
+    #[error("This library has been used the wrong way by users because {0}")]
     ClientImplementationError(&'static str),
     /// Smallstep ACME server is not correctly implemented
     #[error("Incorrect response from ACME server because {0}")]

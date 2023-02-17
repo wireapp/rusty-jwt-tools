@@ -26,7 +26,7 @@ pub struct AccessGenerate {
     htu: String,
     /// qualified wire client id
     ///
-    /// e.g. 'impp:wireapp=ODM5NDJkOWRlYmI4NGNhZWIzNzdmM2JmNjYwNzJjNmI/7b52de7af952ba14@wire.com'
+    /// e.g. 'im:wireapp=ODM5NDJkOWRlYmI4NGNhZWIzNzdmM2JmNjYwNzJjNmI/7b52de7af952ba14@wire.com'
     #[arg(short = 'i', long)]
     client_id: String,
     /// client dpop & access token expiration in seconds
@@ -61,19 +61,16 @@ impl AccessGenerate {
         let expiry = core::time::Duration::from_secs(self.expiry);
 
         let client_dpop_token =
-            RustyJwtTools::generate_dpop_token(dpop, client_id, nonce.clone(), expiry, alg, &client_kp)
+            RustyJwtTools::generate_dpop_token(dpop, &client_id, nonce.clone(), expiry, alg, &client_kp)
                 .expect("Failed generating client Dpop token");
 
         let leeway: u16 = 5;
         let max_expiration: u64 = 2136351646; // somewhere in 2037
-        let hash_alg = match alg {
-            JwsAlgorithm::Ed25519 | JwsAlgorithm::P256 => HashAlgorithm::SHA256,
-            JwsAlgorithm::P384 => HashAlgorithm::SHA384,
-        };
+        let hash_alg = HashAlgorithm::from(alg);
 
         let access_token = RustyJwtTools::generate_access_token(
             &client_dpop_token,
-            client_id,
+            &client_id,
             nonce,
             htu,
             htm,

@@ -89,7 +89,7 @@ And verify it like this
 
 ```bash
 rusty-jwt-cli verify-access access-token.txt \
---client-id impp:wireapp=YjQyNDE4YWVjYzdiNGZlYjk4NzhhNDk5YTdmMmU4NTM/211a945dca45eed1@wire.com \
+--client-id im:wireapp=YjQyNDE4YWVjYzdiNGZlYjk4NzhhNDk5YTdmMmU4NTM/211a945dca45eed1@wire.com \
 --challenge okAJ33Ym/XS2qmmhhh7aWSbBlYy4Ttm1EysqW8I/9ng \
 --leeway 360 \
 --max-expiry 2080200819 \
@@ -114,7 +114,7 @@ rusty-jwt-cli generate-access \
 --challenge okAJ33Ym/XS2qmmhhh7aWSbBlYy4Ttm1EysqW8I/9ng \
 --nonce WE88EvOBzbqGerznM+2P/AadVf7374y0cH19sDSZA2A \
 --htu https://wire.example.com/clients/token \
---client-id impp:wireapp=YjQyNDE4YWVjYzdiNGZlYjk4NzhhNDk5YTdmMmU4NTM/211a945dca45eed1@wire.com \
+--client-id im:wireapp=YjQyNDE4YWVjYzdiNGZlYjk4NzhhNDk5YTdmMmU4NTM/211a945dca45eed1@wire.com \
 --expiry 300 \
 --key access-kp.pem
 ```

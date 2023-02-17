@@ -34,7 +34,7 @@ pub struct DpopBuilder {
     pub dpop: TestDpop,
     pub jwk: Option<Jwk>,
     pub key: JwtKey,
-    pub sub: Option<ClientId<'static>>,
+    pub sub: Option<ClientId>,
     pub nonce: Option<BackendNonce>,
     pub jti: Option<String>,
     pub iat: Option<UnixTimeStamp>,

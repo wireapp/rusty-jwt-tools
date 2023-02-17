@@ -58,7 +58,7 @@ impl RustyJwtToolsFfi {
         {
             let res = RustyJwtTools::generate_access_token(
                 dpop,
-                client_id,
+                &client_id,
                 nonce,
                 uri,
                 method,

@@ -44,7 +44,7 @@ impl Dpop {
     pub fn into_jwt_claims(
         self,
         nonce: BackendNonce,
-        client_id: ClientId,
+        client_id: &ClientId,
         expiry: core::time::Duration,
     ) -> JWTClaims<Self> {
         let expiry = coarsetime::Duration::from_secs(expiry.as_secs());

@@ -145,7 +145,7 @@ fn verifiable_presentation_credential() {
             extra_claims: Some(vp),
         };
 
-        let client_dpop = RustyJwtTools::generate_dpop_token(dpop, alice, nonce.clone(), expiry, alg, &key).unwrap();
+        let client_dpop = RustyJwtTools::generate_dpop_token(dpop, &alice, nonce.clone(), expiry, alg, &key).unwrap();
 
         // println!("2. dpop:\nhttps://jwt.io/#id_token={client_dpop}\n");
         println!("https://jwt.io/#id_token={client_dpop}\n");
