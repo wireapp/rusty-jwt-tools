@@ -8,7 +8,6 @@ impl RustyAcme {
     #[allow(clippy::too_many_arguments)]
     pub fn new_order_request(
         display_name: String,
-        domain: String,
         client_id: ClientId,
         handle: String,
         expiry: core::time::Duration,
@@ -21,6 +20,7 @@ impl RustyAcme {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
 
+        let domain = client_id.domain.clone();
         let identifiers = vec![AcmeIdentifier::try_new(display_name, domain, client_id, handle)?];
         let not_before = time::OffsetDateTime::now_utc();
         let not_after = not_before + expiry;
@@ -48,7 +48,7 @@ impl RustyAcme {
             AcmeOrderStatus::Pending => {}
             AcmeOrderStatus::Processing | AcmeOrderStatus::Valid | AcmeOrderStatus::Ready => {
                 return Err(RustyAcmeError::ClientImplementationError(
-                    "An order is not supposed to be 'processing | valid | ready' at this point. \
+                    "an order is not supposed to be 'processing | valid | ready' at this point. \
                     You should only be using this method after account creation, not after finalize",
                 ))
             }
@@ -87,20 +87,20 @@ impl RustyAcme {
             AcmeOrderStatus::Ready => {}
             AcmeOrderStatus::Pending => {
                 return Err(RustyAcmeError::ClientImplementationError(
-                    "An order is not supposed to be 'pending' at this point. \
+                    "an order is not supposed to be 'pending' at this point. \
                     It means you have forgotten to create authorizations",
                 ))
             }
             AcmeOrderStatus::Processing => {
                 return Err(RustyAcmeError::ClientImplementationError(
-                    "An order is not supposed to be 'processing' at this point. \
+                    "an order is not supposed to be 'processing' at this point. \
                     You should not have called finalize yet ; in fact, you should only call finalize \
                     once this order turns 'ready'",
                 ))
             }
             AcmeOrderStatus::Valid => {
                 return Err(RustyAcmeError::ClientImplementationError(
-                    "An order is not supposed to be 'valid' at this point. \
+                    "an order is not supposed to be 'valid' at this point. \
                     It means a certificate has already been delivered which defeats the purpose \
                     of using this method",
                 ))
@@ -145,8 +145,7 @@ pub struct AcmeOrderRequest {
 
 /// Result of an order creation
 /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
-#[derive(Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(test, derive(Clone))]
+#[derive(Debug, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AcmeOrder {
     pub status: AcmeOrderStatus,

@@ -26,6 +26,7 @@ pub mod prelude {
     pub use dpop::{Dpop, Htm, Htu};
     pub use error::{RustyJwtError, RustyJwtResult};
     pub use jwe::alg::JweAlgorithm;
+    pub use jwk_thumbprint::JwkThumbprint;
     pub use model::{
         alg::{HashAlgorithm, JwsAlgorithm, JwsEcAlgorithm, JwsEdAlgorithm},
         client_id::ClientId,

@@ -10,7 +10,7 @@ pub struct TestAccess {
     #[serde(rename = "proof", skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
     #[serde(rename = "client_id", skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<ClientId<'static>>,
+    pub client_id: Option<ClientId>,
     #[serde(rename = "api_version", skip_serializing_if = "Option::is_none")]
     pub api_version: Option<u32>,
     #[serde(rename = "scope", skip_serializing_if = "Option::is_none")]
@@ -39,7 +39,7 @@ pub struct AccessBuilder {
     pub access: TestAccess,
     pub jwk: Option<Jwk>,
     pub ciphersuite: Ciphersuite,
-    pub sub: Option<ClientId<'static>>,
+    pub sub: Option<ClientId>,
     pub nonce: Option<BackendNonce>,
     pub jti: Option<String>,
     pub iat: Option<UnixTimeStamp>,

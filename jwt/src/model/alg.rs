@@ -183,3 +183,13 @@ impl FromStr for HashAlgorithm {
         })
     }
 }
+
+/// According to MLS defined ciphersuites
+impl From<JwsAlgorithm> for HashAlgorithm {
+    fn from(alg: JwsAlgorithm) -> Self {
+        match alg {
+            JwsAlgorithm::Ed25519 | JwsAlgorithm::P256 => Self::SHA256,
+            JwsAlgorithm::P384 => Self::SHA384,
+        }
+    }
+}

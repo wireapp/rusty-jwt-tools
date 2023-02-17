@@ -1,12 +1,9 @@
 use crate::{
-    account::AcmeAccount,
-    jws::AcmeJws,
-    order::{AcmeOrder, AcmeOrderError, AcmeOrderStatus},
+    order::{AcmeOrderError, AcmeOrderStatus},
     prelude::*,
 };
 use base64::Engine;
 
-use crate::identifier::WireIdentifier;
 use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
@@ -22,7 +19,7 @@ impl RustyAcme {
         let acct_url = account.acct_url()?;
 
         let id = order.identifiers.pop().ok_or(RustyAcmeError::ImplementationError)?;
-        let csr = Self::generate_csr(alg, id.wire_identifier()?, kp)?;
+        let csr = Self::generate_csr(alg, id.to_wire_identifier()?, kp)?;
         let payload = AcmeFinalizeRequest { csr };
         let req = AcmeJws::new(alg, previous_nonce, &order.finalize, Some(&acct_url), Some(payload), kp)?;
         Ok(req)
@@ -31,7 +28,12 @@ impl RustyAcme {
     fn generate_csr(alg: JwsAlgorithm, identifier: WireIdentifier, kp: &Pem) -> RustyAcmeResult<String> {
         let mut params = rcgen::CertificateParams::new(vec![]);
         let mut dn = rcgen::DistinguishedName::new();
-        dn.push(rcgen::DnType::CommonName, identifier.name);
+
+        // TODO: temporarily using a custom OIDC for carrying the display name without having it listed as a DNS SAN.
+        // reusing LDAP's OID for diplay name see http://oid-info.com/get/2.16.840.1.113730.3.1.241
+        let display_name_oid = vec![2, 16, 840, 1, 113730, 3, 1, 241];
+        dn.push(rcgen::DnType::CustomDnType(display_name_oid), identifier.display_name);
+
         dn.push(rcgen::DnType::OrganizationName, identifier.domain.clone());
         params.distinguished_name = dn;
         params.alg = match alg {
@@ -89,7 +91,7 @@ impl AcmeFinalize {
             AcmeOrderStatus::Valid => {}
             AcmeOrderStatus::Pending | AcmeOrderStatus::Processing | AcmeOrderStatus::Ready => {
                 return Err(RustyAcmeError::ClientImplementationError(
-                    "Finalize is not supposed to be 'pending | processing | ready' at this point. \
+                    "finalize is not supposed to be 'pending | processing | ready' at this point. \
                     It means you have forgotten previous steps",
                 ))
             }

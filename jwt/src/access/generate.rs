@@ -41,7 +41,7 @@ impl RustyJwtTools {
     #[allow(clippy::too_many_arguments)]
     pub fn generate_access_token(
         dpop_proof: &str,
-        client_id: ClientId,
+        client_id: &ClientId,
         backend_nonce: BackendNonce,
         uri: Htu,
         method: Htm,
@@ -79,7 +79,7 @@ impl RustyJwtTools {
         proof: &str,
         proof_claims: JWTClaims<Dpop>,
         backend_keys: Pem,
-        client_id: ClientId,
+        client_id: &ClientId,
         nonce: BackendNonce,
         hash: HashAlgorithm,
     ) -> RustyJwtResult<String> {
@@ -352,11 +352,11 @@ mod tests {
             fn should_have_sub_and_client_id(ciphersuite: Ciphersuite) {
                 let sub = ClientId::alice();
                 let dpop = DpopBuilder {
-                    sub: Some(sub),
+                    sub: Some(sub.clone()),
                     ..ciphersuite.key.clone().into()
                 };
                 let params: Params = Params {
-                    client_id: sub,
+                    client_id: sub.clone(),
                     ..ciphersuite.clone().into()
                 };
                 let backend_key = params.backend_keys.clone();
@@ -1018,11 +1018,11 @@ mod tests {
     }
 
     #[derive(Debug, Clone, Eq, PartialEq)]
-    struct Params<'a> {
+    struct Params {
         pub dpop_alg: JwsAlgorithm,
         pub key: JwtKey,
         pub dpop: Dpop,
-        pub client_id: ClientId<'a>,
+        pub client_id: ClientId,
         pub backend_nonce: BackendNonce,
         pub uri: Htu,
         pub method: Htm,
@@ -1032,7 +1032,7 @@ mod tests {
         pub hash_alg: HashAlgorithm,
     }
 
-    impl From<Ciphersuite> for Params<'_> {
+    impl From<Ciphersuite> for Params {
         fn from(ciphersuite: Ciphersuite) -> Self {
             let backend_keys = ciphersuite.key.create_another().kp;
             Self {
@@ -1062,7 +1062,7 @@ mod tests {
         } = params.clone();
         let expiry = Duration::from_days(1).into();
         let dpop =
-            RustyJwtTools::generate_dpop_token(dpop, client_id, backend_nonce, expiry, dpop_alg, &key.kp).unwrap();
+            RustyJwtTools::generate_dpop_token(dpop, &client_id, backend_nonce, expiry, dpop_alg, &key.kp).unwrap();
         access_token_with_dpop(&dpop, params)
     }
 
@@ -1080,7 +1080,7 @@ mod tests {
         } = params;
         RustyJwtTools::generate_access_token(
             dpop,
-            client_id,
+            &client_id,
             backend_nonce,
             uri,
             method,

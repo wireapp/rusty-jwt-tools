@@ -16,10 +16,13 @@ pub mod prelude {
     pub use super::RustyAcme;
     use super::*;
     pub use account::AcmeAccount;
-    pub use chall::AcmeChallenge;
+    pub use authz::AcmeAuthz;
+    pub use chall::{AcmeChallError, AcmeChallenge};
     pub use error::{RustyAcmeError, RustyAcmeResult};
-    pub use identifier::AcmeIdentifier;
+    pub use finalize::AcmeFinalize;
+    pub use identifier::{AcmeIdentifier, WireIdentifier};
     pub use jws::AcmeJws;
+    pub use order::AcmeOrder;
 
     pub use directory::AcmeDirectory;
     #[cfg(all(feature = "docker", not(target_family = "wasm")))]

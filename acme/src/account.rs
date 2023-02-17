@@ -1,4 +1,3 @@
-use crate::jws::AcmeJws;
 use crate::prelude::*;
 use rusty_jwt_tools::prelude::*;
 

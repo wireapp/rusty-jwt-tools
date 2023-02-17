@@ -1,4 +1,4 @@
-use crate::{account::AcmeAccount, finalize::AcmeFinalize, jws::AcmeJws, prelude::*};
+use crate::prelude::*;
 use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
@@ -29,7 +29,6 @@ impl RustyAcme {
             .split(Self::CERTIFICATE_BEGIN)
             .filter(|c| !c.is_empty())
             .map(|c| c.trim().trim_end_matches(Self::CERTIFICATE_END).trim())
-            .into_iter()
             .try_fold(vec![], |mut acc, cert_pem| -> RustyAcmeResult<Vec<String>> {
                 Self::parse_x509_and_validate(cert_pem)?;
                 acc.push(cert_pem.to_string());
