@@ -20,7 +20,7 @@ foreign import ccall unsafe "generate_dpop_access_token"
   generate_dpop_access_token ::
     CString ->
     CString ->
-    Word32 ->
+    Word64 ->
     CString ->
     CString ->
     CString ->
@@ -40,7 +40,7 @@ foreign import ccall unsafe "get_token" get_token :: Ptr JwtResponse -> CString
 createToken ::
   CString ->
   CString ->
-  Word32 ->
+  Word64 ->
   CString ->
   CString ->
   CString ->
@@ -74,7 +74,7 @@ generateDpopAccessToken ::
   (MonadIO m) =>
   ByteString ->
   UUID ->
-  Word32 ->
+  Word64 ->
   Text ->
   ByteString ->
   Text ->
@@ -110,7 +110,6 @@ generateDpopAccessToken dpopProof user client domain nonce uri method maxSkewSec
           Nothing -> pure $ Left "Unable to create token"
           Just r -> do
             mErr <- getError r
-            print mErr
             mToken <- getToken r
             pure $ toResult mErr mToken
   let after = maybe (pure ()) free_dpop_access_token

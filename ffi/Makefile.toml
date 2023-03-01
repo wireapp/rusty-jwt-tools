@@ -2,7 +2,7 @@
 
 [tasks.hs-test]
 script = '''
-    cargo build --features haskell
+    cargo build
 
     cd bindings/haskell
     # link Rust libs we just built
