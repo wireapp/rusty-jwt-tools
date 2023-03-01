@@ -13,3 +13,4 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 rusty-jwt-tools = { version = "0.2", path = "../jwt" }
+uuid = "1.3"

@@ -13,6 +13,7 @@
 use std::{
     ffi::{CStr, CString},
     os::raw::c_char,
+    str::FromStr,
 };
 
 use rusty_jwt_tools::prelude::*;
@@ -35,12 +36,15 @@ impl RustyJwtToolsFfi {
         _now: u64,
         backend_keys: *const c_char,
     ) -> *const HsResult<String> {
-        // TODO: remove unwrap
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
-        let user = unsafe { CStr::from_ptr(user).to_bytes() };
+        let user = unsafe { CStr::from_ptr(user) };
+        let Some(user) = std::str::from_utf8(user.to_bytes()).ok()
+            .and_then(|s| uuid::Uuid::from_str(s).ok()) else {
+            return Box::into_raw(Box::new(Err(HsError::InvalidUserId)))
+        };
         let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
-        let client_id = ClientId::try_from_raw_parts(user, client_id, domain);
+        let client_id = ClientId::try_from_raw_parts(user.as_ref(), client_id, domain);
         let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() });
         let uri = unsafe { CStr::from_ptr(uri).to_bytes() }.try_into();
         let method = unsafe { CStr::from_ptr(method).to_bytes() }.try_into();
@@ -156,28 +160,30 @@ pub enum HsError {
     ExpMismatch = 17,
     /// (exp) claim in DPoP token is sooner than now (with [max_skew_secs] leeway)
     Expired = 18,
+    /// userId supplied across the FFI is invalid
+    InvalidUserId = 19,
 }
 
 impl From<RustyJwtError> for HsError {
     fn from(e: RustyJwtError) -> Self {
         match e {
-            RustyJwtError::InvalidHtu(_, _) => HsError::InvalidHtu,
-            RustyJwtError::InvalidHtm(_) => HsError::InvalidHtm,
-            RustyJwtError::InvalidDpopJwk => HsError::InvalidDpopSyntax,
-            RustyJwtError::InvalidDpopTyp => HsError::InvalidDpopTyp,
-            RustyJwtError::UnsupportedAlgorithm => HsError::UnsupportedDpopAlgorithm,
-            RustyJwtError::InvalidToken(_) => HsError::InvalidDpopSignature,
-            RustyJwtError::TokenSubMismatch => HsError::ClientIdMismatch,
-            RustyJwtError::DpopNonceMismatch => HsError::BackendNonceMismatch,
-            RustyJwtError::MissingTokenClaim("jti") => HsError::MissingJti,
-            RustyJwtError::MissingTokenClaim("chal") => HsError::MissingChallenge,
-            RustyJwtError::MissingTokenClaim("iat") => HsError::MissingIat,
-            RustyJwtError::MissingTokenClaim("exp") => HsError::MissingExp,
-            RustyJwtError::InvalidDpopIat => HsError::InvalidIat,
-            RustyJwtError::TokenLivesTooLong => HsError::ExpMismatch,
-            RustyJwtError::TokenExpired => HsError::Expired,
-            RustyJwtError::ImplementationError => HsError::ImplementationError,
-            _ => HsError::UnknownError,
+            RustyJwtError::InvalidHtu(_, _) => Self::InvalidHtu,
+            RustyJwtError::InvalidHtm(_) => Self::InvalidHtm,
+            RustyJwtError::InvalidDpopJwk => Self::InvalidDpopSyntax,
+            RustyJwtError::InvalidDpopTyp => Self::InvalidDpopTyp,
+            RustyJwtError::UnsupportedAlgorithm => Self::UnsupportedDpopAlgorithm,
+            RustyJwtError::InvalidToken(_) => Self::InvalidDpopSignature,
+            RustyJwtError::TokenSubMismatch => Self::ClientIdMismatch,
+            RustyJwtError::DpopNonceMismatch => Self::BackendNonceMismatch,
+            RustyJwtError::MissingTokenClaim("jti") => Self::MissingJti,
+            RustyJwtError::MissingTokenClaim("chal") => Self::MissingChallenge,
+            RustyJwtError::MissingTokenClaim("iat") => Self::MissingIat,
+            RustyJwtError::MissingTokenClaim("exp") => Self::MissingExp,
+            RustyJwtError::InvalidDpopIat => Self::InvalidIat,
+            RustyJwtError::TokenLivesTooLong => Self::ExpMismatch,
+            RustyJwtError::TokenExpired => Self::Expired,
+            RustyJwtError::ImplementationError => Self::ImplementationError,
+            _ => Self::UnknownError,
         }
     }
 }
