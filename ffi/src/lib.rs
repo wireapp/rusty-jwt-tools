@@ -1,5 +1,6 @@
 #![cfg(not(target_family = "wasm"))]
 #![warn(dead_code)]
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 //! We only declare here intermediate FFI representation with raw types. But we do not generate
 //! all the bindings and wrappers here.
