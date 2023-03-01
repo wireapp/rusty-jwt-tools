@@ -101,10 +101,10 @@ impl RustyJwtToolsFfi {
         }
     }
 
-    /// Frees the allocated [RustyJwtResult] used for returning the result.
+    /// Frees the allocated [HsResult] used for returning the result.
     /// This has to be called from haskell
     #[no_mangle]
-    pub extern "C" fn free_dpop_access_token(ptr: *mut RustyJwtResult<String>) {
+    pub extern "C" fn free_dpop_access_token(ptr: *mut HsResult<String>) {
         if ptr.is_null() {
             return;
         }
