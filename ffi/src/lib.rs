@@ -1,4 +1,4 @@
-#![cfg(all(feature = "haskell", not(target_family = "wasm")))]
+#![cfg(not(target_family = "wasm"))]
 #![warn(dead_code)]
 
 //! We only declare here intermediate FFI representation with raw types. But we do not generate
