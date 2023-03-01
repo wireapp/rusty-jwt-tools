@@ -12,7 +12,7 @@ No license is granted to the Wire trademark and its associated logos, all of whi
 
 ## Haskell
 
-To run the demo you need: 
+To run the demo you need:
 * [Rust toolchain](https://rustup.rs/)
 * [cargo-make](https://crates.io/crates/cargo-make)
 * [cabal](https://www.haskell.org/cabal/)
@@ -20,6 +20,6 @@ To run the demo you need:
 Then simply
 
 ```bash
-cd jwt-ffi
+cd ffi
 cargo make hs-test
 ```
