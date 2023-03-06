@@ -1,11 +1,12 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
+import Data.Either
 import Data.String.Conversions (cs)
-import Data.UUID.V4
 import Data.UUID as UUID
+import Data.UUID.V4
 import RustyJwtToolsHs
 import Test.Hspec
 import Prelude
-import Data.Either
 
 main :: IO ()
 main = hspec $ do
@@ -13,12 +14,12 @@ main = hspec $ do
     it "should return an error when given nonsense values" $ do
       let pubKeyBundle :: String
           pubKeyBundle =
-                "-----BEGIN PRIVATE KEY-----\n\
-                \MC4CAQAwBQYDK2VwBCIEIFANnxZLNE4p+GDzWzR3wm/v8x/0bxZYkCyke1aTRucX\n\
-                \-----END PRIVATE KEY-----\n\
-                \-----BEGIN PUBLIC KEY-----\n\
-                \MCowBQYDK2VwAyEACPvhIdimF20tOPjbb+fXJrwS2RKDp7686T90AZ0+Th8=\n\
-                \-----END PUBLIC KEY-----\n"
+            "-----BEGIN PRIVATE KEY-----\n\
+            \MC4CAQAwBQYDK2VwBCIEIFANnxZLNE4p+GDzWzR3wm/v8x/0bxZYkCyke1aTRucX\n\
+            \-----END PRIVATE KEY-----\n\
+            \-----BEGIN PUBLIC KEY-----\n\
+            \MCowBQYDK2VwAyEACPvhIdimF20tOPjbb+fXJrwS2RKDp7686T90AZ0+Th8=\n\
+            \-----END PUBLIC KEY-----\n"
       uid <- nextRandom
       actual <-
         generateDpopAccessToken
@@ -37,25 +38,26 @@ main = hspec $ do
     it "should return a valid access token" $ do
       let pubKeyBundle :: String
           pubKeyBundle =
-                "-----BEGIN PRIVATE KEY-----\n\
-                \MC4CAQAwBQYDK2VwBCIEIKW3jzXCsRVgnclmiTu53Pu1/r6AUmnKDoghOOVMjozQ\n\
-                \-----END PRIVATE KEY-----\n\
-                \-----BEGIN PUBLIC KEY-----\n\
-                \MCowBQYDK2VwAyEA7t9veqi02mPhllm44JXWga8m/l4JxUeQm3qPyMlerxY=\n\
-                \-----END PUBLIC KEY-----\n"
-      let Just uid = UUID.fromString "ebd272fb-82fd-432b-876c-7abda54ddb75"
+            "-----BEGIN PRIVATE KEY-----\n\
+            \MC4CAQAwBQYDK2VwBCIEIMROyHqEinw8EvFSNXp0X0suu6gMQvd9i/l9v9R9UnhH\n\
+            \-----END PRIVATE KEY-----\n\
+            \-----BEGIN PUBLIC KEY-----\n\
+            \MCowBQYDK2VwAyEA5pDR/Yo4pkKUIxIody2fEQ56eIOW7UqeDeF7FG7WudA=\n\
+            \-----END PUBLIC KEY-----\n"
+      let Just uid = UUID.fromString "c5e21936-c3bc-4007-becb-0acf5972a5b3"
+      let proofExpiring2038 =
+            "eyJhbGciOiJFZERTQSIsInR5cCI6ImRwb3Arand0IiwiandrIjp7Imt0eSI6Ik9LUCIsImNydiI6IkVkMjU1MTkiLCJ4IjoiZ0tYSHpIV3QtRUh1N2ZQbmlWMXFXWGV2Rmk1eFNKd3RNcHJlSjBjdTZ3SSJ9fQ.eyJpYXQiOjE2NzgxMDcwMDksImV4cCI6MjA4ODA3NTAwOSwibmJmIjoxNjc4MTA3MDA5LCJzdWIiOiJpbXBwOndpcmVhcHA9WXpWbE1qRTVNelpqTTJKak5EQXdOMkpsWTJJd1lXTm1OVGszTW1FMVlqTS9lYWZhMDI1NzMwM2Q0MDYwQHdpcmUuY29tIiwianRpIjoiMmQzNzAzYTItNTc4Yi00MmRjLWE2MGUtYmM0NzA3OWVkODk5Iiwibm9uY2UiOiJRV1J4T1VaUVpYVnNTMlJZYjBGS05sWkhXbGgwYUV4amJUUmpTM2M1U2xnIiwiaHRtIjoiUE9TVCIsImh0dSI6Imh0dHBzOi8vd2lyZS5leGFtcGxlLmNvbS9jbGllbnRzLzE2OTMxODQ4MzIyNTQ3NTMxODcyL2FjY2Vzcy10b2tlbiIsImNoYWwiOiJZVE5HTkRSNlRqZHFabGRRZUVGYWVrMTZWMmhqYXpCVmJ6UlFWVXRWUlZJIn0.0J2sx5y0ubZ4NwmQhbKXDj6i5UWTx3cvuTPKbeXXOJFDamr-iFtE6sOnAQT90kfTx1cEoIyDfoUkj3h5GEanAA"
       actual <-
         generateDpopAccessToken
-          "eyJhbGciOiJFZERTQSIsInR5cCI6ImRwb3Arand0IiwiandrIjp7Imt0eSI6Ik9LUCIsImNydiI6IkVkMjU1MTkiLCJ4IjoiZzQwakI3V3pmb2ZCdkxCNVlybmlZM2ZPZU1WVGtfNlpfVnNZM0tBbnpOUSJ9fQ.eyJpYXQiOjE2Nzc2NzAwODEsImV4cCI6MTY3Nzc1NjQ4MSwibmJmIjoxNjc3NjcwMDgxLCJzdWIiOiJpbXBwOndpcmVhcHA9WldKa01qY3labUk0TW1aa05ETXlZamczTm1NM1lXSmtZVFUwWkdSaU56VS8xODllNDhjNmNhODZiNWQ0QGV4YW1wbGUub3JnIiwianRpIjoiZDE5ZWExYmItNWI0Ny00ZGJiLWE1MTktNjU0ZWRmMjU0MTQ0Iiwibm9uY2UiOiJZMkZVTjJaTlExUnZSV0l6Ympsa2RGRjFjWGhHZDJKbWFXUlRiamhXZVdRIiwiaHRtIjoiUE9TVCIsImh0dSI6Imh0dHA6Ly9sb2NhbGhvc3Q6NjQwNTQvIiwiY2hhbCI6IkJpMkpkUGk1eWVTTVdhZjA5TnJEZTVUQXFjZ0FnQmE3In0._PrwHUTS7EoAflXyNDlPNqGMbjKu-JuSXwkNPyryBQdg2gDIb20amsH05Ocih78Josz9h7lAB6FvAWsXKQB1Dw"
+          proofExpiring2038
           uid
-          1773935321869104596
-          "example.org"
-          "Y2FUN2ZNQ1RvRWIzbjlkdFF1cXhGd2JmaWRTbjhWeWQ"
-          "http://localhost:64054/"
+          16931848322547531872
+          "wire.com"
+          "QWRxOUZQZXVsS2RYb0FKNlZHWlh0aExjbTRjS3c5Slg"
+          "https://wire.example.com/clients/16931848322547531872/access-token"
           "POST"
-          2
-          2082008461
+          5
+          2136351646
           360
           (cs pubKeyBundle)
       isRight actual `shouldBe` True
-
