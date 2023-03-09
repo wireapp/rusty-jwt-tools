@@ -188,29 +188,3 @@ impl From<RustyJwtError> for HsError {
         }
     }
 }
-
-impl From<&HsError> for u8 {
-    fn from(e: &HsError) -> Self {
-        match e {
-            HsError::UnknownError => 1,
-            HsError::FfiError => 2,
-            HsError::ImplementationError => 3,
-            HsError::InvalidDpopSyntax => 4,
-            HsError::InvalidDpopTyp => 5,
-            HsError::UnsupportedDpopAlgorithm => 6,
-            HsError::InvalidDpopSignature => 7,
-            HsError::ClientIdMismatch => 8,
-            HsError::BackendNonceMismatch => 9,
-            HsError::InvalidHtu => 10,
-            HsError::InvalidHtm => 11,
-            HsError::MissingJti => 12,
-            HsError::MissingChallenge => 13,
-            HsError::MissingIat => 14,
-            HsError::InvalidIat => 15,
-            HsError::MissingExp => 16,
-            HsError::ExpMismatch => 17,
-            HsError::Expired => 18,
-            HsError::InvalidUserId => 19,
-        }
-    }
-}
