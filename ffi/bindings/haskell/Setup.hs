@@ -31,7 +31,7 @@ customConfHook (description, buildInfo) flags = do
                   library
                     { PD.libBuildInfo =
                         libraryBuildInfo
-                          { PD.extraLibDirs = (dir ++ "/target/debug") : PD.extraLibDirs libraryBuildInfo
+                          { PD.extraLibDirs = (dir ++ "/target/release") : PD.extraLibDirs libraryBuildInfo
                           }
                     }
             }

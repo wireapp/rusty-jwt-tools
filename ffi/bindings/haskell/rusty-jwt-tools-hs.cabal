@@ -33,7 +33,7 @@ library
   ghc-options:
     -O2 -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates
     -Wpartial-fields -fwarn-tabs -optP-Wno-nonportable-include-path
-    "-optl=-Wl,-rpath,./target/debug"
+    "-optl=-Wl,-rpath,./target/release"
 
   default-extensions:
     NoImplicitPrelude
@@ -97,7 +97,7 @@ test-suite rusty-jwt-tools-hs-tests
   ghc-options:
     -O2 -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates
     -Wpartial-fields -fwarn-tabs -optP-Wno-nonportable-include-path
-    -threaded -with-rtsopts=-N "-optl=-Wl,-rpath,./target/debug"
+    -threaded -with-rtsopts=-N "-optl=-Wl,-rpath,./target/release"
 
   default-extensions:
     NoImplicitPrelude
