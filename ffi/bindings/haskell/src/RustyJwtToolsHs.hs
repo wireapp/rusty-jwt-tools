@@ -60,7 +60,10 @@ getError :: Ptr JwtResponse -> IO (Maybe Word8)
 getError ptr = do
   let errorPtr = get_error ptr
   if errorPtr /= nullPtr
-    then Just . fromIntegral <$> peek errorPtr
+    then do
+      e <- peek errorPtr
+      putStrLn $ ">>>>>>>> Error: " <> show e
+      Just . fromIntegral <$> peek errorPtr
     else pure Nothing
 
 getToken :: Ptr JwtResponse -> IO (Maybe String)

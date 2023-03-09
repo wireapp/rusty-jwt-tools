@@ -2,7 +2,8 @@
 
 [tasks.hs-test]
 script = '''
-    cargo build
+    # cargo clean
+    cargo build --release
 
     cd bindings/haskell
     # link Rust libs we just built
