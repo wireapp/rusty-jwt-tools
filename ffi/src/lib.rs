@@ -74,15 +74,15 @@ impl RustyJwtToolsFfi {
     }
 
     #[no_mangle]
-    pub extern "C" fn get_error(ptr: *const HsResult<String>) -> *const u8 {
+    pub extern "C" fn get_error(ptr: *const HsResult<String>) -> u8 {
         let result = unsafe {
             assert!(!ptr.is_null());
             &*ptr
         };
 
         match result {
-            Ok(_) => std::ptr::null_mut(),
-            Err(e) => &(*e as u8),
+            Err(e) => *e as u8,
+            _ => 0,
         }
     }
 
