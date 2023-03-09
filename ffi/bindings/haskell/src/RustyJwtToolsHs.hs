@@ -8,10 +8,8 @@ import Data.String.Conversions (cs)
 import Data.Text
 import Data.UUID
 import Data.Word (Word32, Word64, Word8)
-import Foreign.C (CUChar)
 import Foreign.C.String (CString, newCString, peekCString)
 import Foreign.Ptr (Ptr, nullPtr)
-import Foreign.Storable (peek)
 import Prelude
 
 data JwtResponse = JwtResponse
@@ -33,7 +31,7 @@ foreign import ccall unsafe "generate_dpop_access_token"
 
 foreign import ccall unsafe "free_dpop_access_token" free_dpop_access_token :: Ptr JwtResponse -> IO ()
 
-foreign import ccall unsafe "get_error" get_error :: Ptr JwtResponse -> Ptr CUChar
+foreign import ccall unsafe "get_error" get_error :: Ptr JwtResponse -> Word8
 
 foreign import ccall unsafe "get_token" get_token :: Ptr JwtResponse -> CString
 
@@ -58,12 +56,9 @@ createToken dpopProof user client domain nonce uri method maxSkewSecs expiration
 
 getError :: Ptr JwtResponse -> IO (Maybe Word8)
 getError ptr = do
-  let errorPtr = get_error ptr
-  if errorPtr /= nullPtr
-    then do
-      e <- peek errorPtr
-      putStrLn $ ">>>>>>>> Error: " <> show e
-      Just . fromIntegral <$> peek errorPtr
+  let e = get_error ptr
+  if e /= 0
+    then pure $ Just e
     else pure Nothing
 
 getToken :: Ptr JwtResponse -> IO (Maybe String)
