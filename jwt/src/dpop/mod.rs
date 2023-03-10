@@ -51,6 +51,6 @@ impl Dpop {
         Claims::with_custom_claims(self, expiry)
             .with_jwt_id(new_jti())
             .with_nonce(nonce.to_string())
-            .with_subject(client_id.to_subject())
+            .with_subject(client_id.to_uri())
     }
 }

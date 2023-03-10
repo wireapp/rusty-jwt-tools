@@ -91,7 +91,7 @@ impl DpopBuilder {
     fn claims(&self) -> JWTClaims<TestDpop> {
         let exp = Duration::from_days(2);
         let mut claims = Claims::with_custom_claims(self.dpop.clone(), exp);
-        claims.subject = self.sub.as_ref().map(|c| c.to_subject());
+        claims.subject = self.sub.as_ref().map(|c| c.to_uri());
         claims.nonce = self.nonce.as_ref().map(|n| n.as_str().to_string());
         claims.jwt_id = self.jti.clone();
         claims.issued_at = self.iat;

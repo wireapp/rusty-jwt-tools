@@ -65,7 +65,7 @@ impl Access {
         let exp = Duration::from_secs(Self::EXP);
         Claims::with_custom_claims(self, exp)
             .with_jwt_id(new_jti())
-            .with_subject(client_id.to_subject())
+            .with_subject(client_id.to_uri())
             .with_nonce(nonce.to_string())
             .with_issuer(issuer)
             .with_audience(audience)

@@ -22,7 +22,7 @@ impl From<&Verify<'_>> for VerificationOptions {
         Self {
             accept_future: false,
             required_key_id: None, // we don't verify 'jti', just enforce its presence
-            required_subject: Some(v.client_id.to_subject()),
+            required_subject: Some(v.client_id.to_uri()),
             required_nonce: v.backend_nonce.map(|n| n.to_string()),
             time_tolerance: Some(UnixTimeStamp::from_secs(v.leeway as u64)),
             ..Default::default()

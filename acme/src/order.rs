@@ -1,5 +1,6 @@
-use crate::prelude::*;
 use rusty_jwt_tools::prelude::*;
+
+use crate::prelude::*;
 
 // Order creation
 impl RustyAcme {
@@ -7,9 +8,9 @@ impl RustyAcme {
     /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4).
     #[allow(clippy::too_many_arguments)]
     pub fn new_order_request(
-        display_name: String,
+        display_name: &str,
         client_id: ClientId,
-        handle: String,
+        handle: &str,
         expiry: core::time::Duration,
         directory: &AcmeDirectory,
         account: &AcmeAccount,
@@ -21,7 +22,12 @@ impl RustyAcme {
         let acct_url = account.acct_url()?;
 
         let domain = client_id.domain.clone();
-        let identifiers = vec![AcmeIdentifier::try_new(display_name, domain, client_id, handle)?];
+        let identifiers = vec![AcmeIdentifier::try_new(
+            display_name.to_string(),
+            domain,
+            client_id,
+            handle.to_string(),
+        )?];
         let not_before = time::OffsetDateTime::now_utc();
         let not_after = not_before + expiry;
         let payload = AcmeOrderRequest {
@@ -231,9 +237,10 @@ pub enum AcmeOrderStatus {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

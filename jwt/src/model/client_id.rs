@@ -14,31 +14,18 @@ pub struct ClientId {
     pub domain: String,
 }
 
-impl TryFrom<&str> for ClientId {
-    type Error = RustyJwtError;
-
-    fn try_from(client_id: &str) -> RustyJwtResult<Self> {
-        let rest = client_id
-            .strip_prefix(Self::URI_PREFIX)
-            .ok_or(RustyJwtError::InvalidClientId)?;
-        ClientId::try_from_qualified(rest)
-    }
-}
-
-impl TryFrom<&[u8]> for ClientId {
-    type Error = RustyJwtError;
-
-    fn try_from(client_id: &[u8]) -> RustyJwtResult<Self> {
-        core::str::from_utf8(client_id)?.try_into()
-    }
-}
-
 impl ClientId {
     #[cfg(test)]
     pub const DEFAULT_USER: Uuid = uuid::uuid!("4af3df2e-5c01-422f-baa1-d75546b92aa7");
 
     /// URI prefix for all subject URIs
     pub const URI_PREFIX: &'static str = "im:wireapp=";
+
+    /// Between user-id & client-id when converted to an URI
+    pub const URI_DELIMITER: &'static str = "/";
+
+    /// Between user-id & client-id when parsed from Wire clients
+    pub const CLIENT_DELIMITER: &'static str = ":";
 
     /// Constructor
     pub fn try_new(user: impl AsRef<str>, client: u64, domain: &str) -> RustyJwtResult<Self> {
@@ -57,9 +44,23 @@ impl ClientId {
         Ok(Self { user, client, domain })
     }
 
+    /// Parse from an URI e.g. `im:wireapp={userId}/{clientId}@{domain}`
+    pub fn try_from_uri(client_id: &str) -> RustyJwtResult<Self> {
+        let client_id = client_id
+            .strip_prefix(Self::URI_PREFIX)
+            .ok_or(RustyJwtError::InvalidClientId)?;
+        Self::parse_client_id(client_id, Self::URI_DELIMITER)
+    }
+
     /// Constructor for clientId usually used by Wire client application. Does not have the prefix
+    /// and uses ':' instead of '/' as delimiter
+    /// e.g. `im:wireapp={userId}:{clientId}@{domain}`
     pub fn try_from_qualified(client_id: &str) -> RustyJwtResult<Self> {
-        let (user, rest) = client_id.split_once('/').ok_or(RustyJwtError::InvalidClientId)?;
+        Self::parse_client_id(client_id, Self::CLIENT_DELIMITER)
+    }
+
+    fn parse_client_id(client_id: &str, delimiter: &'static str) -> RustyJwtResult<Self> {
+        let (user, rest) = client_id.split_once(delimiter).ok_or(RustyJwtError::InvalidClientId)?;
         let user = Self::parse_user(user)?;
         let (client, domain) = rest.split_once('@').ok_or(RustyJwtError::InvalidClientId)?;
         let client = u64::from_str_radix(client, 16).map_err(|_| RustyJwtError::InvalidClientId)?;
@@ -71,9 +72,15 @@ impl ClientId {
     }
 
     /// Into JWT 'sub' claim
-    pub fn to_subject(&self) -> String {
+    pub fn to_uri(&self) -> String {
         let user = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(self.user.as_simple().to_string());
-        format!("{}{user}/{:x}@{}", Self::URI_PREFIX, self.client, self.domain)
+        format!(
+            "{}{user}{}{:x}@{}",
+            Self::URI_PREFIX,
+            Self::URI_DELIMITER,
+            self.client,
+            self.domain
+        )
     }
 
     fn parse_user(user: impl AsRef<[u8]>) -> RustyJwtResult<Uuid> {
@@ -90,7 +97,7 @@ impl serde::Serialize for ClientId {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.to_subject())
+        serializer.serialize_str(&self.to_uri())
     }
 }
 
@@ -124,8 +131,9 @@ impl ClientId {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::str::FromStr as _;
+
+    use super::*;
 
     mod constructor {
         use super::*;
@@ -153,19 +161,23 @@ mod tests {
         }
     }
 
-    mod to_subject {
+    mod to_uri {
         use super::*;
 
         #[test]
-        fn to_subject_should_succeed() {
+        fn to_uri_should_succeed() {
             let user = "4af3df2e-5c01-422f-baa1-d75546b92aa7";
             let domain = "wire.com";
             let client_id = ClientId::try_new(user, u64::MAX, domain).unwrap();
             let base64_user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
             let hex_client = "ffffffffffffffff";
             assert_eq!(
-                &client_id.to_subject(),
-                &format!("{}{base64_user}/{hex_client}@{domain}", ClientId::URI_PREFIX)
+                &client_id.to_uri(),
+                &format!(
+                    "{}{base64_user}{}{hex_client}@{domain}",
+                    ClientId::URI_PREFIX,
+                    ClientId::URI_DELIMITER
+                )
             );
         }
     }
@@ -173,57 +185,138 @@ mod tests {
     mod parse {
         use super::*;
 
-        #[test]
-        fn parse_subject_should_succeed() {
-            let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
-            let client = "1a2b";
-            let domain = "wire.com".to_string();
-            let subject = format!("{}{user}/{client}@{domain}", ClientId::URI_PREFIX);
-            let parsed = ClientId::try_from(subject.as_str()).unwrap();
-            assert_eq!(
-                parsed,
-                ClientId {
-                    user: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
-                    client: 6699,
-                    domain,
-                }
-            );
+        const USER_ID: &str = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
+        const CLIENT_ID: &str = "1a2b";
+        const DOMAIN: &str = "wire.com";
+
+        mod uri {
+            use super::*;
+
+            #[test]
+            fn should_succeed() {
+                let subject = format!("{}{USER_ID}/{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let parsed = ClientId::try_from_uri(&subject).unwrap();
+                assert_eq!(
+                    parsed,
+                    ClientId {
+                        user: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
+                        client: 6699,
+                        domain: DOMAIN.to_string(),
+                    }
+                );
+            }
+
+            #[test]
+            fn should_fail_when_invalid_uuid_user() {
+                let invalid_user = format!("{}abcd", USER_ID);
+                let subject = format!("{}{invalid_user}/{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let parsed = ClientId::try_from_uri(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_invalid_uri_prefix() {
+                let subject = format!("im:not:wireapp={USER_ID}/{CLIENT_ID}@{DOMAIN}");
+                let parsed = ClientId::try_from_uri(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_invalid_delimiter() {
+                let delimiter = "@";
+                let subject = format!("{}{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let parsed = ClientId::try_from_uri(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_using_client_delimiter() {
+                let delimiter = ClientId::CLIENT_DELIMITER;
+                let subject = format!("{}{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let parsed = ClientId::try_from_uri(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_invalid_hex_client() {
+                let invalid_client = "1g2g";
+                let subject = format!("{}{USER_ID}/{invalid_client}@{DOMAIN}", ClientId::URI_PREFIX);
+                let parsed = ClientId::try_from_uri(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_client_too_large() {
+                let invalid_client = u128::MAX;
+                let subject = format!("{}{USER_ID}/{invalid_client:x}@{DOMAIN}", ClientId::URI_PREFIX);
+                let parsed = ClientId::try_from_uri(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
         }
 
-        #[test]
-        fn parse_subject_should_fail_when_invalid_uuid_user() {
-            let invalid_user = format!("{}abcd", "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc");
-            let client = "1a2b";
-            let subject = format!("{}{invalid_user}/{client}@wire.com", ClientId::URI_PREFIX);
-            let parsed = ClientId::try_from(subject.as_str());
-            assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
-        }
+        mod client {
+            use super::*;
 
-        #[test]
-        fn parse_subject_should_fail_when_invalid_uri_prefix() {
-            let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
-            let client = "1a2b";
-            let subject = format!("impp:not:wireapp={user}/{client}@wire.com");
-            let parsed = ClientId::try_from(subject.as_str());
-            assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
-        }
+            #[test]
+            fn should_succeed() {
+                let subject = format!("{USER_ID}:{CLIENT_ID}@{DOMAIN}");
+                let parsed = ClientId::try_from_qualified(&subject).unwrap();
+                assert_eq!(
+                    parsed,
+                    ClientId {
+                        user: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
+                        client: 6699,
+                        domain: DOMAIN.to_string(),
+                    }
+                );
+            }
 
-        #[test]
-        fn parse_subject_should_fail_when_invalid_hex_client() {
-            let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
-            let invalid_client = "1g2g";
-            let subject = format!("{}{user}/{invalid_client}@wire.com", ClientId::URI_PREFIX);
-            let parsed = ClientId::try_from(subject.as_str());
-            assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
-        }
+            #[test]
+            fn should_fail_when_invalid_uuid_user() {
+                let invalid_user = format!("{}abcd", USER_ID);
+                let subject = format!("{invalid_user}:{CLIENT_ID}@{DOMAIN}");
+                let parsed = ClientId::try_from_qualified(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
 
-        #[test]
-        fn parse_subject_should_fail_when_client_too_large() {
-            let user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
-            let invalid_client = u128::MAX;
-            let subject = format!("{}{user}/{invalid_client:x}@wire.com", ClientId::URI_PREFIX);
-            let parsed = ClientId::try_from(subject.as_str());
-            assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            #[test]
+            fn should_fail_when_uri_prefix() {
+                let subject = format!("{}{USER_ID}:{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let parsed = ClientId::try_from_qualified(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_invalid_delimiter() {
+                let delimiter = "@";
+                let subject = format!("{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}");
+                let parsed = ClientId::try_from_qualified(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_using_uri_delimiter() {
+                let delimiter = ClientId::URI_DELIMITER;
+                let subject = format!("{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}");
+                let parsed = ClientId::try_from_qualified(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_invalid_hex_client() {
+                let invalid_client = "1g2g";
+                let subject = format!("{USER_ID}:{invalid_client}@{DOMAIN}");
+                let parsed = ClientId::try_from_qualified(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
+
+            #[test]
+            fn should_fail_when_client_too_large() {
+                let invalid_client = u128::MAX;
+                let subject = format!("{USER_ID}:{invalid_client:x}@{DOMAIN}");
+                let parsed = ClientId::try_from_qualified(&subject);
+                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+            }
         }
     }
 }
