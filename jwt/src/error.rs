@@ -14,8 +14,8 @@ pub enum RustyJwtError {
     #[error(transparent)]
     RandError(#[from] rand::Error),
     /// Elliptic curve error
-    #[error("Elliptic curve error because {0}")]
-    Sec1Error(sec1::Error),
+    #[error(transparent)]
+    Sec1Error(#[from] sec1::Error),
     /// Invalid URL
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),

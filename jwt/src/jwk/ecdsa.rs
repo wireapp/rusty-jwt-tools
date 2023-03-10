@@ -62,13 +62,13 @@ impl TryIntoJwk for AnyEcPublicKey {
         let Self(alg, bytes) = self;
         let (x, y) = match alg {
             JwsEcAlgorithm::P256 => {
-                let point = p256::EncodedPoint::from_bytes(bytes).map_err(RustyJwtError::Sec1Error)?;
+                let point = p256::EncodedPoint::from_bytes(bytes)?;
                 let x = RustyJwk::base64_url_encode(point.x().ok_or(RustyJwtError::ImplementationError)?);
                 let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
                 (x, y)
             }
             JwsEcAlgorithm::P384 => {
-                let point = p384::EncodedPoint::from_bytes(bytes).map_err(RustyJwtError::Sec1Error)?;
+                let point = p384::EncodedPoint::from_bytes(bytes)?;
                 let x = RustyJwk::base64_url_encode(point.x().ok_or(RustyJwtError::ImplementationError)?);
                 let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
                 (x, y)
