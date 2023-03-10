@@ -95,7 +95,7 @@ impl RustyJwtTools {
                 challenge: proof_claims.custom.challenge,
                 cnf,
                 proof: proof.to_string(),
-                client_id: client_id.to_subject(),
+                client_id: client_id.to_uri(),
                 api_version: Access::WIRE_SERVER_API_VERSION,
                 scope: Access::DEFAULT_SCOPE.to_string(),
                 extra_claims: proof_claims.custom.extra_claims,
@@ -364,8 +364,8 @@ mod tests {
 
                 let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
-                assert_eq!(claims.subject, Some(sub.to_subject()));
-                assert_eq!(claims.custom.client_id, sub.to_subject());
+                assert_eq!(claims.subject, Some(sub.to_uri()));
+                assert_eq!(claims.custom.client_id, sub.to_uri());
             }
 
             #[apply(all_ciphersuites)]

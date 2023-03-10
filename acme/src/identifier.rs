@@ -10,7 +10,7 @@ pub enum AcmeIdentifier {
 
 impl AcmeIdentifier {
     pub fn try_new(display_name: String, domain: String, client_id: ClientId, handle: String) -> RustyAcmeResult<Self> {
-        let client_id = client_id.to_subject();
+        let client_id = client_id.to_uri();
         let identifier = WireIdentifier {
             display_name,
             domain,

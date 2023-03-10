@@ -463,7 +463,7 @@ pub mod tests {
             .unwrap();
             let claims = key.claims::<Dpop>(&token);
             assert!(claims.subject.is_some());
-            assert_eq!(claims.subject.unwrap(), client_id.to_subject())
+            assert_eq!(claims.subject.unwrap(), client_id.to_uri())
         }
 
         #[apply(all_keys)]

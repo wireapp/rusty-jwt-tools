@@ -57,7 +57,7 @@ impl AccessGenerate {
             extra_claims: None,
         };
         let nonce: BackendNonce = self.nonce.into();
-        let client_id: ClientId = self.client_id.as_str().try_into().expect("Invalid 'client_id'");
+        let client_id = ClientId::try_from_uri(&self.client_id).expect("Invalid 'client_id'");
         let expiry = core::time::Duration::from_secs(self.expiry);
 
         let client_dpop_token =
