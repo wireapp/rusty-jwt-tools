@@ -36,8 +36,8 @@ impl RustyJwtTools {
     /// * `method` - The HTTPS method used on the backend for the DPoP auth token endpoint ex: b"POST"
     /// * `max_skew_secs` - The maximum number of seconds of clock skew the implementation will allow ex: 360 (5 min)
     /// * `max_expiration` - The maximal expiration date and time, in seconds since epoch ex: 1668987368
-    /// * `now` - Current time in seconds since epoch ex: 1661211368
     /// * `backend_keys` - PEM format concatenated private key and public key of the Wire backend
+    /// * `hash_algorithm` - to calculate JWK thumbprint
     #[allow(clippy::too_many_arguments)]
     pub fn generate_access_token(
         dpop_proof: &str,
