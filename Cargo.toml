@@ -4,16 +4,20 @@ resolver = "2"
 
 [patch.crates-io.biscuit]
 git = "https://github.com/beltram/biscuit"
-tag = "v0.6.0-pre.core-crypto-0.6.0"
+rev = "36b6f30964142f0ca5bc17c908e8b2ad78febaf6"
+#tag = "v0.6.0-pre.core-crypto-0.6.0"
 
 [patch.crates-io.jwt-simple]
 git = "https://github.com/wireapp/rust-jwt-simple"
-tag = "v0.11.3-pre.core-crypto-0.6.0"
+rev = "15a69f82288d68b74a75c1364e5d4bf681f1c07b"
+#tag = "v0.11.3-pre.core-crypto-0.6.0"
 
 [patch.crates-io.rcgen]
 git = "https://github.com/wireapp/rcgen"
-tag = "v1.2.0-pre.core-crypto-0.6.0"
+rev = "1e893c3444a9a1625dc8f3fe7be6df025f64646a"
+#tag = "v1.2.0-pre.core-crypto-0.6.0"
 
 [patch.crates-io.x509-parser]
 git = "https://github.com/wireapp/x509-parser"
-tag = "v1.0.2-pre.core-crypto-0.6.0"
+rev = "4fbc4c795fc84537ba24eb91e563c9e80d3bd5d4"
+#tag = "v1.0.2-pre.core-crypto-0.6.0"

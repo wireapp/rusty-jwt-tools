@@ -154,7 +154,7 @@ checksum = "7e0d60973d9320722cb1206f412740e162a33b8547ea8d6be75d7cff237c7a85"
 [[package]]
 name = "biscuit"
 version = "0.6.0-beta1"
-source = "git+https://github.com/beltram/biscuit?tag=v0.6.0-pre.core-crypto-0.6.0#36b6f30964142f0ca5bc17c908e8b2ad78febaf6"
+source = "git+https://github.com/beltram/biscuit?rev=36b6f30964142f0ca5bc17c908e8b2ad78febaf6#36b6f30964142f0ca5bc17c908e8b2ad78febaf6"
 dependencies = [
  "base64 0.21.0",
  "chrono",
@@ -1424,7 +1424,7 @@ dependencies = [
 [[package]]
 name = "jwt-simple"
 version = "0.11.3"
-source = "git+https://github.com/wireapp/rust-jwt-simple?tag=v0.11.3-pre.core-crypto-0.6.0#15a69f82288d68b74a75c1364e5d4bf681f1c07b"
+source = "git+https://github.com/wireapp/rust-jwt-simple?rev=15a69f82288d68b74a75c1364e5d4bf681f1c07b#15a69f82288d68b74a75c1364e5d4bf681f1c07b"
 dependencies = [
  "anyhow",
  "binstring",
@@ -2385,12 +2385,12 @@ dependencies = [
 [[package]]
 name = "rcgen"
 version = "0.9.2"
-source = "git+https://github.com/wireapp/rcgen?tag=v1.2.0-pre.core-crypto-0.6.0#1e893c3444a9a1625dc8f3fe7be6df025f64646a"
+source = "git+https://github.com/wireapp/rcgen?rev=1e893c3444a9a1625dc8f3fe7be6df025f64646a#1e893c3444a9a1625dc8f3fe7be6df025f64646a"
 dependencies = [
  "pem",
  "ring 0.17.0-not-released-yet",
  "time 0.3.20",
- "x509-parser",
+ "x509-parser 0.14.0 (git+https://github.com/wireapp/x509-parser?tag=v1.0.2-pre.core-crypto-0.6.0)",
  "yasna",
 ]
 
@@ -2636,7 +2636,7 @@ dependencies = [
  "time 0.3.20",
  "url",
  "wasm-bindgen-test",
- "x509-parser",
+ "x509-parser 0.14.0 (git+https://github.com/wireapp/x509-parser?rev=4fbc4c795fc84537ba24eb91e563c9e80d3bd5d4)",
 ]
 
 [[package]]
@@ -3723,13 +3723,31 @@ dependencies = [
  "url",
  "uuid",
  "wasm-bindgen-test",
- "x509-parser",
+ "x509-parser 0.14.0 (git+https://github.com/wireapp/x509-parser?rev=4fbc4c795fc84537ba24eb91e563c9e80d3bd5d4)",
 ]
 
 [[package]]
 name = "x509-parser"
 version = "0.14.0"
 source = "git+https://github.com/wireapp/x509-parser?tag=v1.0.2-pre.core-crypto-0.6.0#4fbc4c795fc84537ba24eb91e563c9e80d3bd5d4"
+dependencies = [
+ "asn1-rs",
+ "base64 0.21.0",
+ "chrono",
+ "data-encoding",
+ "der-parser",
+ "lazy_static",
+ "nom",
+ "oid-registry",
+ "ring 0.17.0-not-released-yet",
+ "rusticata-macros",
+ "thiserror",
+]
+
+[[package]]
+name = "x509-parser"
+version = "0.14.0"
+source = "git+https://github.com/wireapp/x509-parser?rev=4fbc4c795fc84537ba24eb91e563c9e80d3bd5d4#4fbc4c795fc84537ba24eb91e563c9e80d3bd5d4"
 dependencies = [
  "asn1-rs",
  "base64 0.21.0",
