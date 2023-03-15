@@ -1,0 +1,7 @@
+[env]
+# ? Ring treats warnings as errors during local development by detecting
+# ? the presence of a `.git` folder
+# ? With us having a git dependency to ring, this triggers this local development behavior, preventing
+# ? release builds on certain platforms. Gotta love build systems that are "UB as a service"
+# TODO: Remove this once we target a crates.io version of ring. Probably never!
+CFLAGS="-Wno-error=inline"
