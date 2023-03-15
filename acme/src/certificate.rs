@@ -2,9 +2,6 @@ use crate::prelude::*;
 use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
-    const CERTIFICATE_BEGIN: &'static str = "-----BEGIN CERTIFICATE-----";
-    const CERTIFICATE_END: &'static str = "-----END CERTIFICATE-----";
-
     /// For fetching the generated certificate
     /// see [RFC 8555 Section 7.4.2](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2)
     pub fn certificate_req(
@@ -24,23 +21,18 @@ impl RustyAcme {
     }
 
     /// see [RFC 8555 Section 7.4.2](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2)
-    pub fn certificate_response(response: String) -> RustyAcmeResult<Vec<String>> {
-        response
-            .split(Self::CERTIFICATE_BEGIN)
-            .filter(|c| !c.is_empty())
-            .map(|c| c.trim().trim_end_matches(Self::CERTIFICATE_END).trim())
-            .try_fold(vec![], |mut acc, cert_pem| -> RustyAcmeResult<Vec<String>> {
-                Self::parse_x509_and_validate(cert_pem)?;
-                acc.push(cert_pem.to_string());
+    pub fn certificate_response(response: String) -> RustyAcmeResult<Vec<Vec<u8>>> {
+        pem::parse_many(response)?
+            .into_iter()
+            .try_fold(vec![], |mut acc, cert_pem| -> RustyAcmeResult<Vec<Vec<u8>>> {
+                Self::parse_x509_and_validate(&cert_pem)?;
+                acc.push(cert_pem.contents);
                 Ok(acc)
             })
     }
 
-    fn parse_x509_and_validate(certificate: &str) -> RustyAcmeResult<()> {
-        let certificate = format!("{}\n{certificate}\n{}", Self::CERTIFICATE_BEGIN, Self::CERTIFICATE_END);
-        let pem = x509_parser::prelude::parse_x509_pem(certificate.as_bytes()).map(|(_, cert)| cert)?;
-        let _certificate = pem.parse_x509()?;
-
+    fn parse_x509_and_validate(cert: &pem::Pem) -> RustyAcmeResult<()> {
+        let (_, _cert) = x509_parser::parse_x509_certificate(&cert.contents[..])?;
         Ok(())
     }
 }

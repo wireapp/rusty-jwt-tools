@@ -22,6 +22,9 @@ pub enum RustyAcmeError {
     /// Error while generating a CSR
     #[error(transparent)]
     CertificateGenerationError(#[from] rcgen::RcgenError),
+    /// Error while parsing a PEM document
+    #[error(transparent)]
+    PemError(#[from] pem::PemError),
     /// We have done something terribly wrong
     #[error("We have done something terribly wrong and it needs to be fixed")]
     ImplementationError,
