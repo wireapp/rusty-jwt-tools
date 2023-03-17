@@ -7,6 +7,8 @@ use crate::prelude::*;
 
 mod ecdsa;
 mod eddsa;
+#[cfg(feature = "test-utils")]
+mod rsa;
 
 /// From json to JWK
 pub trait TryIntoJwk {
@@ -35,9 +37,5 @@ impl RustyJwk {
     #[inline]
     fn base64_url_decode(i: impl AsRef<[u8]>) -> RustyJwtResult<Vec<u8>> {
         Ok(base64::prelude::BASE64_URL_SAFE_NO_PAD.decode(i)?)
-    }
-
-    fn common_parameters() -> CommonParameters {
-        CommonParameters::default()
     }
 }
