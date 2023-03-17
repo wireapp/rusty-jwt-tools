@@ -7,7 +7,7 @@ impl TryIntoJwk for Ed25519PublicKey {
         let alg = JwsEdAlgorithm::Ed25519;
         let x = RustyJwk::base64_url_encode(self.to_bytes());
         Ok(Jwk {
-            common: RustyJwk::common_parameters(),
+            common: CommonParameters::default(),
             algorithm: AlgorithmParameters::OctetKeyPair(OctetKeyPairParameters {
                 key_type: alg.kty(),
                 curve: alg.curve(),
@@ -20,8 +20,8 @@ impl TryIntoJwk for Ed25519PublicKey {
 impl TryFromJwk for Ed25519PublicKey {
     fn try_from_jwk(jwk: &Jwk) -> RustyJwtResult<Self> {
         Ok(match &jwk.algorithm {
-            AlgorithmParameters::OctetKeyPair(p) => {
-                let x = RustyJwk::base64_url_decode(&p.x)?;
+            AlgorithmParameters::OctetKeyPair(OctetKeyPairParameters { x, .. }) => {
+                let x = RustyJwk::base64_url_decode(x)?;
                 Ed25519PublicKey::from_bytes(&x)?
             }
             _ => return Err(RustyJwtError::InvalidDpopJwk),

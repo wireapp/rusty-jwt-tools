@@ -75,7 +75,7 @@ impl TryIntoJwk for AnyEcPublicKey {
             }
         };
         Ok(Jwk {
-            common: RustyJwk::common_parameters(),
+            common: CommonParameters::default(),
             algorithm: AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
                 key_type: alg.kty(),
                 curve: alg.curve(),
