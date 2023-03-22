@@ -13,18 +13,24 @@ pub enum RustyAcmeError {
     /// Error while building a JWT
     #[error(transparent)]
     JwtError(#[from] rusty_jwt_tools::prelude::RustyJwtError),
-    /// Error while parsing certificate
+    /// Failed mapping an ASN.1 ObjectIdentifier
     #[error(transparent)]
-    CertificateError(#[from] x509_parser::nom::Err<x509_parser::error::X509Error>),
-    /// Error while parsing certificate in PEM format
+    OidError(#[from] x509_cert::der::oid::Error),
+    /// Failed mapping a DER object
     #[error(transparent)]
-    CertificatePemError(#[from] x509_parser::nom::Err<x509_parser::error::PEMError>),
-    /// Error while generating a CSR
+    DerError(#[from] x509_cert::der::Error),
+    /// Failed mapping a DER object
     #[error(transparent)]
-    CertificateGenerationError(#[from] rcgen::RcgenError),
+    Asn1SerializeError(#[from] asn1_rs::SerializeError),
     /// Error while parsing a PEM document
     #[error(transparent)]
     PemError(#[from] pem::PemError),
+    /// Error while handling a JWT
+    #[error(transparent)]
+    RawJwtError(#[from] jwt_simple::Error),
+    /// Error with hand-rolled signature
+    #[error(transparent)]
+    SignatureError(#[from] signature::Error),
     /// We have done something terribly wrong
     #[error("We have done something terribly wrong and it needs to be fixed")]
     ImplementationError,

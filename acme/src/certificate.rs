@@ -32,7 +32,8 @@ impl RustyAcme {
     }
 
     fn parse_x509_and_validate(cert: &pem::Pem) -> RustyAcmeResult<()> {
-        let (_, _cert) = x509_parser::parse_x509_certificate(&cert.contents[..])?;
+        use x509_cert::der::Decode as _;
+        let _cert = x509_cert::Certificate::from_der(&cert.contents[..])?;
         Ok(())
     }
 }

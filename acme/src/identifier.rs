@@ -41,8 +41,7 @@ impl Default for AcmeIdentifier {
     }
 }
 
-#[derive(Default, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(test, derive(Clone))]
+#[derive(Default, Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct WireIdentifier {
     #[serde(rename = "name")]
     pub display_name: String,

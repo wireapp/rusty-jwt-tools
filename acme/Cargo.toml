@@ -15,10 +15,16 @@ rusty-jwt-tools = { version = "0.3.1", path = "../jwt" }
 jwt-simple = "0.11.3"
 base64 = "0.21"
 url = { version = "2.3", features = ["serde"] }
-rcgen = "=0.9.2"
 time = { version = "0.3", features = ["serde", "serde-well-known", "wasm-bindgen"] }
-x509-parser = { version = "=0.14.0", features = ["verify", "validate"] }
+x509-cert = "0.2"
+oid-registry = "0.6"
+asn1-rs = "0.5"
+signature = "2"
+ed25519-compact = "2.0"
+p256 = "0.13"
+p384 = "0.13"
 pem = "1.1"
+getrandom = { version = "0.2.8", features = ["js"] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 reqwest = { version = "0.11", features = ["json", "__rustls"], default_features = false, optional = true }
