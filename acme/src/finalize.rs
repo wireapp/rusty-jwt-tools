@@ -1,10 +1,14 @@
+use asn1_rs::ToDer;
+use base64::Engine;
+use jwt_simple::prelude::*;
+use x509_cert::der::Encode;
+
+use rusty_jwt_tools::prelude::*;
+
 use crate::{
     order::{AcmeOrderError, AcmeOrderStatus},
     prelude::*,
 };
-use base64::Engine;
-
-use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
     /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
@@ -26,35 +30,164 @@ impl RustyAcme {
     }
 
     fn generate_csr(alg: JwsAlgorithm, identifier: WireIdentifier, kp: &Pem) -> RustyAcmeResult<String> {
-        let mut params = rcgen::CertificateParams::new(vec![]);
-        let mut dn = rcgen::DistinguishedName::new();
+        let algorithm = Self::csr_alg(alg)?;
+        let cert_info = x509_cert::request::CertReqInfo {
+            version: x509_cert::request::Version::V1,
+            subject: Self::csr_subject(&identifier)?,
+            public_key: Self::csr_spki(alg, kp)?,
+            attributes: Self::csr_attributes(identifier)?,
+        };
+        let signature = Self::csr_signature(alg, kp, &cert_info)?;
+
+        let csr = x509_cert::request::CertReq {
+            info: cert_info,
+            algorithm,
+            signature,
+        };
+        let csr = csr.to_der()?;
+        let csr = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(csr);
+        Ok(csr)
+    }
+
+    fn csr_alg(alg: JwsAlgorithm) -> RustyAcmeResult<x509_cert::spki::AlgorithmIdentifierOwned> {
+        let oid = match alg {
+            JwsAlgorithm::Ed25519 => oid_registry::OID_SIG_ED25519,
+            JwsAlgorithm::P256 => oid_registry::OID_SIG_ECDSA_WITH_SHA256,
+            JwsAlgorithm::P384 => oid_registry::OID_SIG_ECDSA_WITH_SHA384,
+        };
+        Self::into_asn1_alg(oid, None)
+    }
+
+    fn csr_subject(identifier: &WireIdentifier) -> RustyAcmeResult<x509_cert::name::DistinguishedName> {
+        let dn_domain_oid = oid_registry::OID_X509_ORGANIZATION_NAME.as_bytes().try_into()?;
+        let dn_domain_value =
+            x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Utf8String, identifier.domain.as_bytes())?;
+        let dn_domain = x509_cert::attr::AttributeTypeAndValue {
+            oid: dn_domain_oid,
+            value: dn_domain_value,
+        };
 
         // TODO: temporarily using a custom OIDC for carrying the display name without having it listed as a DNS SAN.
         // reusing LDAP's OID for diplay name see http://oid-info.com/get/2.16.840.1.113730.3.1.241
-        let display_name_oid = vec![2, 16, 840, 1, 113730, 3, 1, 241];
-        dn.push(rcgen::DnType::CustomDnType(display_name_oid), identifier.display_name);
-
-        dn.push(rcgen::DnType::OrganizationName, identifier.domain.clone());
-        params.distinguished_name = dn;
-        params.alg = match alg {
-            JwsAlgorithm::Ed25519 => &rcgen::PKCS_ED25519,
-            #[cfg(not(target_family = "wasm"))]
-            JwsAlgorithm::P256 => &rcgen::PKCS_ECDSA_P256_SHA256,
-            #[cfg(not(target_family = "wasm"))]
-            JwsAlgorithm::P384 => &rcgen::PKCS_ECDSA_P384_SHA384,
-            #[cfg(target_family = "wasm")]
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 => return Err(RustyAcmeError::NotSupported),
+        let dn_display_name_oid = asn1_rs::oid!(2.16.840 .1 .113730 .3 .1 .241).as_bytes().try_into()?;
+        let dn_display_name_value =
+            x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Utf8String, identifier.display_name.as_bytes())?;
+        let dn_display_name = x509_cert::attr::AttributeTypeAndValue {
+            oid: dn_display_name_oid,
+            value: dn_display_name_value,
         };
-        params.key_pair = Some(rcgen::KeyPair::from_pem(kp.as_str())?);
-        params.subject_alt_names = vec![
-            rcgen::SanType::URI(identifier.client_id.to_lowercase()),
-            rcgen::SanType::URI(identifier.handle.to_lowercase()),
-        ];
 
-        let cert = rcgen::Certificate::from_params(params)?;
-        let csr = cert.serialize_request_der()?;
-        let csr = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(csr);
-        Ok(csr)
+        let domain = x509_cert::name::RelativeDistinguishedName(vec![dn_domain].try_into()?);
+        let display_name = x509_cert::name::RelativeDistinguishedName(vec![dn_display_name].try_into()?);
+        let subject = x509_cert::name::DistinguishedName::from(vec![domain, display_name]);
+        Ok(subject)
+    }
+
+    fn csr_spki(alg: JwsAlgorithm, kp: &Pem) -> RustyAcmeResult<x509_cert::spki::SubjectPublicKeyInfoOwned> {
+        let (pk, algorithm) = match alg {
+            JwsAlgorithm::Ed25519 => {
+                let pk = Ed25519KeyPair::from_pem(kp.as_str())?.public_key().to_bytes();
+                // see https://www.rfc-editor.org/rfc/rfc8410#section-3
+                let alg = Self::into_asn1_alg(oid_registry::OID_SIG_ED25519, None)?;
+                (pk, alg)
+            }
+            JwsAlgorithm::P256 => {
+                let kp = ES256KeyPair::from_pem(kp.as_str())?;
+                let pk = kp.public_key().public_key().to_bytes_uncompressed();
+
+                // see https://www.rfc-editor.org/rfc/rfc3279#section-2.3.5
+                let alg = Self::into_asn1_alg(
+                    oid_registry::OID_KEY_TYPE_EC_PUBLIC_KEY,
+                    Some(oid_registry::OID_EC_P256),
+                )?;
+                (pk, alg)
+            }
+            JwsAlgorithm::P384 => {
+                let kp = ES384KeyPair::from_pem(kp.as_str())?;
+                let pk = kp.public_key().public_key().to_bytes_uncompressed();
+
+                // see https://www.rfc-editor.org/rfc/rfc3279#section-2.3.5
+                let alg = Self::into_asn1_alg(
+                    oid_registry::OID_KEY_TYPE_EC_PUBLIC_KEY,
+                    Some(oid_registry::OID_NIST_EC_P384),
+                )?;
+                (pk, alg)
+            }
+        };
+        let subject_public_key = x509_cert::der::asn1::BitString::new(0, pk)?;
+        Ok(x509_cert::spki::SubjectPublicKeyInfoOwned {
+            algorithm,
+            subject_public_key,
+        })
+    }
+
+    // TODO: find a cleaner way to encode this reusing more x509-cert structs
+    fn csr_attributes(identifier: WireIdentifier) -> RustyAcmeResult<x509_cert::attr::Attributes> {
+        let gn = |n: String| -> RustyAcmeResult<x509_cert::ext::pkix::name::GeneralName> {
+            // ia5 string only supports ascii characters
+            let n = n.to_ascii_lowercase();
+            let ia5_str = x509_cert::der::asn1::Ia5String::new(n.as_bytes())?;
+            Ok(x509_cert::ext::pkix::name::GeneralName::UniformResourceIdentifier(
+                ia5_str,
+            ))
+        };
+        let san = x509_cert::ext::pkix::SubjectAltName(vec![gn(identifier.client_id)?, gn(identifier.handle)?]);
+
+        let san = x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::OctetString, san.to_der()?)?;
+
+        let san_oid = oid_registry::OID_X509_EXT_SUBJECT_ALT_NAME.to_der_vec()?;
+        let san = [san_oid, san.to_der()?].concat();
+        let san = x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Sequence, san)?;
+        let san = x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Sequence, san.to_der()?)?;
+
+        let attributes = vec![x509_cert::attr::Attribute {
+            oid: oid_registry::OID_PKCS9_EXTENSION_REQUEST.as_bytes().try_into()?,
+            values: vec![san].try_into()?,
+        }];
+        Ok(attributes.try_into()?)
+    }
+
+    fn csr_signature(
+        alg: JwsAlgorithm,
+        kp: &Pem,
+        cert_info: &x509_cert::request::CertReqInfo,
+    ) -> RustyAcmeResult<x509_cert::der::asn1::BitString> {
+        use signature::Signer as _;
+        let cert_data = cert_info.to_der()?;
+
+        let signature = match alg {
+            JwsAlgorithm::Ed25519 => {
+                let kp = Ed25519KeyPair::from_pem(kp.as_str())?;
+                let noise = ed25519_compact::Noise::generate();
+                let signature = kp.key_pair().as_ref().sk.sign(&cert_data, Some(noise));
+                x509_cert::der::asn1::BitString::new(0, signature.as_ref())?
+            }
+            JwsAlgorithm::P256 => {
+                let kp = ES256KeyPair::from_pem(kp.as_str())?;
+                let sk: &p256::ecdsa::SigningKey = kp.key_pair().as_ref();
+                let signature: p256::ecdsa::DerSignature = sk.try_sign(&cert_data)?;
+                x509_cert::der::asn1::BitString::new(0, signature.to_der()?)?
+            }
+            JwsAlgorithm::P384 => {
+                let kp = ES384KeyPair::from_pem(kp.as_str())?;
+                let sk: &p384::ecdsa::SigningKey = kp.key_pair().as_ref();
+                let signature: p384::ecdsa::DerSignature = sk.try_sign(&cert_data)?;
+                x509_cert::der::asn1::BitString::new(0, signature.to_der()?)?
+            }
+        };
+        Ok(signature)
+    }
+
+    fn into_asn1_alg(
+        oid: oid_registry::Oid,
+        oid_parameter: Option<oid_registry::Oid>,
+    ) -> RustyAcmeResult<x509_cert::spki::AlgorithmIdentifierOwned> {
+        let oid = oid.as_bytes().try_into()?;
+        let parameters = oid_parameter
+            .map(|p| x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::ObjectIdentifier, p.as_bytes()))
+            .transpose()?;
+        let alg = x509_cert::spki::AlgorithmIdentifierOwned { oid, parameters };
+        Ok(alg)
     }
 
     /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
@@ -122,9 +255,10 @@ impl Default for AcmeFinalize {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

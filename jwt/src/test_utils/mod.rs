@@ -325,11 +325,13 @@ pub fn all_hash(hash: HashAlgorithm) {}
 pub fn all_cipher(key: JweKey) {}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg(feature = "jwe")]
 pub struct JweKey {
     pub alg: JweAlgorithm,
     pub value: Vec<u8>,
 }
 
+#[cfg(feature = "jwe")]
 impl JweKey {
     pub fn new(alg: JweAlgorithm) -> Self {
         let key = Self::rand_key(alg.key_length());
