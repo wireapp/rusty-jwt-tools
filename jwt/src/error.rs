@@ -9,6 +9,7 @@ pub enum RustyJwtError {
     JwtSimpleError(#[from] jwt_simple::Error),
     /// Error (de)encrypting a JWE with biscuit crate
     #[error(transparent)]
+    #[cfg(feature = "jwe")]
     JweError(#[from] biscuit::errors::Error),
     /// Error generating random numbers
     #[error(transparent)]
