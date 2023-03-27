@@ -6,11 +6,15 @@ concurrency:
 
 on: [push]
 
+env:
+    RUST_BACKTRACE: 1
+    CARGO_TERM_COLOR: always
+    CARGO_NET_GIT_FETCH_WITH_CLI: true
+    CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+
 jobs:
   fmt:
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
@@ -26,8 +30,6 @@ jobs:
 
   check:
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
@@ -41,8 +43,6 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
@@ -62,8 +62,6 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
@@ -79,8 +77,9 @@ jobs:
 
   wasm-build:
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
+    strategy:
+      matrix:
+        workspace: ["jwt", "acme", "e2e-identity"]
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
@@ -92,12 +91,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: WASM build
         run: |
-          wasm-pack build --dev --target web jwt
+          wasm-pack build --dev --target web ${{ matrix.workspace }}
 
   wasm-test:
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
+    strategy:
+      matrix:
+        workspace: ["jwt", "acme", "e2e-identity"]
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
@@ -109,12 +109,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Run tests (wasm)
         run: |
-          wasm-pack test --headless --chrome jwt
+          wasm-pack test --headless --chrome ${{ matrix.workspace }}
 
   hack:
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
