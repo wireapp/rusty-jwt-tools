@@ -23,7 +23,7 @@ signature = "2"
 ed25519-compact = "2.0"
 p256 = "0.13"
 p384 = "0.13"
-pem = "1.1"
+pem = "2.0"
 getrandom = { version = "0.2.8", features = ["js"] }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
