@@ -26,14 +26,14 @@ impl RustyAcme {
             .into_iter()
             .try_fold(vec![], |mut acc, cert_pem| -> RustyAcmeResult<Vec<Vec<u8>>> {
                 Self::parse_x509_and_validate(&cert_pem)?;
-                acc.push(cert_pem.contents);
+                acc.push(cert_pem.contents().to_vec());
                 Ok(acc)
             })
     }
 
     fn parse_x509_and_validate(cert: &pem::Pem) -> RustyAcmeResult<()> {
         use x509_cert::der::Decode as _;
-        let _cert = x509_cert::Certificate::from_der(&cert.contents[..])?;
+        let _cert = x509_cert::Certificate::from_der(cert.contents())?;
         Ok(())
     }
 }
