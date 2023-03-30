@@ -1,4 +1,4 @@
-use crate::docker::{rand_str, NETWORK};
+use crate::utils::docker::{rand_str, NETWORK};
 use std::net::SocketAddr;
 use std::{collections::HashMap, path::PathBuf};
 use testcontainers::{clients::Cli, core::WaitFor, Container, Image, RunnableImage};

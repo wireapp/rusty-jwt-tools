@@ -1,8 +1,7 @@
 use std::{collections::HashMap, net::SocketAddr, path::PathBuf};
 
+use crate::utils::docker::{ldap::LdapCfg, rand_str};
 use testcontainers::{clients::Cli, core::WaitFor, Container, Image, RunnableImage};
-
-use crate::{docker::ldap::LdapCfg, docker::rand_str};
 
 pub struct DexServer<'a> {
     pub uri: String,

@@ -3,8 +3,6 @@ mod authz;
 mod certificate;
 mod chall;
 mod directory;
-#[cfg(any(test, feature = "docker"))]
-mod docker;
 mod error;
 mod finalize;
 mod identifier;
