@@ -22,11 +22,12 @@ impl RustyAcme {
         let acct_url = account.acct_url()?;
 
         let domain = client_id.domain.clone();
+        let handle = format!("{}{handle}", ClientId::URI_PREFIX);
         let identifiers = vec![AcmeIdentifier::try_new(
             display_name.to_string(),
             domain,
             client_id,
-            handle.to_string(),
+            handle,
         )?];
         let not_before = time::OffsetDateTime::now_utc();
         let not_after = not_before + expiry;
