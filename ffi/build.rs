@@ -16,5 +16,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     std::fs::copy(cargo_lock, cwd.join("Cargo.lock"))?;
 
+    // updates the local Cargo.lock for Nix
+    std::process::Command::new("cargo")
+        .arg("build")
+        .stderr(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .spawn()?;
+
     Ok(())
 }
