@@ -73,14 +73,17 @@ impl ClientId {
 
     /// Into JWT 'sub' claim
     pub fn to_uri(&self) -> String {
+        format!("{}{}", Self::URI_PREFIX, self.format(Self::URI_DELIMITER))
+    }
+
+    /// Without URI prefix
+    pub fn to_raw(&self) -> String {
+        self.format(Self::CLIENT_DELIMITER)
+    }
+
+    fn format(&self, delimiter: &str) -> String {
         let user = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(self.user.as_simple().to_string());
-        format!(
-            "{}{user}{}{:x}@{}",
-            Self::URI_PREFIX,
-            Self::URI_DELIMITER,
-            self.client,
-            self.domain
-        )
+        format!("{user}{}{:x}@{}", delimiter, self.client, self.domain)
     }
 
     fn parse_user(user: impl AsRef<[u8]>) -> RustyJwtResult<Uuid> {

@@ -16,7 +16,7 @@ pub enum RustyAcmeError {
     /// Failed mapping an ASN.1 ObjectIdentifier
     #[error(transparent)]
     OidError(#[from] x509_cert::der::oid::Error),
-    /// Failed mapping a DER object
+    /// Failed mapping a DER certificate
     #[error(transparent)]
     DerError(#[from] x509_cert::der::Error),
     /// Failed mapping a DER object
@@ -58,4 +58,9 @@ pub enum RustyAcmeError {
     /// Error while finalizing an order
     #[error(transparent)]
     FinalizeError(#[from] crate::finalize::AcmeFinalizeError),
+    #[error(transparent)]
+    Utf8(#[from] std::str::Utf8Error),
+    /// Invalid/incomplete certificate
+    #[error("Given x509 certificate is invalid and does not follow Wire's format")]
+    InvalidCertificate,
 }

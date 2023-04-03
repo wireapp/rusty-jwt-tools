@@ -6,6 +6,7 @@ mod directory;
 mod error;
 mod finalize;
 mod identifier;
+mod identity;
 mod jws;
 mod order;
 
@@ -19,6 +20,7 @@ pub mod prelude {
     pub use error::{RustyAcmeError, RustyAcmeResult};
     pub use finalize::AcmeFinalize;
     pub use identifier::{AcmeIdentifier, WireIdentifier};
+    pub use identity::{WireIdentity, WireIdentityReader};
     pub use jws::AcmeJws;
     pub use order::AcmeOrder;
 
