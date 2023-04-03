@@ -22,18 +22,18 @@ impl RustyAcme {
 
     /// see [RFC 8555 Section 7.4.2](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2)
     pub fn certificate_response(response: String) -> RustyAcmeResult<Vec<Vec<u8>>> {
-        pem::parse_many(response)?
-            .into_iter()
-            .try_fold(vec![], |mut acc, cert_pem| -> RustyAcmeResult<Vec<Vec<u8>>> {
-                Self::parse_x509_and_validate(&cert_pem)?;
+        let pems: Vec<pem::Pem> = pem::parse_many(response)?;
+        pems.into_iter()
+            .enumerate()
+            .try_fold(vec![], |mut acc, (i, cert_pem)| -> RustyAcmeResult<Vec<Vec<u8>>> {
+                use x509_cert::der::Decode as _;
+                let cert = x509_cert::Certificate::from_der(cert_pem.contents())?;
+                // only verify that leaf has the right identity fields
+                if i == 0 {
+                    let _ = cert.extract_identity()?;
+                }
                 acc.push(cert_pem.contents().to_vec());
                 Ok(acc)
             })
-    }
-
-    fn parse_x509_and_validate(cert: &pem::Pem) -> RustyAcmeResult<()> {
-        use x509_cert::der::Decode as _;
-        let _cert = x509_cert::Certificate::from_der(cert.contents())?;
-        Ok(())
     }
 }
