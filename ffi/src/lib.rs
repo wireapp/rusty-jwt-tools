@@ -37,6 +37,18 @@ impl RustyJwtToolsFfi {
         _now: u64,
         backend_keys: *const c_char,
     ) -> *const HsResult<String> {
+        println!("<< dpop_proof: {dpop_proof:#?}");
+        println!("<< user: {user:#?}");
+        println!("<< client_id: {client_id:#?}");
+        println!("<< domain: {domain:#?}");
+        println!("<< backend_nonce: {backend_nonce:#?}");
+        println!("<< uri: {uri:#?}");
+        println!("<< method: {method:#?}");
+        println!("<< max_skew_secs: {max_skew_secs:#?}");
+        println!("<< max_expiration: {max_expiration:#?}");
+        println!("<< _now: {_now:#?}");
+        println!("<< backend_keys: {backend_keys:#?}");
+
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
         let user = unsafe { CStr::from_ptr(user) };
@@ -53,6 +65,15 @@ impl RustyJwtToolsFfi {
         // TODO: change in API
         let hash_algorithm = HashAlgorithm::SHA256;
 
+        println!(">> dpop: {dpop:#?}");
+        println!(">> user: {user:#?}");
+        println!(">> client_id: {client_id:#?}");
+        println!(">> domain: {domain:#?}");
+        println!(">> backend_nonce: {backend_nonce:#?}");
+        println!(">> uri: {uri:#?}");
+        println!(">> method: {method:#?}");
+        println!(">> backend_kp: {backend_kp:#?}");
+
         if let (Ok(dpop), Ok(client_id), Ok(nonce), Ok(uri), Ok(method), Ok(kp)) =
             (dpop, client_id, backend_nonce, uri, method, backend_kp)
         {
@@ -68,8 +89,11 @@ impl RustyJwtToolsFfi {
                 hash_algorithm,
             )
             .map_err(HsError::from);
+            println!(">> Internal rust error: {res:#?}");
+
             return Box::into_raw(Box::new(res));
         }
+        println!(">> FFI error with inputs");
         Box::into_raw(Box::new(Err(HsError::ImplementationError)))
     }
 
