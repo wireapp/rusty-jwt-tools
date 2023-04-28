@@ -6,8 +6,6 @@ use rusty_jwt_tools::jwk::TryIntoJwk;
 use rusty_jwt_tools::prelude::{ClientId, Dpop, Htm, Pem, RustyJwtTools};
 use zeroize::Zeroize;
 
-#[cfg(feature = "identity-builder")]
-mod builder;
 mod error;
 mod types;
 
