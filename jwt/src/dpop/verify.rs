@@ -63,6 +63,8 @@ impl VerifyDpop for &str {
             leeway,
         };
 
+        println!(">> verify options: {verify:?}");
+
         let claims = (*self).verify_jwt::<Dpop>(&pk, max_expiration, None, None, verify)?;
         if let Some(expected_htm) = htm {
             if expected_htm != claims.custom.htm {

@@ -56,7 +56,7 @@ impl RustyJwtToolsFfi {
         if let (Ok(dpop), Ok(client_id), Ok(nonce), Ok(uri), Ok(method), Ok(kp)) =
             (dpop, client_id, backend_nonce, uri, method, backend_kp)
         {
-            let res = RustyJwtTools::generate_access_token(
+            let result = RustyJwtTools::generate_access_token(
                 dpop,
                 &client_id,
                 nonce,
@@ -66,8 +66,9 @@ impl RustyJwtToolsFfi {
                 max_expiration,
                 kp,
                 hash_algorithm,
-            )
-            .map_err(HsError::from);
+            );
+            println!(">> {result:#?}");
+            let res = result.map_err(HsError::from);
             return Box::into_raw(Box::new(res));
         }
         Box::into_raw(Box::new(Err(HsError::ImplementationError)))

@@ -52,7 +52,10 @@ impl RustyJwtTools {
         hash_algorithm: HashAlgorithm,
     ) -> RustyJwtResult<String> {
         let header = Token::decode_metadata(dpop_proof)?;
+        println!(">> token header ok");
         let (alg, jwk) = header.verify_dpop_header()?;
+        println!(">> token header alg & jwk ok");
+        println!(">> dpop token in rust: '{dpop_proof}'");
         let proof_claims = dpop_proof.verify_client_dpop(
             alg,
             jwk,
@@ -64,15 +67,20 @@ impl RustyJwtTools {
             max_expiration,
             max_skew_secs,
         )?;
-        Self::access_token(
+        println!(">> client dpop claims {proof_claims:#?}");
+        println!(">> client dpop verified");
+        let result = Self::access_token(
             alg,
             dpop_proof,
             proof_claims,
-            backend_keys,
+            backend_keys.clone(),
             client_id,
             backend_nonce,
             hash_algorithm,
-        )
+        );
+        println!(">> generated access token {result:#?}");
+        println!(">> backend keys: {:?}", backend_keys.as_str());
+        Ok(result?)
     }
 
     fn access_token(

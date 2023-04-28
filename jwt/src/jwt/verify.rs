@@ -79,6 +79,7 @@ impl VerifyJwt for &str {
         T: Serialize + DeserializeOwned,
     {
         let verifications = Some(VerificationOptions::from(&verify));
+        println!(">> verification options: {verify:?}");
         let claims = key.verify_token::<T>(self, verifications).map_err(jwt_error_mapping)?;
 
         claims.jwt_id.as_ref().ok_or(RustyJwtError::MissingTokenClaim("jti"))?;
