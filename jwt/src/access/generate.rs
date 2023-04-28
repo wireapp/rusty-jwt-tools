@@ -56,6 +56,13 @@ impl RustyJwtTools {
         let (alg, jwk) = header.verify_dpop_header()?;
         println!(">> token header alg & jwk ok");
         println!(">> dpop token in rust: '{dpop_proof}'");
+
+        let now = Clock::now_since_epoch();
+        println!(
+            ">> max_expiration: {max_expiration}, max_skew_secs: {max_skew_secs}, now (secs): {}",
+            now.as_secs()
+        );
+
         let proof_claims = dpop_proof.verify_client_dpop(
             alg,
             jwk,
@@ -67,12 +74,6 @@ impl RustyJwtTools {
             max_expiration,
             max_skew_secs,
         )?;
-
-        let now = Clock::now_since_epoch();
-        println!(
-            ">> max_expiration: {max_expiration}, max_skew_secs: {max_skew_secs}, now (secs): {}",
-            now.as_secs()
-        );
 
         println!(">> client dpop claims {proof_claims:#?}");
         println!(">> client dpop verified");
