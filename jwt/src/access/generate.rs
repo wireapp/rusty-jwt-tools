@@ -1,3 +1,5 @@
+use jwt_simple::{prelude::*, token::Token};
+
 use crate::{
     access::Access,
     dpop::{VerifyDpop, VerifyDpopTokenHeader},
@@ -5,7 +7,6 @@ use crate::{
     jwk_thumbprint::JwkThumbprint,
     prelude::*,
 };
-use jwt_simple::{prelude::*, token::Token};
 
 impl RustyJwtTools {
     /// Validate the provided [dpop_proof] DPoP proof JWT from the client, and if valid, return an
@@ -141,13 +142,13 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 mod tests {
+    use base64::Engine;
     use jwt_simple::prelude::*;
     use serde_json::{json, Value};
 
     use crate::{dpop::Dpop, jwk::TryFromJwk, test_utils::*};
 
     use super::*;
-    use base64::Engine;
 
     mod generated_access_token {
         use super::*;
@@ -532,7 +533,75 @@ mod tests {
     }
 
     mod validate_dpop {
+        use std::ffi::{CStr, CString};
+
         use super::*;
+
+        #[test]
+        fn repro_ffi() {
+            let token = "eyJhbGciOiJFZERTQSIsImp3ayI6eyJjcnYiOiJFZDI1NTE5Iiwia3R5IjoiT0tQIiwieCI6Im5MSkdOLU9hNkpzcTNLY2xaZ2dMbDdVdkFWZG1CMFE2QzNONUJDZ3BoSHcifSwidHlwIjoiZHBvcCtqd3QifQ.eyJjaGFsIjoid2EyVnJrQ3RXMXNhdUoyRDN1S1k4cmM3eTRrbDR1c0giLCJleHAiOjE2ODI2NzM5MTQsImh0bSI6IlBPU1QiLCJodHUiOiJodHRwczovLzEyNy4wLjAuMS9jbGllbnRzLzU1MGQ4YzYxNGZkMjAyOTkvYWNjZXNzLXRva2VuIiwiaWF0IjoxNjgyNjczOTE0LCJqdGkiOiI2ZmM1OWU3Zi1iNjY2LTRmZmMtYjczOC00ZjQ3NjBjODg0Y2EiLCJuYmYiOjE2ODI2NzM5MTQsIm5vbmNlIjoiYVNZMC1hczRTVEN1emd0czZVdENNdyIsInN1YiI6ImltOndpcmVhcHA9WlRreE1HRTNNVGN5TTJVd05HWXpOR0prWldabVlUYzFNbVJqWkdOa09UVS81NTBkOGM2MTRmZDIwMjk5QDEyNy4wLjAuMSJ9.rbWQaBQ57-Zl1v_rFCH92G7216zO7qzDTRJXovHgRraLuuRimgu25Ny6G8eHPpkEKwWkvlSrHZo0aeTyqExFBQ";
+            println!("{}", token.len());
+            let token = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(token);
+            println!("{}", token.len());
+            println!("{}", token.as_bytes().len());
+            // let ctoken = CString::from_vec_with_nul(token.as_bytes().to_vec()).unwrap();
+        }
+
+        #[test]
+        fn repro_flaky_mojtaba() {
+            let token = "eyJhbGciOiJFZERTQSIsInR5cCI6ImRwb3Arand0IiwiandrIjp7Imt0eSI6Ik9LUCIsImNydiI6IkVkMjU1MTkiLCJ4IjoiMkRscXBTVDNBMURmVm15SGJveXZuaXpnUVJkLVRha2Y1UThzVXZJUVZzOCJ9fQ.eyJpYXQiOjE2ODI2NzIwNjgsImV4cCI6MTY5MDQ0ODA2OCwibmJmIjoxNjgyNjcyMDY4LCJzdWIiOiJpbTp3aXJlYXBwPVpURTFNamMwTXpFeU5EUTBOR0poWTJFMU5XWm1OakEyWlRrMU1qSXlNek0vN2MxNDgzMTdjMWVlMGE2QHN0YWdpbmcuemluZnJhLmlvIiwianRpIjoiNjY5ZDA1NDYtNjA4Yi00ODhlLTg1ZTgtNGY4NDU5OWE4Y2IwIiwibm9uY2UiOiJWclVsRE5SOVJzV0lJeW5zZHZ6cFFnPT0iLCJodG0iOiJQT1NUIiwiaHR1IjoiaHR0cHM6Ly9zdGFnaW5nLW5naW56LWh0dHBzLnppbmZyYS5pby9jbGllbnRzLzdjMTQ4MzE3YzFlZTBhNi9hY2Nlc3MtdG9rZW4iLCJjaGFsIjoiZnh2bmthNVIyc2w2V1pqVFZQV0ZpY1JvTWZRNVplYUkifQ.9FtQGOrghnihr5zB5VS-VnXG_n4eahSyfTD0F2pqqLm1CWbKYyW7qew-5W4FnzEE7yqm2G5a1dCJht7DzZlxBw";
+            let header = Token::decode_metadata(token).unwrap();
+            let (alg, jwk) = header.verify_dpop_header().unwrap();
+            let client_id = ClientId::try_from_uri(
+                "im:wireapp=ZTE1Mjc0MzEyNDQ0NGJhY2E1NWZmNjA2ZTk1MjIyMzM/7c148317c1ee0a6@staging.zinfra.io",
+            )
+            .unwrap();
+            let backend_nonce = "VrUlDNR9RsWIIynsdvzpQg==".into();
+            let uri = "https://staging-nginz-https.zinfra.io/clients/7c148317c1ee0a6/access-token"
+                .try_into()
+                .unwrap();
+            token
+                .verify_client_dpop(
+                    alg,
+                    jwk,
+                    &client_id,
+                    &backend_nonce,
+                    None,
+                    Some(Htm::Post),
+                    &uri,
+                    2136351646,
+                    u16::MAX,
+                )
+                .unwrap();
+        }
+
+        #[test]
+        fn repro_flaky_leif() {
+            let token = "eyJhbGciOiJFZERTQSIsImp3ayI6eyJjcnYiOiJFZDI1NTE5Iiwia3R5IjoiT0tQIiwieCI6Im5MSkdOLU9hNkpzcTNLY2xaZ2dMbDdVdkFWZG1CMFE2QzNONUJDZ3BoSHcifSwidHlwIjoiZHBvcCtqd3QifQ.eyJjaGFsIjoid2EyVnJrQ3RXMXNhdUoyRDN1S1k4cmM3eTRrbDR1c0giLCJleHAiOjE2ODI2NzM5MTQsImh0bSI6IlBPU1QiLCJodHUiOiJodHRwczovLzEyNy4wLjAuMS9jbGllbnRzLzU1MGQ4YzYxNGZkMjAyOTkvYWNjZXNzLXRva2VuIiwiaWF0IjoxNjgyNjczOTE0LCJqdGkiOiI2ZmM1OWU3Zi1iNjY2LTRmZmMtYjczOC00ZjQ3NjBjODg0Y2EiLCJuYmYiOjE2ODI2NzM5MTQsIm5vbmNlIjoiYVNZMC1hczRTVEN1emd0czZVdENNdyIsInN1YiI6ImltOndpcmVhcHA9WlRreE1HRTNNVGN5TTJVd05HWXpOR0prWldabVlUYzFNbVJqWkdOa09UVS81NTBkOGM2MTRmZDIwMjk5QDEyNy4wLjAuMSJ9.rbWQaBQ57-Zl1v_rFCH92G7216zO7qzDTRJXovHgRraLuuRimgu25Ny6G8eHPpkEKwWkvlSrHZo0aeTyqExFBQ";
+            let header = Token::decode_metadata(token).unwrap();
+            let (alg, jwk) = header.verify_dpop_header().unwrap();
+            let client_id = ClientId::try_from_uri(
+                "im:wireapp=ZTkxMGE3MTcyM2UwNGYzNGJkZWZmYTc1MmRjZGNkOTU/550d8c614fd20299@127.0.0.1",
+            )
+            .unwrap();
+            let backend_nonce = "aSY0-as4STCuzgts6UtCMw".into();
+            let uri = "https://127.0.0.1/clients/550d8c614fd20299/access-token"
+                .try_into()
+                .unwrap();
+            token
+                .verify_client_dpop(
+                    alg,
+                    jwk,
+                    &client_id,
+                    &backend_nonce,
+                    None,
+                    Some(Htm::Post),
+                    &uri,
+                    2136351646,
+                    u16::MAX,
+                )
+                .unwrap();
+        }
 
         #[apply(all_ciphersuites)]
         #[test]
