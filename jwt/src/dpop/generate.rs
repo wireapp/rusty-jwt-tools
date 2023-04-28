@@ -384,6 +384,29 @@ pub mod tests {
 
         #[apply(all_keys)]
         #[wasm_bindgen_test]
+        fn should_have_nbf_slightly_in_past(key: JwtKey) {
+            // we want "nbf" slightly in the past to prevent clock drifts or problems non-monotonic hosts
+            let token = RustyJwtTools::generate_dpop_token(
+                Dpop::default(),
+                &ClientId::default(),
+                BackendNonce::default(),
+                Duration::from_days(1).into(),
+                key.alg,
+                &key.kp,
+            )
+            .unwrap();
+            let claims = key.claims::<Dpop>(&token);
+            assert!(claims.invalid_before.is_some());
+            let nbf = claims.invalid_before.unwrap().as_secs();
+
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            let leeway = Dpop::NBF_LEEWAY_SECONDS;
+
+            assert!(nbf <= (now - leeway));
+        }
+
+        #[apply(all_keys)]
+        #[wasm_bindgen_test]
         fn should_have_exp(key: JwtKey) {
             let expiry = Duration::from_days(90).into();
             let token = RustyJwtTools::generate_dpop_token(

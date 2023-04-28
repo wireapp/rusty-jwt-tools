@@ -354,7 +354,7 @@ mod tests {
                 status: AcmeOrderStatus::Pending,
                 ..Default::default()
             };
-            let order = serde_json::to_value(&order).unwrap();
+            let order = serde_json::to_value(order).unwrap();
             assert!(RustyAcme::new_order_response(order).is_ok());
         }
 
@@ -365,7 +365,7 @@ mod tests {
                 status: AcmeOrderStatus::Ready,
                 ..Default::default()
             };
-            let order = serde_json::to_value(&order).unwrap();
+            let order = serde_json::to_value(order).unwrap();
             assert!(matches!(
                 RustyAcme::new_order_response(order).unwrap_err(),
                 RustyAcmeError::ClientImplementationError(_)
@@ -375,7 +375,7 @@ mod tests {
                 status: AcmeOrderStatus::Processing,
                 ..Default::default()
             };
-            let order = serde_json::to_value(&order).unwrap();
+            let order = serde_json::to_value(order).unwrap();
             assert!(matches!(
                 RustyAcme::new_order_response(order).unwrap_err(),
                 RustyAcmeError::ClientImplementationError(_)
@@ -385,7 +385,7 @@ mod tests {
                 status: AcmeOrderStatus::Valid,
                 ..Default::default()
             };
-            let order = serde_json::to_value(&order).unwrap();
+            let order = serde_json::to_value(order).unwrap();
             assert!(matches!(
                 RustyAcme::new_order_response(order).unwrap_err(),
                 RustyAcmeError::ClientImplementationError(_)
@@ -399,7 +399,7 @@ mod tests {
                 status: AcmeOrderStatus::Invalid,
                 ..Default::default()
             };
-            let order = serde_json::to_value(&order).unwrap();
+            let order = serde_json::to_value(order).unwrap();
             assert!(matches!(
                 RustyAcme::new_order_response(order).unwrap_err(),
                 RustyAcmeError::OrderError(AcmeOrderError::Invalid)
@@ -417,7 +417,7 @@ mod tests {
                 status: AcmeOrderStatus::Ready,
                 ..Default::default()
             };
-            let order = serde_json::to_value(&order).unwrap();
+            let order = serde_json::to_value(order).unwrap();
             assert!(RustyAcme::check_order_response(order).is_ok());
         }
 
@@ -448,7 +448,7 @@ mod tests {
                 status: AcmeOrderStatus::Invalid,
                 ..Default::default()
             };
-            let order = serde_json::to_value(&order).unwrap();
+            let order = serde_json::to_value(order).unwrap();
             assert!(matches!(
                 RustyAcme::check_order_response(order).unwrap_err(),
                 RustyAcmeError::OrderError(AcmeOrderError::Invalid)

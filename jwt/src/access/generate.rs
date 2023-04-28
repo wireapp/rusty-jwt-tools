@@ -427,6 +427,31 @@ mod tests {
 
             #[apply(all_ciphersuites)]
             #[test]
+            fn should_have_nbf_slightly_in_past(ciphersuite: Ciphersuite) {
+                let dpop = DpopBuilder {
+                    ..ciphersuite.key.clone().into()
+                };
+                let params = Params {
+                    ..ciphersuite.clone().into()
+                };
+                let backend_key = params.backend_keys.clone();
+                let token = access_token_with_dpop(&dpop.build(), params).unwrap();
+
+                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
+                let claims = backend_key.claims::<Access>(&token);
+                let nbf = claims.invalid_before.unwrap().as_secs();
+
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
+                let leeway = Dpop::NBF_LEEWAY_SECONDS;
+
+                assert!(nbf <= (now - leeway));
+            }
+
+            #[apply(all_ciphersuites)]
+            #[test]
             fn should_have_dpop_extra_claims(ciphersuite: Ciphersuite) {
                 let extra = json!({"extra": "some"});
                 let dpop = DpopBuilder {
@@ -923,6 +948,39 @@ mod tests {
             };
             let result = access_token_with_dpop(&dpop.build(), params);
             assert!(result.is_ok());
+        }
+
+        #[apply(all_ciphersuites)]
+        #[test]
+        fn nbf(ciphersuite: Ciphersuite) {
+            // should succeed when 'nbf' claim is present in dpop token and in the past
+            let yesterday = now() - Duration::from_days(1);
+            let dpop = DpopBuilder {
+                nbf: Some(yesterday),
+                ..ciphersuite.key.clone().into()
+            };
+            let params = ciphersuite.clone().into();
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(result.is_ok());
+
+            // should fail when 'nbf' claim is absent from dpop token
+            let dpop = DpopBuilder {
+                nbf: None,
+                ..ciphersuite.key.clone().into()
+            };
+            let params = ciphersuite.clone().into();
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "nbf"));
+
+            // should fail when 'nbf' in the future
+            let tomorrow = now() + Duration::from_days(1);
+            let dpop = DpopBuilder {
+                nbf: Some(tomorrow),
+                ..ciphersuite.key.clone().into()
+            };
+            let params = ciphersuite.into();
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopNotYetValid));
         }
 
         #[apply(all_ciphersuites)]

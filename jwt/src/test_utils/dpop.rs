@@ -38,13 +38,14 @@ pub struct DpopBuilder {
     pub nonce: Option<BackendNonce>,
     pub jti: Option<String>,
     pub iat: Option<UnixTimeStamp>,
+    pub nbf: Option<UnixTimeStamp>,
     pub exp: Option<UnixTimeStamp>,
 }
 
 impl From<JwtKey> for DpopBuilder {
     fn from(key: JwtKey) -> Self {
-        let iat = now();
-        let exp = iat + Duration::from_days(2);
+        let now = now();
+        let exp = now + Duration::from_days(2);
         Self {
             alg: key.alg.to_string(),
             typ: Some("dpop+jwt"),
@@ -54,7 +55,8 @@ impl From<JwtKey> for DpopBuilder {
             sub: Some(ClientId::default()),
             nonce: Some(BackendNonce::default()),
             jti: Some(uuid::Uuid::new_v4().to_string()),
-            iat: Some(iat),
+            iat: Some(now),
+            nbf: Some(now),
             exp: Some(exp),
         }
     }
@@ -96,6 +98,7 @@ impl DpopBuilder {
         claims.jwt_id = self.jti.clone();
         claims.issued_at = self.iat;
         claims.expires_at = self.exp;
+        claims.invalid_before = self.nbf;
         claims
     }
 }
