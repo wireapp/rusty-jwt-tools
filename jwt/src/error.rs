@@ -62,6 +62,9 @@ pub enum RustyJwtError {
     /// DPoP 'iat' claim is issued in the future
     #[error("DPoP 'iat' claim is issued in the future")]
     InvalidDpopIat,
+    /// DPoP 'nbf' claim is issued in the future
+    #[error("DPoP 'nbf' claim is issued in the future")]
+    DpopNotYetValid,
     /// JWT token verification failed
     #[error("JWT token verification failed because {0}")]
     InvalidToken(String),

@@ -163,6 +163,8 @@ pub enum HsError {
     Expired = 18,
     /// userId supplied across the FFI is invalid
     InvalidUserId = 19,
+    /// Client DPoP token "nbf" claim is in the future
+    NotYetValid = 20,
 }
 
 impl From<RustyJwtError> for HsError {
@@ -181,6 +183,7 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::MissingTokenClaim("iat") => Self::MissingIat,
             RustyJwtError::MissingTokenClaim("exp") => Self::MissingExp,
             RustyJwtError::InvalidDpopIat => Self::InvalidIat,
+            RustyJwtError::DpopNotYetValid => Self::NotYetValid,
             RustyJwtError::TokenLivesTooLong => Self::ExpMismatch,
             RustyJwtError::TokenExpired => Self::Expired,
             RustyJwtError::ImplementationError => Self::ImplementationError,

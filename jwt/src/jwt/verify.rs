@@ -84,6 +84,7 @@ impl VerifyJwt for &str {
         claims.jwt_id.as_ref().ok_or(RustyJwtError::MissingTokenClaim("jti"))?;
         let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim("exp"))?;
         claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim("iat"))?;
+        claims.invalid_before.ok_or(RustyJwtError::MissingTokenClaim("nbf"))?;
         if exp > Duration::from_secs(max_expiration) {
             return Err(RustyJwtError::TokenLivesTooLong);
         }
@@ -111,6 +112,7 @@ pub fn jwt_error_mapping(e: jwt_simple::Error) -> RustyJwtError {
         "Required subject mismatch" => RustyJwtError::TokenSubMismatch,
         "Required nonce mismatch" => RustyJwtError::DpopNonceMismatch,
         "Clock drift detected" => RustyJwtError::InvalidDpopIat,
+        "Token not valid yet" => RustyJwtError::DpopNotYetValid,
         "Token has expired" => RustyJwtError::TokenExpired,
         "Invalid JWK in DPoP token" => RustyJwtError::InvalidDpopJwk,
         // DPoP claims failing because of serde
