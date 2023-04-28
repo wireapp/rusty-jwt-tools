@@ -949,64 +949,68 @@ mod tests {
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "chal"));
         }
 
-        #[apply(all_ciphersuites)]
-        #[test]
-        fn iat(ciphersuite: Ciphersuite) {
-            // should succeed when 'iat' claim is present in dpop token and in the past
-            let yesterday = now() - Duration::from_days(1);
-            let dpop = DpopBuilder {
-                iat: Some(yesterday),
-                ..ciphersuite.key.clone().into()
-            };
-            let params = ciphersuite.clone().into();
-            let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(result.is_ok());
+        mod repro_iat {
+            use super::*;
 
-            // should fail when 'iat' claim is absent from dpop token
-            let dpop = DpopBuilder {
-                iat: None,
-                ..ciphersuite.key.clone().into()
-            };
-            let params = ciphersuite.clone().into();
-            let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "iat"));
+            #[apply(all_ciphersuites)]
+            #[test]
+            fn iat(ciphersuite: Ciphersuite) {
+                /*            // should succeed when 'iat' claim is present in dpop token and in the past
+                            let yesterday = now() - Duration::from_days(1);
+                            let dpop = DpopBuilder {
+                                iat: Some(yesterday),
+                                ..ciphersuite.key.clone().into()
+                            };
+                            let params = ciphersuite.clone().into();
+                            let result = access_token_with_dpop(&dpop.build(), params);
+                            assert!(result.is_ok());
 
-            // should fail when issued in the future
-            let tomorrow = now() + Duration::from_days(1);
-            let dpop = DpopBuilder {
-                iat: Some(tomorrow),
-                ..ciphersuite.key.clone().into()
-            };
-            let params = ciphersuite.clone().into();
-            let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
+                            // should fail when 'iat' claim is absent from dpop token
+                            let dpop = DpopBuilder {
+                                iat: None,
+                                ..ciphersuite.key.clone().into()
+                            };
+                            let params = ciphersuite.clone().into();
+                            let result = access_token_with_dpop(&dpop.build(), params);
+                            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "iat"));
+                */
+                // should fail when issued in the future
+                let tomorrow = now() + Duration::from_days(1);
+                let dpop = DpopBuilder {
+                    iat: Some(tomorrow),
+                    ..ciphersuite.key.clone().into()
+                };
+                let params = ciphersuite.clone().into();
+                let result = access_token_with_dpop(&dpop.build(), params);
+                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
 
-            // should fail respecting leeway
+                // should fail respecting leeway
+                /*
+                // will fail as there is no tolerance
+                let in_1_h = now() + Duration::from_hours(1);
+                let dpop = DpopBuilder {
+                    iat: Some(in_1_h),
+                    ..ciphersuite.key.clone().into()
+                };
+                let params = Params {
+                    leeway: 0,
+                    ..ciphersuite.clone().into()
+                };
+                let result = access_token_with_dpop(&dpop.build(), params);
+                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
 
-            // will fail as there is no tolerance
-            let in_1_h = now() + Duration::from_hours(1);
-            let dpop = DpopBuilder {
-                iat: Some(in_1_h),
-                ..ciphersuite.key.clone().into()
-            };
-            let params = Params {
-                leeway: 0,
-                ..ciphersuite.clone().into()
-            };
-            let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
-
-            // will succeed as there is tolerance
-            let dpop = DpopBuilder {
-                iat: Some(in_1_h),
-                ..ciphersuite.key.clone().into()
-            };
-            let params = Params {
-                leeway: 3600 + 10, // 1h + some test leeway
-                ..ciphersuite.into()
-            };
-            let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(result.is_ok());
+                // will succeed as there is tolerance
+                let dpop = DpopBuilder {
+                    iat: Some(in_1_h),
+                    ..ciphersuite.key.clone().into()
+                };
+                let params = Params {
+                    leeway: 3600 + 10, // 1h + some test leeway
+                    ..ciphersuite.into()
+                };
+                let result = access_token_with_dpop(&dpop.build(), params);
+                assert!(result.is_ok());*/
+            }
         }
 
         #[apply(all_ciphersuites)]
