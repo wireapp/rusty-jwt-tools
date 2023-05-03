@@ -43,6 +43,12 @@ impl TryFrom<&str> for Htu {
     }
 }
 
+impl From<url::Url> for Htu {
+    fn from(u: url::Url) -> Self {
+        Self(u)
+    }
+}
+
 impl ToString for Htu {
     fn to_string(&self) -> String {
         self.0.to_string()

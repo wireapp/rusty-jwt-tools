@@ -77,6 +77,9 @@ pub enum RustyJwtError {
     /// DPoP token 'sub' claim mismatches with the expected one
     #[error("DPoP token 'sub' claim mismatches with the expected one")]
     TokenSubMismatch,
+    /// Claim 'iss' is missing while required
+    #[error("Issuer claim 'iss' is missing")]
+    MissingIssuer,
     /// JWT token is expired
     #[error("JWT token is expired")]
     TokenExpired,

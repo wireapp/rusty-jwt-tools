@@ -7,9 +7,9 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ClientId {
     /// base64url encoded UUIDv4 unique user identifier
-    pub user: Uuid,
-    /// the client number assigned by the backend in hex
-    pub client: u64,
+    pub user_id: Uuid,
+    /// the device id assigned by the backend in hex
+    pub device_id: u64,
     /// the backend domain of the client
     pub domain: String,
 }
@@ -31,17 +31,21 @@ impl ClientId {
     pub fn try_new(user: impl AsRef<str>, client: u64, domain: &str) -> RustyJwtResult<Self> {
         let user = uuid::Uuid::try_from(user.as_ref()).map_err(|_| RustyJwtError::InvalidClientId)?;
         Ok(Self {
-            user,
-            client,
+            user_id: user,
+            device_id: client,
             domain: domain.to_string(),
         })
     }
 
     /// Constructor
-    pub fn try_from_raw_parts(user: &[u8], client: u64, domain: &[u8]) -> RustyJwtResult<Self> {
+    pub fn try_from_raw_parts(user: &[u8], device_id: u64, domain: &[u8]) -> RustyJwtResult<Self> {
         let user = Uuid::from_slice(user)?;
         let domain = core::str::from_utf8(domain)?.to_string();
-        Ok(Self { user, client, domain })
+        Ok(Self {
+            user_id: user,
+            device_id,
+            domain,
+        })
     }
 
     /// Parse from an URI e.g. `im:wireapp={userId}/{clientId}@{domain}`
@@ -62,11 +66,11 @@ impl ClientId {
     fn parse_client_id(client_id: &str, delimiter: &'static str) -> RustyJwtResult<Self> {
         let (user, rest) = client_id.split_once(delimiter).ok_or(RustyJwtError::InvalidClientId)?;
         let user = Self::parse_user(user)?;
-        let (client, domain) = rest.split_once('@').ok_or(RustyJwtError::InvalidClientId)?;
-        let client = u64::from_str_radix(client, 16).map_err(|_| RustyJwtError::InvalidClientId)?;
+        let (device, domain) = rest.split_once('@').ok_or(RustyJwtError::InvalidClientId)?;
+        let client = u64::from_str_radix(device, 16).map_err(|_| RustyJwtError::InvalidClientId)?;
         Ok(Self {
-            user,
-            client,
+            user_id: user,
+            device_id: client,
             domain: domain.to_string(),
         })
     }
@@ -82,8 +86,8 @@ impl ClientId {
     }
 
     fn format(&self, delimiter: &str) -> String {
-        let user = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(self.user.as_simple().to_string());
-        format!("{user}{}{:x}@{}", delimiter, self.client, self.domain)
+        let user = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(self.user_id.as_simple().to_string());
+        format!("{user}{}{:x}@{}", delimiter, self.device_id, self.domain)
     }
 
     fn parse_user(user: impl AsRef<[u8]>) -> RustyJwtResult<Uuid> {
@@ -150,8 +154,8 @@ mod tests {
             assert_eq!(
                 client_id,
                 ClientId {
-                    user: Uuid::from_str(&user).unwrap(),
-                    client,
+                    user_id: Uuid::from_str(&user).unwrap(),
+                    device_id: client,
                     domain
                 }
             )
@@ -202,8 +206,8 @@ mod tests {
                 assert_eq!(
                     parsed,
                     ClientId {
-                        user: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
-                        client: 6699,
+                        user_id: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
+                        device_id: 6699,
                         domain: DOMAIN.to_string(),
                     }
                 );
@@ -267,8 +271,8 @@ mod tests {
                 assert_eq!(
                     parsed,
                     ClientId {
-                        user: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
-                        client: 6699,
+                        user_id: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
+                        device_id: 6699,
                         domain: DOMAIN.to_string(),
                     }
                 );

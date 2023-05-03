@@ -61,6 +61,7 @@ impl VerifyDpop for &str {
             client_id,
             backend_nonce: Some(backend_nonce),
             leeway,
+            issuer: None,
         };
 
         let claims = (*self).verify_jwt::<Dpop>(&pk, max_expiration, None, None, verify)?;

@@ -1,6 +1,7 @@
+use rusty_jwt_tools::prelude::*;
+
 use crate::chall::AcmeChallengeType;
 use crate::prelude::*;
-use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
     /// create authorizations
@@ -75,16 +76,10 @@ pub struct AcmeAuthz {
 }
 
 impl AcmeAuthz {
-    pub fn http_challenge(&self) -> Option<&AcmeChallenge> {
-        self.challenges.iter().find(|c| c.typ == AcmeChallengeType::Http01)
-    }
-
-    pub fn wire_dpop_challenge(&self) -> Option<&AcmeChallenge> {
-        self.challenges.iter().find(|c| c.typ == AcmeChallengeType::WireDpop01)
-    }
-
-    pub fn wire_oidc_challenge(&self) -> Option<&AcmeChallenge> {
-        self.challenges.iter().find(|c| c.typ == AcmeChallengeType::WireOidc01)
+    pub fn take_challenge(&mut self, typ: AcmeChallengeType) -> Option<AcmeChallenge> {
+        let index = self.challenges.iter().position(|c| c.typ == typ)?;
+        let challenge = self.challenges.remove(index);
+        Some(challenge)
     }
 
     pub fn verify(&self) -> RustyAcmeResult<()> {
@@ -115,6 +110,7 @@ impl Default for AcmeAuthz {
                 typ: AcmeChallengeType::WireDpop01,
                 url: "https://wire.com/acme/chall/prV_B7yEyA4".parse().unwrap(),
                 token: "DGyRejmCefe7v4NfDGDKfA".to_string(),
+                target: None,
             }],
         }
     }
@@ -134,9 +130,10 @@ pub enum AuthzStatus {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

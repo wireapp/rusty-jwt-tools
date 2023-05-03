@@ -34,12 +34,14 @@ impl RustyJwtTools {
     /// * `max_expiration` - The maximal expiration date and time, in seconds since epoch ex: 1668987368
     /// * `now` - Current time in seconds since epoch ex: 1661211368
     /// * `backend_pk` - PEM format for public key of the Wire backend
+    #[allow(clippy::too_many_arguments)]
     pub fn verify_access_token(
         access_token: &str,
         client_id: &ClientId,
         challenge: AcmeNonce,
         max_skew_secs: u16,
         max_expiration: u64,
+        issuer: Htu,
         backend_pk: Pem,
         hash: HashAlgorithm,
     ) -> RustyJwtResult<()> {
@@ -52,6 +54,7 @@ impl RustyJwtTools {
             client_id,
             &challenge,
             max_expiration,
+            issuer,
             max_skew_secs,
             jwk,
             hash,
@@ -78,6 +81,7 @@ impl RustyJwtTools {
         client_id: &ClientId,
         challenge: &AcmeNonce,
         max_expiration: u64,
+        issuer: Htu,
         leeway: u16,
         jwk: &Jwk,
         hash: HashAlgorithm,
@@ -87,6 +91,7 @@ impl RustyJwtTools {
             leeway,
             client_id,
             backend_nonce: None,
+            issuer: Some(issuer),
         };
 
         let expected_cnf = JwkThumbprint::generate(jwk, hash)?;
@@ -122,9 +127,9 @@ impl RustyJwtTools {
         let proof = claims.custom.proof.as_str();
         let header = Token::decode_metadata(proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
-        let issuer: Htu = claims
+        let dpop_issuer: Htu = claims
             .issuer
-            .ok_or(RustyJwtError::MissingTokenClaim("issuer"))
+            .ok_or(RustyJwtError::MissingTokenClaim("htu"))
             .and_then(|i| i.as_str().try_into())?;
 
         proof.verify_client_dpop(
@@ -134,7 +139,7 @@ impl RustyJwtTools {
             &nonce,
             Some(&claims.custom.challenge),
             None,
-            &issuer,
+            &dpop_issuer,
             max_expiration,
             leeway,
         )?;
@@ -571,6 +576,72 @@ mod tests {
 
         #[apply(all_ciphersuites)]
         #[test]
+        fn iss(ciphersuite: Ciphersuite) {
+            let issuer_a: Htu = "https://a.com/".try_into().unwrap();
+            let issuer_b: Htu = "https://b.com/".try_into().unwrap();
+
+            // should succeed when challenge and JWT's 'chal' match
+            let proof = DpopBuilder {
+                dpop: TestDpop {
+                    htu: Some(issuer_a.clone()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            }
+            .build();
+            let access = AccessBuilder {
+                access: TestAccess {
+                    proof: Some(proof),
+                    ..ciphersuite.clone().into()
+                },
+                issuer: Some(issuer_a.clone()),
+                ..ciphersuite.clone().into()
+            };
+            let params = Params {
+                issuer: issuer_a.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = verify_token(&access.build(), params);
+            assert!(result.is_ok());
+
+            // JWT's 'iss' is absent
+            let access = AccessBuilder {
+                issuer: None,
+                ..ciphersuite.clone().into()
+            };
+            let params = Params {
+                ..ciphersuite.clone().into()
+            };
+            let result = verify_token(&access.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingIssuer));
+
+            // should fail when 'iss' and issuer argument mismatch
+            let proof = DpopBuilder {
+                dpop: TestDpop {
+                    htu: Some(issuer_a.clone()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            }
+            .build();
+            let access = AccessBuilder {
+                access: TestAccess {
+                    proof: Some(proof),
+                    ..ciphersuite.clone().into()
+                },
+                issuer: Some(issuer_a),
+                ..ciphersuite.clone().into()
+            };
+            let params = Params {
+                issuer: issuer_b,
+                ..ciphersuite.into()
+            };
+            let result = verify_token(&access.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHtuMismatch));
+        }
+
+        #[apply(all_ciphersuites)]
+        #[test]
         fn backend_nonce(ciphersuite: Ciphersuite) {
             // should succeed when 'nonce' claim is present in access token
             let nonce = BackendNonce::rand();
@@ -974,11 +1045,14 @@ mod tests {
 
         #[apply(all_ciphersuites)]
         #[test]
-        fn htu_should_match_access_iss(ciphersuite: Ciphersuite) {
-            // should succeed when 'htu' claim matches the 'iss' claim in the access token
+        fn htu_should_match_expected_issuer(ciphersuite: Ciphersuite) {
+            // should succeed when 'htu' claim matches the issuer argument
+            let issuer_a: Htu = "https://a.com/".try_into().unwrap();
+            let issuer_b: Htu = "https://b.com/".try_into().unwrap();
+
             let proof = DpopBuilder {
                 dpop: TestDpop {
-                    htu: Some("https://a.com/".try_into().unwrap()),
+                    htu: Some(issuer_a.clone()),
                     ..Default::default()
                 },
                 ..ciphersuite.key.clone().into()
@@ -989,11 +1063,71 @@ mod tests {
                     proof: Some(proof),
                     ..ciphersuite.clone().into()
                 },
-                issuer: Some("https://a.com/".try_into().unwrap()),
+                issuer: Some(issuer_a.clone()),
                 ..ciphersuite.clone().into()
             }
             .build();
-            let result = verify_token(&access, ciphersuite.clone().into());
+            let params = Params {
+                issuer: issuer_a.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = verify_token(&access, params);
+            assert!(result.is_ok());
+
+            // should fail when 'htu' claim mismatches the issuer argument
+            let proof = DpopBuilder {
+                dpop: TestDpop {
+                    htu: Some(issuer_a.clone()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            }
+            .build();
+            let access = AccessBuilder {
+                access: TestAccess {
+                    proof: Some(proof),
+                    ..ciphersuite.clone().into()
+                },
+                issuer: Some(issuer_a),
+                ..ciphersuite.clone().into()
+            }
+            .build();
+            let params = Params {
+                issuer: issuer_b,
+                ..ciphersuite.into()
+            };
+            let result = verify_token(&access, params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHtuMismatch));
+        }
+
+        #[apply(all_ciphersuites)]
+        #[test]
+        fn htu_should_match_access_iss(ciphersuite: Ciphersuite) {
+            // should succeed when 'htu' claim matches the 'iss' claim in the access token
+            let issuer_a: Htu = "https://a.com/".try_into().unwrap();
+            let issuer_b: Htu = "https://b.com/".try_into().unwrap();
+            let proof = DpopBuilder {
+                dpop: TestDpop {
+                    htu: Some(issuer_a.clone()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            }
+            .build();
+            let access = AccessBuilder {
+                access: TestAccess {
+                    proof: Some(proof),
+                    ..ciphersuite.clone().into()
+                },
+                issuer: Some(issuer_a.clone()),
+                ..ciphersuite.clone().into()
+            }
+            .build();
+            let params = Params {
+                issuer: issuer_a.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = verify_token(&access, params);
             assert!(result.is_ok());
 
             // should fail when 'htu' claim lacks in the proof
@@ -1006,13 +1140,17 @@ mod tests {
             }
             .build();
             let access = build_access(&ciphersuite, proof);
-            let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "htu"));
+            let params = Params {
+                issuer: issuer_a.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = verify_token(&access, params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHtuMismatch));
 
             // should fail when 'htu' claim mismatches the 'iss' claim in the access token
             let proof = DpopBuilder {
                 dpop: TestDpop {
-                    htu: Some("https://a.com/".try_into().unwrap()),
+                    htu: Some(issuer_a),
                     ..Default::default()
                 },
                 ..ciphersuite.key.clone().into()
@@ -1023,11 +1161,15 @@ mod tests {
                     proof: Some(proof),
                     ..ciphersuite.clone().into()
                 },
-                issuer: Some("https://b.com/".try_into().unwrap()),
+                issuer: Some(issuer_b.clone()),
                 ..ciphersuite.clone().into()
             }
             .build();
-            let result = verify_token(&access, ciphersuite.into());
+            let params = Params {
+                issuer: issuer_b,
+                ..ciphersuite.into()
+            };
+            let result = verify_token(&access, params);
             assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHtuMismatch));
         }
 
@@ -1336,6 +1478,7 @@ mod tests {
         pub challenge: AcmeNonce,
         pub leeway: u16,
         pub max_expiration: u64,
+        pub issuer: Htu,
         pub backend_pk: Option<Pem>,
     }
 
@@ -1347,6 +1490,7 @@ mod tests {
                 challenge: AcmeNonce::default(),
                 leeway: 5,
                 max_expiration: 2136351646, // somewhere in 2037
+                issuer: TestDpop::default().htu.unwrap(),
                 backend_pk: None,
             }
         }
@@ -1359,6 +1503,7 @@ mod tests {
             challenge,
             leeway,
             max_expiration,
+            issuer,
             backend_pk,
         } = params;
         let backend_pk = backend_pk.unwrap_or(ciphersuite.key.pk);
@@ -1368,6 +1513,7 @@ mod tests {
             challenge,
             leeway,
             max_expiration,
+            issuer,
             backend_pk,
             ciphersuite.hash,
         )
