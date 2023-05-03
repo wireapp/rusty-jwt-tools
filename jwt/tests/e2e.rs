@@ -79,6 +79,7 @@ fn e2e_jwt() {
             challenge,
             leeway,
             max_expiration,
+            htu.clone(),
             backend_pk.clone(),
             hash_alg,
         );

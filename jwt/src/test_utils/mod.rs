@@ -308,6 +308,13 @@ impl Ciphersuite {
     }
 }
 
+/// Very useful for debugging a specific test ()
+impl Default for Ciphersuite {
+    fn default() -> Self {
+        Self::new(JwsAlgorithm::Ed25519, HashAlgorithm::SHA256)
+    }
+}
+
 #[template]
 #[export]
 #[rstest(hash, case::SHA256(HashAlgorithm::SHA256), case::SHA384(HashAlgorithm::SHA384))]

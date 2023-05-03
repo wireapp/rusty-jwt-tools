@@ -101,6 +101,11 @@ pub struct AcmeChallenge {
     pub status: Option<AcmeChallengeStatus>,
     /// The acme challenge value to store in the Dpop token
     pub token: String,
+    /// Non-standard, Wire specific claim. Indicates the consumer from where it should get the challenge
+    /// proof. Either from wire-server "/access-token" endpoint in case of a DPoP challenge, or from
+    /// an OAuth token endpoint for an OIDC challenge
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target: Option<url::Url>,
 }
 
 /// see [RFC 8555 Section 7.1.6](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6)

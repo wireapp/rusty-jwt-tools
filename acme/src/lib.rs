@@ -16,7 +16,7 @@ pub mod prelude {
     use super::*;
     pub use account::AcmeAccount;
     pub use authz::AcmeAuthz;
-    pub use chall::{AcmeChallError, AcmeChallenge};
+    pub use chall::{AcmeChallError, AcmeChallenge, AcmeChallengeType};
     pub use error::{RustyAcmeError, RustyAcmeResult};
     pub use finalize::AcmeFinalize;
     pub use identifier::{AcmeIdentifier, WireIdentifier};

@@ -15,6 +15,8 @@ pub struct Verify<'a> {
     pub backend_nonce: Option<&'a BackendNonce>,
     /// leeway
     pub leeway: u16,
+    /// issuer
+    pub issuer: Option<Htu>,
 }
 
 impl From<&Verify<'_>> for VerificationOptions {
@@ -25,6 +27,7 @@ impl From<&Verify<'_>> for VerificationOptions {
             required_subject: Some(v.client_id.to_uri()),
             required_nonce: v.backend_nonce.map(|n| n.to_string()),
             time_tolerance: Some(UnixTimeStamp::from_secs(v.leeway as u64)),
+            allowed_issuers: v.issuer.as_ref().map(|i| HashSet::from([i.to_string()])),
             ..Default::default()
         }
     }
@@ -111,10 +114,12 @@ pub fn jwt_error_mapping(e: jwt_simple::Error) -> RustyJwtError {
         "Required nonce missing" => RustyJwtError::MissingTokenClaim("nonce"),
         "Required subject mismatch" => RustyJwtError::TokenSubMismatch,
         "Required nonce mismatch" => RustyJwtError::DpopNonceMismatch,
+        "Required issuer mismatch" => RustyJwtError::DpopHtuMismatch,
         "Clock drift detected" => RustyJwtError::InvalidDpopIat,
         "Token not valid yet" => RustyJwtError::DpopNotYetValid,
         "Token has expired" => RustyJwtError::TokenExpired,
         "Invalid JWK in DPoP token" => RustyJwtError::InvalidDpopJwk,
+        "Required issuer missing" => RustyJwtError::MissingIssuer,
         // DPoP claims failing because of serde
         r if r.starts_with("missing field `chal`") => RustyJwtError::MissingTokenClaim("chal"),
         r if r.starts_with("missing field `htm`") => RustyJwtError::MissingTokenClaim("htm"),

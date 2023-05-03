@@ -29,6 +29,12 @@ pub struct AccessVerify {
     /// e.g. '1701507459'
     #[arg(short = 'e', long)]
     max_expiry: u64,
+    /// endpoint delivering the access-token on wire-server.
+    /// Should be configured in `provisioners[*].options.dpop.dpop-target` config key on the ACME server
+    ///
+    /// e.g. 'https://wire.com/clients/123abef456/access-token'
+    #[arg(short = 'e', long)]
+    issuer: String,
     /// hash algorithm used to compute the JWK thumbprint. Supported values: ['SHA-256', 'SHA-384']
     ///
     /// e.g. 'SHA-256'
@@ -49,6 +55,7 @@ impl AccessVerify {
         let client_id = ClientId::try_from_uri(&self.client_id).expect("Invalid 'client_id'");
         let challenge: AcmeNonce = self.challenge.into();
         let (_, backend_pk) = parse_public_key_pem(read_file(Some(&self.key)).unwrap());
+        let issuer = self.issuer.as_str().try_into().expect("Invalid 'issuer'");
 
         let verification = RustyJwtTools::verify_access_token(
             &access_token,
@@ -56,6 +63,7 @@ impl AccessVerify {
             challenge,
             self.leeway,
             self.max_expiry,
+            issuer,
             backend_pk,
             self.hash_algorithm,
         );
