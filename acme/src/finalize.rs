@@ -13,7 +13,7 @@ use crate::{
 impl RustyAcme {
     /// see [RFC 8555 Section 7.4](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4)
     pub fn finalize_req(
-        mut order: AcmeOrder,
+        order: &AcmeOrder,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
         kp: &Pem,
@@ -22,7 +22,7 @@ impl RustyAcme {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
 
-        let id = order.identifiers.pop().ok_or(RustyAcmeError::ImplementationError)?;
+        let id = order.identifiers.first().ok_or(RustyAcmeError::ImplementationError)?;
         let csr = Self::generate_csr(alg, id.to_wire_identifier()?, kp)?;
         let payload = AcmeFinalizeRequest { csr };
         let req = AcmeJws::new(alg, previous_nonce, &order.finalize, Some(&acct_url), Some(payload), kp)?;
@@ -68,7 +68,7 @@ impl RustyAcme {
         };
 
         // TODO: temporarily using a custom OIDC for carrying the display name without having it listed as a DNS SAN.
-        // reusing LDAP's OID for diplay name see http://oid-info.com/get/2.16.840.1.113730.3.1.241
+        // reusing LDAP's OID for display_name see http://oid-info.com/get/2.16.840.1.113730.3.1.241
         let dn_display_name_oid = asn1_rs::oid!(2.16.840 .1 .113730 .3 .1 .241).as_bytes().try_into()?;
         let dn_display_name_value =
             x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Utf8String, identifier.display_name.as_bytes())?;

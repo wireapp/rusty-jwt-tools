@@ -21,9 +21,9 @@ impl AcmeIdentifier {
         Ok(Self::WireappId(identifier))
     }
 
-    pub fn to_wire_identifier(self) -> RustyAcmeResult<WireIdentifier> {
+    pub fn to_wire_identifier(&self) -> RustyAcmeResult<WireIdentifier> {
         Ok(match self {
-            AcmeIdentifier::WireappId(id) => serde_json::from_str(id.as_str())?,
+            AcmeIdentifier::WireappId(id) => serde_json::from_str(id)?,
         })
     }
 
