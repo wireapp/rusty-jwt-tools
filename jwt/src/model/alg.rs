@@ -1,11 +1,12 @@
-use jwt_simple::prelude::*;
 use std::fmt::Formatter;
 use std::str::FromStr;
+
+use jwt_simple::prelude::*;
 
 use crate::prelude::*;
 
 /// Narrows the supported signature algorithms to the ones we define
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum JwsAlgorithm {
     /// ECDSA using P-256 and SHA-256
     ///
@@ -147,7 +148,7 @@ impl From<JwsEdAlgorithm> for JwsAlgorithm {
 }
 
 /// Narrows the supported hashing algorithms to the ones we define
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum HashAlgorithm {
     /// SHA-256
     SHA256,
