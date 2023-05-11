@@ -7,7 +7,10 @@ use crate::prelude::*;
 /// Specified in [RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures][1]
 ///
 /// [1]: https://tools.ietf.org/html/rfc7468
-#[derive(Debug, Clone, Eq, PartialEq, zeroize::Zeroize, zeroize::ZeroizeOnDrop)]
+#[derive(
+    Debug, Clone, Eq, PartialEq, zeroize::Zeroize, zeroize::ZeroizeOnDrop, serde::Serialize, serde::Deserialize,
+)]
+#[serde(transparent)]
 pub struct Pem(String);
 
 impl From<String> for Pem {
