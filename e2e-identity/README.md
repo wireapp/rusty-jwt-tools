@@ -21,10 +21,11 @@ sequenceDiagram
     wire-client->>+acme-server: 🔒 POST /acme/wire/challenge/oYzoMhjtWfBfCrybUOPSazmYNZhr6hDf/V3LKiNPifdQwz0PLladtHRH9WtOu9XFj
     acme-server->>-wire-client: 200
     wire-client->>wire-client: OAUTH authorization request
-    wire-client->>+authorization-server:  GET /dex/auth
+    wire-client->>+idp:  GET /dex/auth
+    idp->>-wire-client: 200
     wire-client->>wire-client: OAUTH authorization code
-    wire-client->>+authorization-server:  POST /dex/token
-    authorization-server->>-wire-client: 200
+    wire-client->>+idp:  POST /dex/token
+    idp->>-wire-client: 200
     wire-client->>+acme-server: 🔒 POST /acme/wire/challenge/oYzoMhjtWfBfCrybUOPSazmYNZhr6hDf/oPyI2NPNHw9do0Mql8ZNfvjSo0rQn9H1
     acme-server->>-wire-client: 200
     wire-client->>+acme-server: 🔒 POST /acme/wire/order/dIIN9chdQ0MxGmPsts7zr5hsCJyInl9X
