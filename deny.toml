@@ -29,11 +29,14 @@ name = "webpki"
 expression = "ISC"
 license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
 
+[[licenses.clarify]]
+name = "rustls-webpki"
+expression = "ISC"
+license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
+
 [sources]
 private = [
-    #    "https://github.com/wireapp",
-    # TODO: remove when no longer required
-    "https://github.com/beltram",
+    "https://github.com/wireapp",
 ]
 
 [bans]
