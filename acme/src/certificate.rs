@@ -44,8 +44,11 @@ impl RustyAcme {
     fn verify_leaf_certificate(mut order: AcmeOrder, cert: Certificate) -> RustyAcmeResult<()> {
         let cert_identity = cert.extract_identity()?;
 
+        println!("cert_identity: {:#?}", cert_identity);
+
         let identifier = order.identifiers.pop().ok_or(RustyAcmeError::ImplementationError)?;
         let identifier = identifier.to_wire_identifier()?;
+        println!("identifier: {:#?}", identifier);
 
         let invalid_client_id =
             ClientId::try_from_qualified(&cert_identity.client_id)? != ClientId::try_from_uri(&identifier.client_id)?;
