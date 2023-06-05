@@ -35,12 +35,6 @@ pub enum RustyJwtError {
     /// Json error
     #[error(transparent)]
     JsonError(#[from] serde_json::Error),
-    /// Number conversion error
-    #[error(transparent)]
-    NumberError(#[from] core::num::TryFromIntError),
-    /// Number parsing error
-    #[error(transparent)]
-    ParseIntError(#[from] core::num::ParseIntError),
     /// Invalid JSON Patch supplied according to RFC 6902
     #[error("Invalid JSON Patch according to RFC 6902 because {0}")]
     InvalidJsonPath(serde_json::Error),
