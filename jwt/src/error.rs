@@ -23,9 +23,6 @@ pub enum RustyJwtError {
     /// Invalid UUID
     #[error(transparent)]
     UuidError(#[from] uuid::Error),
-    /// Failed converting a Vec<T> into a [T ; N]
-    #[error(transparent)]
-    ArrayConversionError(#[from] core::array::TryFromSliceError),
     /// UTF-8 parsing error
     #[error(transparent)]
     Utf8Error(#[from] core::str::Utf8Error),
