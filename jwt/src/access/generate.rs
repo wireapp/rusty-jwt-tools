@@ -149,6 +149,52 @@ mod tests {
     use super::*;
     use base64::Engine;
 
+    #[test]
+    fn verify_leif() {
+        let dpop_proof = "eyJhbGciOiJFZERTQSIsInR5cCI6ImRwb3Arand0IiwiandrIjp7Imt0eSI6Ik9LUCIsImNydiI6IkVkMjU1MTkiLCJ4IjoiQXRzbWl5RkZwX1F3X0V4UDhiRjdWWDFsS1A0enN0d3djYjIyZUE1NDRHOCJ9fQ.eyJpYXQiOjE2ODYwNTU2MjEsImV4cCI6MTY4NjA1NTY1MSwibmJmIjoxNjg2MDU1NjE2LCJzdWIiOiJpbTp3aXJlYXBwPVpUazVaalExTkdObU5qZGlORFF3TWpoaE5HVXdZV1ZqWm1OalpqQm1NRFUvODlmMWM0MDU2Yzk5ZWRjYkBhbnRhLndpcmUubGluayIsImp0aSI6ImFkMTMyNGNlLTI0ZjktNGZiYy1hNzczLTJkNTY3ZDZhODM0NSIsIm5vbmNlIjoiTnhTdVpLR2NRbmkxN2tMM2Fqakc0ZyIsImh0bSI6IlBPU1QiLCJodHUiOiJodHRwczovL2FudGEud2lyZS5saW5rL3Y0L2NsaWVudHMvODlmMWM0MDU2Yzk5ZWRjYi9hY2Nlc3MtdG9rZW4iLCJjaGFsIjoiQVIwVHNpVXZ0THhaZW1kTWx5ZFRXUGtTY1VxM0lVODgifQ.ysgdpt39dCcrgZ1ZbAuM1bpndlwZtiDMb2WyDoJbSoB1p1Ydu-x2kGhaic3tx7B3Y87oVq_6gumjj43D1KY1Cg";
+        let header = Token::decode_metadata(dpop_proof).unwrap();
+        let (alg, jwk) = header.verify_dpop_header().unwrap();
+        let client_id = ClientId::try_from_uri(
+            "im:wireapp=ZTk5ZjQ1NGNmNjdiNDQwMjhhNGUwYWVjZmNjZjBmMDU/89f1c4056c99edcb@anta.wire.link",
+        )
+        .unwrap();
+
+        println!("{:#?}", client_id);
+
+        let backend_nonce = "NxSuZKGcQni17kL3ajjG4g".into();
+        let htu = "https://anta.wire.link/v4/clients/89f1c4056c99edcb/access-token"
+            .try_into()
+            .unwrap();
+        dpop_proof
+            .verify_client_dpop(
+                alg,
+                jwk,
+                &client_id,
+                &backend_nonce,
+                None,
+                Some(Htm::Post),
+                &htu,
+                2136351646,
+                65000,
+            )
+            .unwrap();
+
+        let backend_keys = Ed25519KeyPair::generate().to_pem().into();
+
+        RustyJwtTools::generate_access_token(
+            dpop_proof,
+            &client_id,
+            backend_nonce,
+            htu,
+            Htm::Post,
+            36000,
+            2136351646,
+            backend_keys,
+            HashAlgorithm::SHA256,
+        )
+        .unwrap();
+    }
+
     mod generated_access_token {
         use super::*;
 
