@@ -24,7 +24,7 @@ pub struct AcmeDirectory {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use wasm_bindgen_test::*;
 

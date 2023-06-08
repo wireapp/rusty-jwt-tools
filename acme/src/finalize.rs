@@ -251,7 +251,7 @@ impl Default for AcmeFinalize {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use serde_json::json;
     use wasm_bindgen_test::*;
 
