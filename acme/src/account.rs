@@ -140,7 +140,7 @@ pub enum AcmeAccountStatus {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use serde_json::json;
     use wasm_bindgen_test::*;

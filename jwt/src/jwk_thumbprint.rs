@@ -68,13 +68,17 @@ impl JwkThumbprint {
 }
 
 #[cfg(test)]
-mod tests {
-    use crate::jwk::RustyJwk;
-    use crate::test_utils::*;
+pub mod tests {
+    use wasm_bindgen_test::*;
+
+    use crate::{jwk::RustyJwk, test_utils::*};
 
     use super::*;
 
+    wasm_bindgen_test_configure!(run_in_browser);
+
     #[test]
+    #[wasm_bindgen_test]
     fn rfc_test() {
         let n = "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw".to_string();
         let jwk = Jwk {
@@ -103,6 +107,7 @@ mod tests {
 
         #[apply(all_hash)]
         #[test]
+        #[wasm_bindgen_test]
         fn rsa(hash: HashAlgorithm) {
             let e = "AQAB".to_string();
             let n = "3Ra1kbdyBFvCtL459VQMK8h8ry2wPJXlf3ZBzP5Lu6DPSLbmH_BXB4bVQ1MMo5hgQ0aIN6bw4Bb1qN-qUpKCr3a-TN3wfmYfjAl1Km-qYMpPPZliZyLKqx9_m0prClyffIBnYxZF04KQDHSkgqDxYywUqAKBlhu37RP0HFD7ZwPUdlv1DL_ep2zlm8CiWyvRe1kKpnvFqq6VLwOFia4eXenEwRE4GEDqj9PpmPCN6Bd-PvlBxI8GsWbl57pCXW6zsh3TV70b2rJDGEm06kORNvN5C_X_8U6lIVeCepeFDJKgyKH5lMhbV6uSl2-AX6TK0ARzvx3DQK16KRhO95RRQw".to_string();
@@ -126,6 +131,7 @@ mod tests {
 
         #[apply(all_hash)]
         #[test]
+        #[wasm_bindgen_test]
         fn es256(hash: HashAlgorithm) {
             let x = "KKIwHE0jKHJXdzF3lEeIfRw0Vqf-S6YIjX6t6iSZPIE".to_string();
             let y = "Kng6pbKYmgw1MWCyaoXEbP3nYPpvs5yH7BYOhrivpe0".to_string();
@@ -150,6 +156,7 @@ mod tests {
 
         #[apply(all_hash)]
         #[test]
+        #[wasm_bindgen_test]
         fn es384(hash: HashAlgorithm) {
             let x = "RMqa4EpWcufvQm7paEK6ptQNYrRUnHp11YtvzFcQf5dJ8fvITjstBTCoy0v0R8Ec".to_string();
             let y = "9b9PWo6wxew9QGyjTsRSXiz64N6Y2bLiiWALT47l7X8STVnER9kFLwtZ98CJOwE5".to_string();
@@ -174,6 +181,7 @@ mod tests {
 
         #[apply(all_hash)]
         #[test]
+        #[wasm_bindgen_test]
         fn ed25519(hash: HashAlgorithm) {
             let x = "fe6kgFGhCGu7epAE3JK9Zv2NpQlAzb88ta58ktVA9mQ".to_string();
             let jwk = Jwk {
@@ -197,6 +205,7 @@ mod tests {
 
     #[apply(all_ciphersuites)]
     #[test]
+    #[wasm_bindgen_test]
     fn should_use_only_required_fields(ciphersuite: Ciphersuite) {
         let jwk = RustyJwk::rand_jwk(ciphersuite.key.alg);
         // we will compare a thumbprint of a JWK with ALL its optional fields and one with none
@@ -225,6 +234,7 @@ mod tests {
     }
 
     #[test]
+    #[wasm_bindgen_test]
     fn order() {
         // By default 'serde_json' does not activate its `preserve_order` feature which guarantees us
         // that json fields are lexicographically ordered as we want them to be.

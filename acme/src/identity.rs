@@ -98,10 +98,14 @@ fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String,
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
 
     #[test]
+    #[wasm_bindgen_test]
     fn should_find_claims_in_x509() {
         const CERT: &str = r#"-----BEGIN CERTIFICATE-----
 MIICLjCCAdWgAwIBAgIRAO0V5lJjXkcp2unghc4O6mkwCgYIKoZIzj0EAwIwLjEN

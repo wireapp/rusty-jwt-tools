@@ -87,7 +87,7 @@ impl TryIntoJwk for AnyEcPublicKey {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use jwt_simple::prelude::*;
     use wasm_bindgen_test::*;
 

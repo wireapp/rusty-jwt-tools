@@ -137,15 +137,19 @@ impl ClientId {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use std::str::FromStr as _;
 
     use super::*;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
 
     mod constructor {
         use super::*;
 
         #[test]
+        #[wasm_bindgen_test]
         fn constructor_should_build() {
             let client = 6699;
             let domain = "wire.com".to_string();
@@ -162,6 +166,7 @@ mod tests {
         }
 
         #[test]
+        #[wasm_bindgen_test]
         fn constructor_should_fail_when_user_not_uuid() {
             let client_id = ClientId::try_new("abcd", 6699, "wire.com");
             assert!(matches!(client_id.unwrap_err(), RustyJwtError::InvalidClientId))
@@ -172,6 +177,7 @@ mod tests {
         use super::*;
 
         #[test]
+        #[wasm_bindgen_test]
         fn to_uri_should_succeed() {
             let user = "4af3df2e-5c01-422f-baa1-d75546b92aa7";
             let domain = "wire.com";
@@ -200,6 +206,7 @@ mod tests {
             use super::*;
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_succeed() {
                 let subject = format!("{}{USER_ID}/{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
                 let parsed = ClientId::try_from_uri(&subject).unwrap();
@@ -214,6 +221,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_invalid_uuid_user() {
                 let invalid_user = format!("{}abcd", USER_ID);
                 let subject = format!("{}{invalid_user}/{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
@@ -222,6 +230,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_invalid_uri_prefix() {
                 let subject = format!("im:not:wireapp={USER_ID}/{CLIENT_ID}@{DOMAIN}");
                 let parsed = ClientId::try_from_uri(&subject);
@@ -229,6 +238,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_invalid_delimiter() {
                 let delimiter = "@";
                 let subject = format!("{}{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
@@ -237,6 +247,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_using_client_delimiter() {
                 let delimiter = ClientId::CLIENT_DELIMITER;
                 let subject = format!("{}{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
@@ -245,6 +256,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_invalid_hex_client() {
                 let invalid_client = "1g2g";
                 let subject = format!("{}{USER_ID}/{invalid_client}@{DOMAIN}", ClientId::URI_PREFIX);
@@ -253,6 +265,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_client_too_large() {
                 let invalid_client = u128::MAX;
                 let subject = format!("{}{USER_ID}/{invalid_client:x}@{DOMAIN}", ClientId::URI_PREFIX);
@@ -265,6 +278,7 @@ mod tests {
             use super::*;
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_succeed() {
                 let subject = format!("{USER_ID}:{CLIENT_ID}@{DOMAIN}");
                 let parsed = ClientId::try_from_qualified(&subject).unwrap();
@@ -279,6 +293,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_invalid_uuid_user() {
                 let invalid_user = format!("{}abcd", USER_ID);
                 let subject = format!("{invalid_user}:{CLIENT_ID}@{DOMAIN}");
@@ -287,6 +302,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_uri_prefix() {
                 let subject = format!("{}{USER_ID}:{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
                 let parsed = ClientId::try_from_qualified(&subject);
@@ -294,6 +310,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_invalid_delimiter() {
                 let delimiter = "@";
                 let subject = format!("{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}");
@@ -302,6 +319,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_using_uri_delimiter() {
                 let delimiter = ClientId::URI_DELIMITER;
                 let subject = format!("{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}");
@@ -310,6 +328,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_invalid_hex_client() {
                 let invalid_client = "1g2g";
                 let subject = format!("{USER_ID}:{invalid_client}@{DOMAIN}");
@@ -318,6 +337,7 @@ mod tests {
             }
 
             #[test]
+            #[wasm_bindgen_test]
             fn should_fail_when_client_too_large() {
                 let invalid_client = u128::MAX;
                 let subject = format!("{USER_ID}:{invalid_client:x}@{DOMAIN}");
