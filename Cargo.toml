@@ -8,4 +8,4 @@ tag = "v0.6.2-pre.core-crypto-0.7.0"
 
 [patch.crates-io.jwt-simple]
 git = "https://github.com/wireapp/rust-jwt-simple"
-tag = "v0.11.4-pre.core-crypto-0.7.0"
+tag = "v0.11.4-pre.core-crypto-1.0.0-pre.1"
