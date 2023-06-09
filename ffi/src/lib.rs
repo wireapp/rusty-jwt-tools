@@ -165,6 +165,46 @@ pub enum HsError {
     InvalidUserId = 19,
     /// Client DPoP token "nbf" claim is in the future
     NotYetValid = 20,
+    /// Bubbling up errors
+    JwtSimpleError = 21,
+    /// Bubbling up errors
+    RandError = 22,
+    /// Bubbling up errors
+    Sec1Error = 23,
+    /// Bubbling up errors
+    UrlParseError = 24,
+    /// Bubbling up errors
+    UuidError = 25,
+    /// Bubbling up errors
+    Utf8Error = 26,
+    /// Bubbling up errors
+    Base64DecodeError = 27,
+    /// Bubbling up errors
+    JsonError = 28,
+    /// Bubbling up errors
+    InvalidJsonPath = 29,
+    /// Bubbling up errors
+    JsonPathError = 30,
+    /// Bubbling up errors
+    InvalidJwkThumbprint = 31,
+    /// Bubbling up errors
+    MissingDpopHeader = 32,
+    /// Bubbling up errors
+    MissingIssuer = 33,
+    /// Bubbling up errors
+    DpopChallengeMismatch = 34,
+    /// Bubbling up errors
+    DpopHtuMismatch = 35,
+    /// Bubbling up errors
+    DpopHtmMismatch = 36,
+    /// Bubbling up errors
+    InvalidBackendKeys = 37,
+    /// Bubbling up errors
+    InvalidClientId = 38,
+    /// Bubbling up errors
+    UnsupportedApiVersion = 39,
+    /// Bubbling up errors
+    UnsupportedScope = 40,
 }
 
 impl From<RustyJwtError> for HsError {
@@ -187,6 +227,26 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::TokenLivesTooLong => Self::ExpMismatch,
             RustyJwtError::TokenExpired => Self::Expired,
             RustyJwtError::ImplementationError => Self::ImplementationError,
+            RustyJwtError::JwtSimpleError(_) => Self::JwtSimpleError,
+            RustyJwtError::RandError(_) => Self::RandError,
+            RustyJwtError::Sec1Error(_) => Self::Sec1Error,
+            RustyJwtError::UrlParseError(_) => Self::UrlParseError,
+            RustyJwtError::UuidError(_) => Self::UuidError,
+            RustyJwtError::Utf8Error(_) => Self::Utf8Error,
+            RustyJwtError::Base64DecodeError(_) => Self::Base64DecodeError,
+            RustyJwtError::JsonError(_) => Self::JsonError,
+            RustyJwtError::InvalidJsonPath(_) => Self::InvalidJsonPath,
+            RustyJwtError::JsonPathError(_) => Self::JsonPathError,
+            RustyJwtError::InvalidJwkThumbprint => Self::InvalidJwkThumbprint,
+            RustyJwtError::MissingDpopHeader(_) => Self::MissingDpopHeader,
+            RustyJwtError::MissingIssuer => Self::MissingIssuer,
+            RustyJwtError::DpopChallengeMismatch => Self::DpopChallengeMismatch,
+            RustyJwtError::DpopHtuMismatch => Self::DpopHtuMismatch,
+            RustyJwtError::DpopHtmMismatch => Self::DpopHtmMismatch,
+            RustyJwtError::InvalidBackendKeys(_) => Self::InvalidBackendKeys,
+            RustyJwtError::InvalidClientId => Self::InvalidClientId,
+            RustyJwtError::UnsupportedApiVersion => Self::UnsupportedApiVersion,
+            RustyJwtError::UnsupportedScope => Self::UnsupportedScope,
             _ => Self::UnknownError,
         }
     }
