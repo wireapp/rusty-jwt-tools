@@ -1481,8 +1481,8 @@ dependencies = [
 
 [[package]]
 name = "jwt-simple"
-version = "0.11.3"
-source = "git+https://github.com/wireapp/rust-jwt-simple?tag=v0.11.4-pre.core-crypto-0.7.0#8c53f6008cff0b122782bb62ba21f1bfeb71fa56"
+version = "0.11.4"
+source = "git+https://github.com/wireapp/rust-jwt-simple?tag=v0.11.4-pre.core-crypto-1.0.0-pre.1#5a35177ae37c06d65225df4ba2c2b065917748c5"
 dependencies = [
  "anyhow",
  "binstring",
@@ -1499,7 +1499,7 @@ dependencies = [
  "rsa",
  "serde",
  "serde_json",
- "spki 0.7.2",
+ "spki 0.6.0",
  "thiserror",
  "zeroize",
 ]
@@ -2689,7 +2689,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-acme"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "asn1-rs",
  "base64 0.21.1",
@@ -2713,7 +2713,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-cli"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "anyhow",
  "clap",
@@ -2725,7 +2725,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "base64 0.21.1",
  "biscuit",
@@ -2757,7 +2757,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools-ffi"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "rusty-jwt-tools",
  "uuid",
@@ -3860,7 +3860,7 @@ dependencies = [
 
 [[package]]
 name = "wire-e2e-identity"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "anyhow",
  "asserhttp",
