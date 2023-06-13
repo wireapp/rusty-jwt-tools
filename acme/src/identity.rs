@@ -14,6 +14,9 @@ pub trait WireIdentityReader {
     /// Verifies a proof of identity, may it be a x509 certificate (or a Verifiable Presentation (later)).
     /// We do not verify anything else e.g. expiry, it is left to MLS implementation
     fn extract_identity(&self) -> RustyAcmeResult<WireIdentity>;
+
+    /// returns the 'Not Before' claim which usually matches the creation timestamp
+    fn extract_created_at(&self) -> RustyAcmeResult<u64>;
 }
 
 impl WireIdentityReader for x509_cert::Certificate {
@@ -28,17 +31,29 @@ impl WireIdentityReader for x509_cert::Certificate {
             domain,
         })
     }
+
+    fn extract_created_at(&self) -> RustyAcmeResult<u64> {
+        Ok(self.tbs_certificate.validity.not_before.to_unix_duration().as_secs())
+    }
 }
 
 impl WireIdentityReader for &[u8] {
     fn extract_identity(&self) -> RustyAcmeResult<WireIdentity> {
         x509_cert::Certificate::from_der(self)?.extract_identity()
     }
+
+    fn extract_created_at(&self) -> RustyAcmeResult<u64> {
+        x509_cert::Certificate::from_der(self)?.extract_created_at()
+    }
 }
 
 impl WireIdentityReader for Vec<u8> {
     fn extract_identity(&self) -> RustyAcmeResult<WireIdentity> {
         self.as_slice().extract_identity()
+    }
+
+    fn extract_created_at(&self) -> RustyAcmeResult<u64> {
+        self.as_slice().extract_created_at()
     }
 }
 
@@ -104,10 +119,7 @@ pub mod tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    #[test]
-    #[wasm_bindgen_test]
-    fn should_find_claims_in_x509() {
-        const CERT: &str = r#"-----BEGIN CERTIFICATE-----
+    const CERT: &str = r#"-----BEGIN CERTIFICATE-----
 MIICLjCCAdWgAwIBAgIRAO0V5lJjXkcp2unghc4O6mkwCgYIKoZIzj0EAwIwLjEN
 MAsGA1UEChMEd2lyZTEdMBsGA1UEAxMUd2lyZSBJbnRlcm1lZGlhdGUgQ0EwHhcN
 MjMwNDA0MTQ1NzU3WhcNMjMwNDA0MTU1NzU3WjApMREwDwYDVQQKEwh3aXJlLmNv
@@ -122,6 +134,9 @@ CCqGSM49BAMCA0cAMEQCIAZzup0xzgZ5i1FflEPwbXl8uigVYKyuAMHLCEeh3Eln
 AiAVcCmqcVr3MXYNsIa/gnzYlF2/CSGNDD27ke1sLVUo9w==
 -----END CERTIFICATE-----"#;
 
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_find_claims_in_x509() {
         let cert_der = pem::parse(CERT).unwrap();
         let identity = cert_der.contents().extract_identity().unwrap();
 
@@ -130,5 +145,13 @@ AiAVcCmqcVr3MXYNsIa/gnzYlF2/CSGNDD27ke1sLVUo9w==
         assert_eq!(&identity.handle, "alice_wire");
         assert_eq!(&identity.display_name, "Alice Smith");
         assert_eq!(&identity.domain, "wire.com");
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_find_created_at_claim() {
+        let cert_der = pem::parse(CERT).unwrap();
+        let created_at = cert_der.contents().extract_created_at().unwrap();
+        assert_eq!(created_at, 1680620277);
     }
 }
