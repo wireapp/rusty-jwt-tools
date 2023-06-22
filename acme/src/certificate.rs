@@ -1,7 +1,8 @@
-use rusty_jwt_tools::prelude::*;
 use x509_cert::Certificate;
 
-use crate::prelude::*;
+use rusty_jwt_tools::prelude::*;
+
+use crate::{error::CertificateError, prelude::*};
 
 impl RustyAcme {
     /// For fetching the generated certificate
@@ -47,15 +48,23 @@ impl RustyAcme {
         let identifier = identifier.to_wire_identifier()?;
         let invalid_client_id =
             ClientId::try_from_qualified(&cert_identity.client_id)? != ClientId::try_from_uri(&identifier.client_id)?;
+        if invalid_client_id {
+            return Err(CertificateError::ClientIdMismatch.into());
+        }
 
         let invalid_display_name = cert_identity.display_name != identifier.display_name;
+        if invalid_display_name {
+            return Err(CertificateError::DisplayNameMismatch.into());
+        }
 
         let invalid_handle = cert_identity.handle != identifier.handle.trim_start_matches(ClientId::URI_PREFIX);
+        if invalid_handle {
+            return Err(CertificateError::HandleMismatch.into());
+        }
 
         let invalid_domain = cert_identity.domain != identifier.domain;
-
-        if invalid_display_name || invalid_client_id || invalid_handle || invalid_domain {
-            return Err(RustyAcmeError::InvalidCertificate);
+        if invalid_domain {
+            return Err(CertificateError::DomainMismatch.into());
         }
         Ok(())
     }
