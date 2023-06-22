@@ -1,6 +1,9 @@
-use crate::prelude::*;
-use rusty_jwt_tools::prelude::*;
 use x509_cert::der::Decode as _;
+
+use rusty_jwt_tools::prelude::*;
+
+use crate::error::CertificateError;
+use crate::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct WireIdentity {
@@ -70,21 +73,21 @@ fn try_extract_subject(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(Str
         }
         Ok(())
     })?;
-    let display_name = display_name.ok_or(RustyAcmeError::InvalidCertificate)?.to_string();
-    let domain = domain.ok_or(RustyAcmeError::InvalidCertificate)?.to_string();
+    let display_name = display_name.ok_or(CertificateError::MissingDisplayName)?.to_string();
+    let domain = domain.ok_or(CertificateError::MissingDomain)?.to_string();
     Ok((display_name, domain))
 }
 
 /// extract Subject Alternative Name to pick client-id & display name
 fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String, String)> {
-    let extensions = cert.extensions.as_ref().ok_or(RustyAcmeError::InvalidCertificate)?;
+    let extensions = cert.extensions.as_ref().ok_or(CertificateError::InvalidFormat)?;
 
     let san = extensions
         .iter()
         .find(|e| e.extn_id.as_bytes() == oid_registry::OID_X509_EXT_SUBJECT_ALT_NAME.as_bytes())
         .map(|e| x509_cert::ext::pkix::SubjectAltName::from_der(e.extn_value.as_bytes()))
         .transpose()?
-        .ok_or(RustyAcmeError::InvalidCertificate)?;
+        .ok_or(CertificateError::InvalidFormat)?;
 
     let mut client_id = None;
     let mut handle = None;
@@ -107,15 +110,16 @@ fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String,
             Ok(())
         })?;
 
-    let client_id = client_id.ok_or(RustyAcmeError::InvalidCertificate)?;
-    let handle = handle.ok_or(RustyAcmeError::InvalidCertificate)?;
+    let client_id = client_id.ok_or(CertificateError::MissingClientId)?;
+    let handle = handle.ok_or(CertificateError::MissingHandle)?;
     Ok((client_id, handle))
 }
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 
