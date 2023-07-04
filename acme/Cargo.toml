@@ -1,7 +1,7 @@
 [package]
 name = "rusty-acme"
 description = "ACME types"
-version = "0.4.4"
+version = "0.4.5"
 edition = "2021"
 repository = "https://github.com/wireapp/rusty-jwt-tools"
 license = "MPL-2.0"
@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 serde = "1.0"
 serde_json = "1.0"
 thiserror = "1.0"
-rusty-jwt-tools = { version = "0.4.4", path = "../jwt" }
+rusty-jwt-tools = { version = "0.4.5", path = "../jwt" }
 jwt-simple = "0.11.3"
 base64 = "0.21"
 url = { version = "2.3", features = ["serde"] }
