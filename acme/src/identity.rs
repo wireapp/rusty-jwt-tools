@@ -20,6 +20,9 @@ pub trait WireIdentityReader {
 
     /// returns the 'Not Before' claim which usually matches the creation timestamp
     fn extract_created_at(&self) -> RustyAcmeResult<u64>;
+
+    /// returns the 'Subject Public Key Info' claim
+    fn extract_public_key(&self) -> RustyAcmeResult<Vec<u8>>;
 }
 
 impl WireIdentityReader for x509_cert::Certificate {
@@ -38,6 +41,15 @@ impl WireIdentityReader for x509_cert::Certificate {
     fn extract_created_at(&self) -> RustyAcmeResult<u64> {
         Ok(self.tbs_certificate.validity.not_before.to_unix_duration().as_secs())
     }
+
+    fn extract_public_key(&self) -> RustyAcmeResult<Vec<u8>> {
+        Ok(self
+            .tbs_certificate
+            .subject_public_key_info
+            .subject_public_key
+            .raw_bytes()
+            .to_vec())
+    }
 }
 
 impl WireIdentityReader for &[u8] {
@@ -48,6 +60,10 @@ impl WireIdentityReader for &[u8] {
     fn extract_created_at(&self) -> RustyAcmeResult<u64> {
         x509_cert::Certificate::from_der(self)?.extract_created_at()
     }
+
+    fn extract_public_key(&self) -> RustyAcmeResult<Vec<u8>> {
+        x509_cert::Certificate::from_der(self)?.extract_public_key()
+    }
 }
 
 impl WireIdentityReader for Vec<u8> {
@@ -57,6 +73,10 @@ impl WireIdentityReader for Vec<u8> {
 
     fn extract_created_at(&self) -> RustyAcmeResult<u64> {
         self.as_slice().extract_created_at()
+    }
+
+    fn extract_public_key(&self) -> RustyAcmeResult<Vec<u8>> {
+        self.as_slice().extract_public_key()
     }
 }
 
@@ -157,5 +177,16 @@ AiAVcCmqcVr3MXYNsIa/gnzYlF2/CSGNDD27ke1sLVUo9w==
         let cert_der = pem::parse(CERT).unwrap();
         let created_at = cert_der.contents().extract_created_at().unwrap();
         assert_eq!(created_at, 1680620277);
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_find_public_key() {
+        let cert_der = pem::parse(CERT).unwrap();
+        let spki = cert_der.contents().extract_public_key().unwrap();
+        assert_eq!(
+            hex::encode(&spki),
+            "fb28fd0ebb4297dbb8e7b9ce38c56d9f212e63a43151c8b33408080d4ec46f18"
+        );
     }
 }
