@@ -1,3 +1,5 @@
+use jwt_simple::{prelude::*, token::Token};
+
 use crate::{
     access::Access,
     dpop::{VerifyDpop, VerifyDpopTokenHeader},
@@ -5,7 +7,6 @@ use crate::{
     jwk_thumbprint::JwkThumbprint,
     prelude::*,
 };
-use jwt_simple::{prelude::*, token::Token};
 
 impl RustyJwtTools {
     /// Validate the provided [dpop_proof] DPoP proof JWT from the client, and if valid, return an
@@ -65,6 +66,7 @@ impl RustyJwtTools {
         )?;
         Self::access_token(
             alg,
+            jwk,
             dpop_proof,
             proof_claims,
             backend_keys,
@@ -74,8 +76,10 @@ impl RustyJwtTools {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn access_token(
         alg: JwsAlgorithm,
+        client_jwk: &Jwk,
         proof: &str,
         proof_claims: JWTClaims<Dpop>,
         backend_keys: Pem,
@@ -86,11 +90,9 @@ impl RustyJwtTools {
         let header = Self::new_access_header(alg);
 
         let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
-        // build claims given the JWK thumbprint which requires knowing the algorithm and being in
-        // a branch. This simply factorizes this piece of code
-        let claims = |cnf: JwkThumbprint| {
-            // TODO: should be acme server authorization URI but wait for final decision
+        let claims = {
             let audience = proof_claims.custom.htu.clone();
+            let cnf = JwkThumbprint::generate(client_jwk, hash)?;
             Access {
                 challenge: proof_claims.custom.challenge,
                 cnf,
@@ -107,25 +109,22 @@ impl RustyJwtTools {
                 let mut kp = ES256KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES256 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims(cnf)), header)?
+                kp.sign_with_header(Some(claims), header)?
             }
             JwsAlgorithm::P384 => {
                 let mut kp = ES384KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES384 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims(cnf)), header)?
+                kp.sign_with_header(Some(claims), header)?
             }
             JwsAlgorithm::Ed25519 => {
                 let mut kp = Ed25519KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ED25519 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
-                let cnf = JwkThumbprint::generate(&jwk, hash)?;
                 kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims(cnf)), header)?
+                kp.sign_with_header(Some(claims), header)?
             }
         })
     }
@@ -141,13 +140,13 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use base64::Engine;
     use jwt_simple::prelude::*;
     use serde_json::{json, Value};
 
     use crate::{dpop::Dpop, jwk::TryFromJwk, test_utils::*};
 
     use super::*;
-    use base64::Engine;
 
     mod generated_access_token {
         use super::*;
@@ -269,17 +268,18 @@ pub mod tests {
             #[apply(all_ciphersuites)]
             #[test]
             fn should_have_valid_jwk_thumbprint(ciphersuite: Ciphersuite) {
+                let dpop = DpopBuilder::from(ciphersuite.key.clone()).build();
+
                 let params = Params::from(ciphersuite.clone());
                 let backend_key = params.backend_keys.clone();
-                let token = access_token(params).unwrap();
+                let token = access_token_with_dpop(&dpop, params).unwrap();
 
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                let jwk = header.public_key().unwrap();
+                let client_header = Token::decode_metadata(&dpop).unwrap();
+                let client_jwk = client_header.public_key().unwrap();
+                let expected_cnf = JwkThumbprint::generate(client_jwk, ciphersuite.hash).unwrap();
 
                 let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
-
-                let expected_cnf = JwkThumbprint::generate(jwk, ciphersuite.hash).unwrap();
                 assert_eq!(claims.custom.cnf, expected_cnf);
             }
         }

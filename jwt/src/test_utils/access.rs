@@ -21,9 +21,12 @@ impl From<Ciphersuite> for TestAccess {
     fn from(ciphersuite: Ciphersuite) -> Self {
         let access = Access::default();
         let proof = DpopBuilder::from(ciphersuite.key.clone()).build();
+        let proof_header = Token::decode_metadata(&proof).unwrap();
+        let proof_jwk = proof_header.public_key().unwrap();
+        let cnf = JwkThumbprint::generate(proof_jwk, ciphersuite.hash).unwrap();
         Self {
             challenge: Some(access.challenge),
-            cnf: Some(ciphersuite.to_jwk_thumbprint()),
+            cnf: Some(cnf),
             proof: Some(proof),
             client_id: Some(ClientId::default()),
             api_version: Some(Access::WIRE_SERVER_API_VERSION),

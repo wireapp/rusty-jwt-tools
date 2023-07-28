@@ -40,6 +40,9 @@ pub struct AccessVerify {
     /// e.g. 'SHA-256'
     #[arg(short = 'a', long)]
     hash_algorithm: HashAlgorithm,
+    /// Thumbprint of the dpop proof JWK
+    #[arg(long)]
+    kid: String,
     /// path to file with wire-server's signature public key in PEM format
     #[arg(short = 'k', long)]
     key: PathBuf,
@@ -65,6 +68,7 @@ impl AccessVerify {
             self.max_expiry,
             issuer,
             backend_pk,
+            self.kid,
             self.hash_algorithm,
         );
 

@@ -3,7 +3,6 @@
 use jwt_simple::prelude::*;
 use serde::de::DeserializeOwned;
 
-use crate::jwk_thumbprint::JwkThumbprint;
 use crate::prelude::*;
 
 /// Global trait to verify a Jwt token
@@ -61,8 +60,9 @@ pub trait VerifyJwt {
         &self,
         key: &AnyPublicKey,
         max_expiration: u64,
-        expected_cnf: Option<&JwkThumbprint>,
-        actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
+        // expected_cnf: Option<&JwkThumbprint>,
+        // actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
+        // custom: Option<fn(&JWTClaims<T>) -> RustyJwtResult<JWTClaims<T>>>,
         verify: Verify,
     ) -> RustyJwtResult<JWTClaims<T>>
     where
@@ -74,8 +74,9 @@ impl VerifyJwt for &str {
         &self,
         key: &AnyPublicKey<'_>,
         max_expiration: u64,
-        expected_cnf: Option<&JwkThumbprint>,
-        actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
+        // expected_cnf: Option<&JwkThumbprint>,
+        // actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
+        // custom: Option<fn(&JWTClaims<T>) -> RustyJwtResult<JWTClaims<T>>>,
         verify: Verify,
     ) -> RustyJwtResult<JWTClaims<T>>
     where
@@ -92,12 +93,12 @@ impl VerifyJwt for &str {
             return Err(RustyJwtError::TokenLivesTooLong);
         }
 
-        if let Some((expected_cnf, actual_cnf)) = expected_cnf.zip(actual_cnf) {
+        /*if let Some((expected_cnf, actual_cnf)) = expected_cnf.zip(actual_cnf) {
             let actual_cnf = actual_cnf(&claims);
             if expected_cnf != actual_cnf {
                 return Err(RustyJwtError::InvalidJwkThumbprint);
             }
-        }
+        }*/
 
         Ok(claims)
     }

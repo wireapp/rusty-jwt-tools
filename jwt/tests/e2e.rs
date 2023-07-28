@@ -73,6 +73,9 @@ fn e2e_jwt() {
                 .to_pem(),
         }
         .into();
+        let dpop_header = Token::decode_metadata(&client_dpop).unwrap();
+        let dpop_jwk = dpop_header.public_key().unwrap();
+        let kid = JwkThumbprint::generate(dpop_jwk, hash_alg).unwrap().kid;
         let verify = RustyJwtTools::verify_access_token(
             &access_token,
             &alice,
@@ -81,15 +84,16 @@ fn e2e_jwt() {
             max_expiration,
             htu.clone(),
             backend_pk.clone(),
+            kid,
             hash_alg,
         );
         println!("3. verify access token\nwire-server public signature key:\n{backend_pk}");
         if verify.is_ok() {
             println!("✅ access token verified");
+            results.push(verify);
         } else {
-            println!("❌ access token invalid");
+            panic!("❌ access token invalid because {:?}", verify.unwrap_err());
         }
-        results.push(verify);
         println!("---------------------------------------------------------------------\n");
     }
     assert!(results.into_iter().all(|v| v.is_ok()));
