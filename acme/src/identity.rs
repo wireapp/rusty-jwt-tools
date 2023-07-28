@@ -185,7 +185,7 @@ AiAVcCmqcVr3MXYNsIa/gnzYlF2/CSGNDD27ke1sLVUo9w==
         let cert_der = pem::parse(CERT).unwrap();
         let spki = cert_der.contents().extract_public_key().unwrap();
         assert_eq!(
-            hex::encode(&spki),
+            hex::encode(spki),
             "fb28fd0ebb4297dbb8e7b9ce38c56d9f212e63a43151c8b33408080d4ec46f18"
         );
     }

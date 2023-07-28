@@ -34,6 +34,7 @@ impl RustyJwtTools {
     /// * `max_expiration` - The maximal expiration date and time, in seconds since epoch ex: 1668987368
     /// * `now` - Current time in seconds since epoch ex: 1661211368
     /// * `backend_pk` - PEM format for public key of the Wire backend
+    /// * `client_kid` - JWK thumbprint of the dpop_proof JWK
     #[allow(clippy::too_many_arguments)]
     pub fn verify_access_token(
         access_token: &str,
@@ -43,6 +44,7 @@ impl RustyJwtTools {
         max_expiration: u64,
         issuer: Htu,
         backend_pk: Pem,
+        client_kid: String,
         hash: HashAlgorithm,
     ) -> RustyJwtResult<()> {
         let header = Token::decode_metadata(access_token)?;
@@ -51,6 +53,7 @@ impl RustyJwtTools {
             access_token,
             alg,
             &backend_pk,
+            client_kid,
             client_id,
             &challenge,
             max_expiration,
@@ -68,7 +71,6 @@ impl RustyJwtTools {
             return Err(RustyJwtError::InvalidDpopTyp);
         }
         let alg = header.verify_jwt_header()?;
-        // TODO: use JWK thumbprint
         let jwk = header.public_key().ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
         Ok((alg, jwk))
     }
@@ -78,6 +80,7 @@ impl RustyJwtTools {
         access_token: &str,
         alg: JwsAlgorithm,
         backend_pk: &Pem,
+        client_kid: String,
         client_id: &ClientId,
         challenge: &AcmeNonce,
         max_expiration: u64,
@@ -94,14 +97,7 @@ impl RustyJwtTools {
             issuer: Some(issuer),
         };
 
-        let expected_cnf = JwkThumbprint::generate(jwk, hash)?;
-        let claims = access_token.verify_jwt::<Access>(
-            &pk,
-            max_expiration,
-            Some(&expected_cnf),
-            Some(|c| &c.custom.cnf),
-            verify,
-        )?;
+        let claims = access_token.verify_jwt::<Access>(&pk, max_expiration, verify)?;
 
         // verify the JWK in access token represents the same key as the one supplied
         if pk != AnyPublicKey::from((alg, jwk)) {
@@ -143,6 +139,18 @@ impl RustyJwtTools {
             max_expiration,
             leeway,
         )?;
+
+        let proof_thumbprint = JwkThumbprint::generate(jwk, hash)?;
+
+        if proof_thumbprint.kid != client_kid {
+            // this would mean the acme server messed up either by miscomputing the JWK thumbprint
+            // or the access token after being stolen is being used by a rogue client
+            return Err(RustyJwtError::InvalidJwkThumbprint);
+        }
+
+        if claims.custom.cnf != proof_thumbprint {
+            return Err(RustyJwtError::InvalidJwkThumbprint);
+        }
 
         Ok(())
     }
@@ -298,11 +306,16 @@ pub mod tests {
         #[apply(all_ciphersuites)]
         #[test]
         fn jwk_thumbprint(ciphersuite: Ciphersuite) {
-            // should succeed when JWK thumbprint matches JWK in header
-            let cnf = ciphersuite.to_jwk_thumbprint();
+            // should succeed when JWK thumbprint matches JWK in dpop proof
+            let proof = DpopBuilder::from(ciphersuite.key.clone()).build();
+            let proof_header = Token::decode_metadata(&proof).unwrap();
+            let proof_jwk = proof_header.public_key().unwrap();
+            let cnf = JwkThumbprint::generate(proof_jwk, ciphersuite.hash).unwrap();
+
             let access = AccessBuilder {
                 access: TestAccess {
                     cnf: Some(cnf),
+                    proof: Some(proof),
                     ..ciphersuite.clone().into()
                 },
                 ..ciphersuite.clone().into()
@@ -311,15 +324,48 @@ pub mod tests {
             let result = verify_token(&access.build(), params);
             assert!(result.is_ok());
 
-            // should fail when JWK thumbprint mismatches JWK in header
-            let invalid_jwk = ciphersuite.key.create_another().to_jwk();
-            let cnf = ciphersuite.to_jwk_thumbprint();
+            // should fail when JWK thumbprint is not the expected one
+            let invalid_key = ciphersuite.key.create_another();
+            let invalid_kid = JwkThumbprint::generate(&invalid_key.to_jwk(), ciphersuite.hash)
+                .unwrap()
+                .kid;
+
+            let access = AccessBuilder::from(ciphersuite.clone());
+            let params = Params {
+                expected_kid: Some(invalid_kid),
+                ..ciphersuite.clone().into()
+            };
+            let result = verify_token(&access.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidJwkThumbprint));
+
+            // should fail when JWK thumbprint mismatches JWK in proof
+            let proof = DpopBuilder::from(ciphersuite.key.clone()).build();
+
+            let invalid_key = ciphersuite.key.create_another();
+            let invalid_cnf = JwkThumbprint::generate(&invalid_key.to_jwk(), ciphersuite.hash).unwrap();
+
             let access = AccessBuilder {
                 access: TestAccess {
-                    cnf: Some(cnf),
+                    proof: Some(proof),
+                    cnf: Some(invalid_cnf),
                     ..ciphersuite.clone().into()
                 },
-                jwk: Some(invalid_jwk),
+                ..ciphersuite.clone().into()
+            };
+            let params = Params::from(ciphersuite.clone());
+            let result = verify_token(&access.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidJwkThumbprint));
+
+            // should fail when JWK thumbprint is the same as the access token jwk
+            let proof = DpopBuilder::from(ciphersuite.key.create_another()).build();
+            let access_token_cnf = ciphersuite.to_jwk_thumbprint();
+
+            let access = AccessBuilder {
+                access: TestAccess {
+                    proof: Some(proof),
+                    cnf: Some(access_token_cnf),
+                    ..ciphersuite.clone().into()
+                },
                 ..ciphersuite.clone().into()
             };
             let params = Params::from(ciphersuite.clone());
@@ -332,7 +378,6 @@ pub mod tests {
                     cnf: None,
                     ..ciphersuite.clone().into()
                 },
-                jwk: Some(ciphersuite.key.to_jwk()),
                 ..ciphersuite.clone().into()
             };
             let params = Params::from(ciphersuite);
@@ -1480,6 +1525,7 @@ pub mod tests {
         pub max_expiration: u64,
         pub issuer: Htu,
         pub backend_pk: Option<Pem>,
+        pub expected_kid: Option<String>,
     }
 
     impl From<Ciphersuite> for Params {
@@ -1492,6 +1538,7 @@ pub mod tests {
                 max_expiration: 2136351646, // somewhere in 2037
                 issuer: TestDpop::default().htu.unwrap(),
                 backend_pk: None,
+                expected_kid: None,
             }
         }
     }
@@ -1505,8 +1552,30 @@ pub mod tests {
             max_expiration,
             issuer,
             backend_pk,
+            expected_kid,
         } = params;
         let backend_pk = backend_pk.unwrap_or(ciphersuite.key.pk);
+
+        let expected_kid = expected_kid
+            .or_else(|| {
+                let key = AnyPublicKey::from((ciphersuite.key.alg, &backend_pk));
+                let relaxed_verify = Verify {
+                    client_id: &client_id,
+                    leeway: u16::MAX,
+                    issuer: None,
+                    backend_nonce: None,
+                };
+                // let access_claims = access.verify_jwt::<Access>(&key, u64::MAX, relaxed_verify).unwrap();
+                let verifications = Some(VerificationOptions::from(&relaxed_verify));
+                let access_claims = key.verify_token::<serde_json::Value>(access, verifications).ok()?;
+                let proof = access_claims.custom["proof"].as_str()?;
+                let proof_header = Token::decode_metadata(proof).ok()?;
+                let proof_jwk = proof_header.public_key()?;
+                let kid = JwkThumbprint::generate(proof_jwk, ciphersuite.hash).ok()?.kid;
+                Some(kid)
+            })
+            .unwrap_or_default();
+
         RustyJwtTools::verify_access_token(
             access,
             &client_id,
@@ -1515,6 +1584,7 @@ pub mod tests {
             max_expiration,
             issuer,
             backend_pk,
+            expected_kid,
             ciphersuite.hash,
         )
     }
