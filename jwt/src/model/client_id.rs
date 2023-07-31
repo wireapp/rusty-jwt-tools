@@ -28,21 +28,21 @@ impl ClientId {
     pub const CLIENT_DELIMITER: &'static str = ":";
 
     /// Constructor
-    pub fn try_new(user: impl AsRef<str>, client: u64, domain: &str) -> RustyJwtResult<Self> {
-        let user = uuid::Uuid::try_from(user.as_ref()).map_err(|_| RustyJwtError::InvalidClientId)?;
+    pub fn try_new(user_id: impl AsRef<str>, device_id: u64, domain: &str) -> RustyJwtResult<Self> {
+        let user_id = uuid::Uuid::try_from(user_id.as_ref()).map_err(|_| RustyJwtError::InvalidClientId)?;
         Ok(Self {
-            user_id: user,
-            device_id: client,
+            user_id,
+            device_id,
             domain: domain.to_string(),
         })
     }
 
     /// Constructor
-    pub fn try_from_raw_parts(user: &[u8], device_id: u64, domain: &[u8]) -> RustyJwtResult<Self> {
-        let user = Uuid::from_slice(user)?;
+    pub fn try_from_raw_parts(user_id: &[u8], device_id: u64, domain: &[u8]) -> RustyJwtResult<Self> {
+        let user_id = Uuid::from_slice(user_id)?;
         let domain = core::str::from_utf8(domain)?.to_string();
         Ok(Self {
-            user_id: user,
+            user_id,
             device_id,
             domain,
         })
@@ -64,13 +64,13 @@ impl ClientId {
     }
 
     fn parse_client_id(client_id: &str, delimiter: &'static str) -> RustyJwtResult<Self> {
-        let (user, rest) = client_id.split_once(delimiter).ok_or(RustyJwtError::InvalidClientId)?;
-        let user = Self::parse_user(user)?;
-        let (device, domain) = rest.split_once('@').ok_or(RustyJwtError::InvalidClientId)?;
-        let client = u64::from_str_radix(device, 16).map_err(|_| RustyJwtError::InvalidClientId)?;
+        let (user_id, rest) = client_id.split_once(delimiter).ok_or(RustyJwtError::InvalidClientId)?;
+        let user_id = Self::parse_user_id(user_id)?;
+        let (device_id, domain) = rest.split_once('@').ok_or(RustyJwtError::InvalidClientId)?;
+        let device_id = u64::from_str_radix(device_id, 16).map_err(|_| RustyJwtError::InvalidClientId)?;
         Ok(Self {
-            user_id: user,
-            device_id: client,
+            user_id,
+            device_id,
             domain: domain.to_string(),
         })
     }
@@ -81,20 +81,22 @@ impl ClientId {
     }
 
     /// Without URI prefix
-    pub fn to_raw(&self) -> String {
+    pub fn to_qualified(&self) -> String {
         self.format(Self::CLIENT_DELIMITER)
     }
 
     fn format(&self, delimiter: &str) -> String {
-        let user = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(self.user_id.as_simple().to_string());
-        format!("{user}{}{:x}@{}", delimiter, self.device_id, self.domain)
+        let user_id = self.user_id.as_bytes().as_slice();
+        let user_id = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(user_id);
+        format!("{user_id}{}{:x}@{}", delimiter, self.device_id, self.domain)
     }
 
-    fn parse_user(user: impl AsRef<[u8]>) -> RustyJwtResult<Uuid> {
-        let user = base64::prelude::BASE64_URL_SAFE_NO_PAD
-            .decode(user)
+    fn parse_user_id(user_id: impl AsRef<[u8]>) -> RustyJwtResult<Uuid> {
+        let user_id = base64::prelude::BASE64_URL_SAFE_NO_PAD
+            .decode(user_id)
             .map_err(|_| RustyJwtError::InvalidClientId)?;
-        Ok(Uuid::try_parse_ascii(&user)?)
+        let user_id = Uuid::from_slice(&user_id)?;
+        Ok(user_id)
     }
 }
 
@@ -145,6 +147,20 @@ pub mod tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_roundtrip() {
+        let user_id = Uuid::new_v4().to_string();
+        let device_id = u64::MAX;
+        let domain = "wire.com";
+        let client_id = ClientId::try_new(user_id, device_id, domain).unwrap();
+        assert_eq!(client_id, ClientId::try_from_uri(&client_id.to_uri()).unwrap());
+        assert_eq!(
+            client_id,
+            ClientId::try_from_qualified(&client_id.to_qualified()).unwrap()
+        );
+    }
+
     mod constructor {
         use super::*;
 
@@ -182,7 +198,7 @@ pub mod tests {
             let user = "4af3df2e-5c01-422f-baa1-d75546b92aa7";
             let domain = "wire.com";
             let client_id = ClientId::try_new(user, u64::MAX, domain).unwrap();
-            let base64_user = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
+            let base64_user = "SvPfLlwBQi-6oddVRrkqpw";
             let hex_client = "ffffffffffffffff";
             assert_eq!(
                 &client_id.to_uri(),
@@ -198,7 +214,7 @@ pub mod tests {
     mod parse {
         use super::*;
 
-        const USER_ID: &str = "NGFmM2RmMmU1YzAxNDIyZmJhYTFkNzU1NDZiOTJhYTc";
+        const USER_ID: &str = "SvPfLlwBQi-6oddVRrkqpw";
         const CLIENT_ID: &str = "1a2b";
         const DOMAIN: &str = "wire.com";
 
