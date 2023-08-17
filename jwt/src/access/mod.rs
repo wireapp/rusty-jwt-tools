@@ -44,7 +44,8 @@ impl Access {
     /// Specified in [RFC 7519 Section 4.1.4: JSON Web Token (JWT)][1]
     ///
     /// [1]: https://tools.ietf.org/html/rfc7519#section-4.1.4
-    pub const EXP: u64 = 3600 * 24 * 90; // 90 days
+    // pub const EXP: u64 = 3600 * 24 * 90; // 90 days
+    pub const EXP: u64 = 10 * 60; // 10 minutes
 
     /// Access token header 'typ'
     pub const TYP: &'static str = "at+jwt";
@@ -52,7 +53,7 @@ impl Access {
     /// Current wire-server API version
     pub const WIRE_SERVER_API_VERSION: u32 = 3;
 
-    /// Current wire-server API version
+    /// TODO
     pub const DEFAULT_SCOPE: &'static str = "wire_client_id";
 
     /// we want "nbf" slightly in the past to prevent clock drifts or problems non-monotonic hosts

@@ -12,7 +12,8 @@ impl RustyAcme {
     ) -> RustyAcmeResult<AcmeJws> {
         // explicitly set an invalid email so that if someday it is required to set one we do not
         // set it by accident
-        let contact = vec!["unknown@example.com".to_string()];
+        // TODO: Rohan exact string
+        let contact = vec!["anonymous@invalid.com".to_string()];
         let payload = AcmeAccountRequest {
             terms_of_service_agreed: Some(true),
             contact,

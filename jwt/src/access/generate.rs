@@ -50,6 +50,8 @@ impl RustyJwtTools {
         max_expiration: u64,
         backend_keys: Pem,
         hash_algorithm: HashAlgorithm,
+        // TODO: API version
+        // TODO: inject expiry = to be decided
     ) -> RustyJwtResult<String> {
         let header = Token::decode_metadata(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;

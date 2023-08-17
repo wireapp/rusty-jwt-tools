@@ -21,6 +21,7 @@ pub struct AcmeDirectory {
     pub new_account: url::Url,
     /// URL for creating an order
     pub new_order: url::Url,
+    // TODO: revocation post-Zulu
 }
 
 #[cfg(test)]
