@@ -46,6 +46,11 @@ pub struct AccessVerify {
     /// path to file with wire-server's signature public key in PEM format
     #[arg(short = 'k', long)]
     key: PathBuf,
+    /// version of wire-server http API
+    ///
+    /// e.g. '5' (current default)
+    #[arg(long, default_value = "5")]
+    api_version: u32,
 }
 
 impl AccessVerify {
@@ -70,6 +75,7 @@ impl AccessVerify {
             backend_pk,
             self.kid,
             self.hash_algorithm,
+            self.api_version,
         );
 
         if verification.is_ok() {

@@ -39,6 +39,7 @@ impl RustyJwtTools {
     /// * `max_expiration` - The maximal expiration date and time, in seconds since epoch ex: 1668987368
     /// * `backend_keys` - PEM format concatenated private key and public key of the Wire backend
     /// * `hash_algorithm` - to calculate JWK thumbprint
+    /// * `api_version` - version of wire-server http API
     #[allow(clippy::too_many_arguments)]
     pub fn generate_access_token(
         dpop_proof: &str,
@@ -50,6 +51,7 @@ impl RustyJwtTools {
         max_expiration: u64,
         backend_keys: Pem,
         hash_algorithm: HashAlgorithm,
+        api_version: u32,
     ) -> RustyJwtResult<String> {
         let header = Token::decode_metadata(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
@@ -73,6 +75,7 @@ impl RustyJwtTools {
             client_id,
             backend_nonce,
             hash_algorithm,
+            api_version,
         )
     }
 
@@ -86,6 +89,7 @@ impl RustyJwtTools {
         client_id: &ClientId,
         nonce: BackendNonce,
         hash: HashAlgorithm,
+        api_version: u32,
     ) -> RustyJwtResult<String> {
         let header = Self::new_access_header(alg);
 
@@ -98,7 +102,7 @@ impl RustyJwtTools {
                 cnf,
                 proof: proof.to_string(),
                 client_id: client_id.to_uri(),
-                api_version: Access::WIRE_SERVER_API_VERSION,
+                api_version,
                 scope: Access::DEFAULT_SCOPE.to_string(),
                 extra_claims: proof_claims.custom.extra_claims,
             }
@@ -390,7 +394,7 @@ pub mod tests {
 
                 let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
-                assert_eq!(claims.custom.api_version, Access::WIRE_SERVER_API_VERSION);
+                assert_eq!(claims.custom.api_version, Access::DEFAULT_WIRE_SERVER_API_VERSION);
             }
 
             #[apply(all_ciphersuites)]
@@ -1088,6 +1092,7 @@ pub mod tests {
         pub max_expiration: u64,
         pub backend_keys: Pem,
         pub hash_alg: HashAlgorithm,
+        pub api_version: u32,
     }
 
     impl From<Ciphersuite> for Params {
@@ -1105,6 +1110,7 @@ pub mod tests {
                 max_expiration: 2136351646, // somewhere in 2037
                 backend_keys,
                 hash_alg: ciphersuite.hash,
+                api_version: Access::DEFAULT_WIRE_SERVER_API_VERSION,
             }
         }
     }
@@ -1134,6 +1140,7 @@ pub mod tests {
             max_expiration,
             backend_keys,
             hash_alg,
+            api_version,
             ..
         } = params;
         RustyJwtTools::generate_access_token(
@@ -1146,6 +1153,7 @@ pub mod tests {
             max_expiration,
             backend_keys,
             hash_alg,
+            api_version,
         )
     }
 }

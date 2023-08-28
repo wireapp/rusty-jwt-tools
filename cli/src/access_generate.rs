@@ -34,6 +34,11 @@ pub struct AccessGenerate {
     /// e.g. '300' for 5 minutes
     #[arg(short = 'e', long)]
     expiry: u64,
+    /// version of wire-server http API
+    ///
+    /// e.g. '5' (current default)
+    #[arg(long, default_value = "5")]
+    api_version: u32,
 }
 
 impl AccessGenerate {
@@ -78,6 +83,7 @@ impl AccessGenerate {
             max_expiration,
             backend_pk,
             hash_alg,
+            self.api_version,
         )
         .unwrap();
 
