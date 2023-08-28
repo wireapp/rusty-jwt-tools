@@ -21,6 +21,8 @@ pub struct AcmeDirectory {
     pub new_account: url::Url,
     /// URL for creating an order
     pub new_order: url::Url,
+    /// URL for revoking a certificate
+    pub revoke_cert: url::Url,
 }
 
 #[cfg(test)]
