@@ -39,12 +39,13 @@ pub struct Access {
 }
 
 impl Access {
-    /// JWT claim 'exp' (expiration) in seconds (90 days by default)
+    /// JWT claim 'exp' (expiration) in seconds (10 minutes by default)
     ///
     /// Specified in [RFC 7519 Section 4.1.4: JSON Web Token (JWT)][1]
     ///
     /// [1]: https://tools.ietf.org/html/rfc7519#section-4.1.4
-    pub const EXP: u64 = 3600 * 24 * 90; // 90 days
+    #[cfg(test)]
+    pub const DEFAULT_EXPIRY: u64 = 360; // 10 minutes
 
     /// Access token header 'typ'
     pub const TYP: &'static str = "at+jwt";
@@ -65,10 +66,10 @@ impl Access {
         nonce: BackendNonce,
         issuer: Htu,
         audience: Htu,
+        expiry: core::time::Duration,
     ) -> JWTClaims<Self> {
-        let exp = Duration::from_secs(Self::EXP);
         let nbf = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NBF_LEEWAY_SECONDS);
-        Claims::with_custom_claims(self, exp)
+        Claims::with_custom_claims(self, expiry.into())
             .invalid_before(nbf)
             .with_jwt_id(new_jti())
             .with_subject(client_id.to_uri())

@@ -37,6 +37,7 @@ impl RustyJwtToolsFfi {
         _now: u64,
         backend_keys: *const c_char,
         api_version: u32,
+        expiry_secs: u64,
     ) -> *const HsResult<String> {
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
@@ -55,6 +56,7 @@ impl RustyJwtToolsFfi {
         let backend_kp = unsafe { CStr::from_ptr(backend_keys).to_bytes() }.try_into();
         // TODO: change in API
         let hash_algorithm = HashAlgorithm::SHA256;
+        let expiry = core::time::Duration::from_secs(expiry_secs);
 
         if let (Ok(dpop), Ok(client_id), Ok(nonce), Ok(uri), Ok(method), Ok(kp)) =
             (dpop, client_id, backend_nonce, uri, method, backend_kp)
@@ -70,6 +72,7 @@ impl RustyJwtToolsFfi {
                 kp,
                 hash_algorithm,
                 api_version,
+                expiry,
             )
             .map_err(HsError::from);
             return Box::into_raw(Box::new(res));
