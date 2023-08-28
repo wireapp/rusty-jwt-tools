@@ -40,6 +40,7 @@ impl RustyJwtTools {
     /// * `backend_keys` - PEM format concatenated private key and public key of the Wire backend
     /// * `hash_algorithm` - to calculate JWK thumbprint
     /// * `api_version` - version of wire-server http API
+    /// * `expiry` - access token 'exp' (expiry)
     #[allow(clippy::too_many_arguments)]
     pub fn generate_access_token(
         dpop_proof: &str,
@@ -52,6 +53,7 @@ impl RustyJwtTools {
         backend_keys: Pem,
         hash_algorithm: HashAlgorithm,
         api_version: u32,
+        expiry: core::time::Duration,
     ) -> RustyJwtResult<String> {
         let header = Token::decode_metadata(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
@@ -76,6 +78,7 @@ impl RustyJwtTools {
             backend_nonce,
             hash_algorithm,
             api_version,
+            expiry,
         )
     }
 
@@ -90,6 +93,7 @@ impl RustyJwtTools {
         nonce: BackendNonce,
         hash: HashAlgorithm,
         api_version: u32,
+        expiry: core::time::Duration,
     ) -> RustyJwtResult<String> {
         let header = Self::new_access_header(alg);
 
@@ -106,7 +110,7 @@ impl RustyJwtTools {
                 scope: Access::DEFAULT_SCOPE.to_string(),
                 extra_claims: proof_claims.custom.extra_claims,
             }
-            .into_jwt_claims(client_id, nonce, proof_claims.custom.htu, audience)
+            .into_jwt_claims(client_id, nonce, proof_claims.custom.htu, audience, expiry)
         };
         Ok(match alg {
             JwsAlgorithm::P256 => {
@@ -1093,6 +1097,7 @@ pub mod tests {
         pub backend_keys: Pem,
         pub hash_alg: HashAlgorithm,
         pub api_version: u32,
+        pub expiry: core::time::Duration,
     }
 
     impl From<Ciphersuite> for Params {
@@ -1111,6 +1116,7 @@ pub mod tests {
                 backend_keys,
                 hash_alg: ciphersuite.hash,
                 api_version: Access::DEFAULT_WIRE_SERVER_API_VERSION,
+                expiry: core::time::Duration::from_secs(Access::DEFAULT_EXPIRY),
             }
         }
     }
@@ -1141,6 +1147,7 @@ pub mod tests {
             backend_keys,
             hash_alg,
             api_version,
+            expiry,
             ..
         } = params;
         RustyJwtTools::generate_access_token(
@@ -1154,6 +1161,7 @@ pub mod tests {
             backend_keys,
             hash_alg,
             api_version,
+            expiry,
         )
     }
 }

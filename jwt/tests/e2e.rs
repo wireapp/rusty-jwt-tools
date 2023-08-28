@@ -51,6 +51,7 @@ fn e2e_jwt() {
             backend_keys.clone(),
             hash_alg,
             5,
+            core::time::Duration::from_secs(360),
         )
         .unwrap();
 

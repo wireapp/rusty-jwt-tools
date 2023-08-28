@@ -84,6 +84,7 @@ impl AccessGenerate {
             backend_pk,
             hash_alg,
             self.api_version,
+            core::time::Duration::from_secs(360),
         )
         .unwrap();
 
