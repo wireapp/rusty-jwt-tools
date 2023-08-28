@@ -10,9 +10,11 @@ impl RustyAcme {
         kp: &Pem,
         previous_nonce: String,
     ) -> RustyAcmeResult<AcmeJws> {
+        const DEFAULT_CONTACT: &str = "anonymous@anonymous.invalid";
+
         // explicitly set an invalid email so that if someday it is required to set one we do not
         // set it by accident
-        let contact = vec!["unknown@example.com".to_string()];
+        let contact = vec![DEFAULT_CONTACT.to_string()];
         let payload = AcmeAccountRequest {
             terms_of_service_agreed: Some(true),
             contact,
