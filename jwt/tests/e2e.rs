@@ -50,6 +50,7 @@ fn e2e_jwt() {
             max_expiration,
             backend_keys.clone(),
             hash_alg,
+            5,
         )
         .unwrap();
 
@@ -86,6 +87,7 @@ fn e2e_jwt() {
             backend_pk.clone(),
             kid,
             hash_alg,
+            5,
         );
         println!("3. verify access token\nwire-server public signature key:\n{backend_pk}");
         if verify.is_ok() {

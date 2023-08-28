@@ -50,7 +50,8 @@ impl Access {
     pub const TYP: &'static str = "at+jwt";
 
     /// Current wire-server API version
-    pub const WIRE_SERVER_API_VERSION: u32 = 3;
+    #[cfg(test)]
+    pub const DEFAULT_WIRE_SERVER_API_VERSION: u32 = 5;
 
     /// Current wire-server API version
     pub const DEFAULT_SCOPE: &'static str = "wire_client_id";

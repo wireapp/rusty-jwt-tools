@@ -29,7 +29,7 @@ impl From<Ciphersuite> for TestAccess {
             cnf: Some(cnf),
             proof: Some(proof),
             client_id: Some(ClientId::default()),
-            api_version: Some(Access::WIRE_SERVER_API_VERSION),
+            api_version: Some(Access::DEFAULT_WIRE_SERVER_API_VERSION),
             scope: Some(Access::DEFAULT_SCOPE.to_string()),
         }
     }

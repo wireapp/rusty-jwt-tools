@@ -35,6 +35,7 @@ impl RustyJwtTools {
     /// * `now` - Current time in seconds since epoch ex: 1661211368
     /// * `backend_pk` - PEM format for public key of the Wire backend
     /// * `client_kid` - JWK thumbprint of the dpop_proof JWK
+    /// * `api_version` - version of wire-server http API
     #[allow(clippy::too_many_arguments)]
     pub fn verify_access_token(
         access_token: &str,
@@ -46,6 +47,7 @@ impl RustyJwtTools {
         backend_pk: Pem,
         client_kid: String,
         hash: HashAlgorithm,
+        api_version: u32,
     ) -> RustyJwtResult<()> {
         let header = Token::decode_metadata(access_token)?;
         let (alg, jwk) = Self::verify_access_token_header(&header)?;
@@ -61,6 +63,7 @@ impl RustyJwtTools {
             max_skew_secs,
             jwk,
             hash,
+            api_version,
         )
     }
 
@@ -88,6 +91,7 @@ impl RustyJwtTools {
         leeway: u16,
         jwk: &Jwk,
         hash: HashAlgorithm,
+        api_version: u32,
     ) -> RustyJwtResult<()> {
         let pk = AnyPublicKey::from((alg, backend_pk));
         let verify = Verify {
@@ -107,7 +111,7 @@ impl RustyJwtTools {
         if &claims.custom.challenge != challenge {
             return Err(RustyJwtError::DpopChallengeMismatch);
         }
-        if claims.custom.api_version != Access::WIRE_SERVER_API_VERSION {
+        if claims.custom.api_version != api_version {
             return Err(RustyJwtError::UnsupportedApiVersion);
         }
         if claims.custom.scope != Access::DEFAULT_SCOPE {
@@ -492,7 +496,7 @@ pub mod tests {
             // should succeed when 'api_version' claim is present in access token
             let access = AccessBuilder {
                 access: TestAccess {
-                    api_version: Some(Access::WIRE_SERVER_API_VERSION),
+                    api_version: Some(Access::DEFAULT_WIRE_SERVER_API_VERSION),
                     ..ciphersuite.clone().into()
                 },
                 ..ciphersuite.clone().into()
@@ -514,7 +518,7 @@ pub mod tests {
             // should fail when 'api_version' claim does not have the expected value
             let access = AccessBuilder {
                 access: TestAccess {
-                    api_version: Some(Access::WIRE_SERVER_API_VERSION + 1),
+                    api_version: Some(Access::DEFAULT_WIRE_SERVER_API_VERSION + 1),
                     ..ciphersuite.clone().into()
                 },
                 ..ciphersuite.clone().into()
@@ -1526,6 +1530,7 @@ pub mod tests {
         pub issuer: Htu,
         pub backend_pk: Option<Pem>,
         pub expected_kid: Option<String>,
+        pub api_version: u32,
     }
 
     impl From<Ciphersuite> for Params {
@@ -1539,6 +1544,7 @@ pub mod tests {
                 issuer: TestDpop::default().htu.unwrap(),
                 backend_pk: None,
                 expected_kid: None,
+                api_version: Access::DEFAULT_WIRE_SERVER_API_VERSION,
             }
         }
     }
@@ -1553,6 +1559,7 @@ pub mod tests {
             issuer,
             backend_pk,
             expected_kid,
+            api_version,
         } = params;
         let backend_pk = backend_pk.unwrap_or(ciphersuite.key.pk);
 
@@ -1586,6 +1593,7 @@ pub mod tests {
             backend_pk,
             expected_kid,
             ciphersuite.hash,
+            api_version,
         )
     }
 }

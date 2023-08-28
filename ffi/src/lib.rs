@@ -36,13 +36,16 @@ impl RustyJwtToolsFfi {
         max_expiration: u64,
         _now: u64,
         backend_keys: *const c_char,
+        api_version: u32,
     ) -> *const HsResult<String> {
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
         let user = unsafe { CStr::from_ptr(user) };
-        let Some(user) = std::str::from_utf8(user.to_bytes()).ok()
-            .and_then(|s| uuid::Uuid::from_str(s).ok()) else {
-            return Box::into_raw(Box::new(Err(HsError::InvalidUserId)))
+        let Some(user) = std::str::from_utf8(user.to_bytes())
+            .ok()
+            .and_then(|s| uuid::Uuid::from_str(s).ok())
+        else {
+            return Box::into_raw(Box::new(Err(HsError::InvalidUserId)));
         };
         let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
         let client_id = ClientId::try_from_raw_parts(user.as_ref(), client_id, domain);
@@ -66,6 +69,7 @@ impl RustyJwtToolsFfi {
                 max_expiration,
                 kp,
                 hash_algorithm,
+                api_version,
             )
             .map_err(HsError::from);
             return Box::into_raw(Box::new(res));
