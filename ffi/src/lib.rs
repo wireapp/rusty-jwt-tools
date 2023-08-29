@@ -36,9 +36,13 @@ impl RustyJwtToolsFfi {
         max_expiration: u64,
         _now: u64,
         backend_keys: *const c_char,
-        api_version: u32,
-        expiry_secs: u64,
+        // api_version: u32,
+        // expiry_secs: u64,
     ) -> *const HsResult<String> {
+        // TODO: setting default values for now. Do it properly later
+        let api_version = 5;
+        let expiry_secs = 360;
+
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
         let user = unsafe { CStr::from_ptr(user) };
