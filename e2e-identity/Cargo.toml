@@ -27,45 +27,45 @@ x509-cert = { version = "0.2", optional = true }
 oid-registry = { version = "0.6", optional = true }
 time = { version = "0.3", optional = true }
 
-[dependencies.rcgen]
-git = "https://github.com/wireapp/rcgen"
-tag = "v1.2.2-pre.core-crypto-0.7.0"
-version = "=0.9.2"
-optional = true
+#[dependencies.rcgen]
+#git = "https://github.com/wireapp/rcgen"
+#tag = "v1.2.2-pre.core-crypto-0.7.0"
+#version = "=0.9.2"
+#optional = true
 
-[dev-dependencies]
-rusty-jwt-tools = { version = "0.5.0", path = "../jwt", features = ["test-utils"] }
-rand = "0.8"
-base64 = "0.21.0"
-url = "2.3"
-itertools = "0.11"
-uuid = "1.2"
-wasm-bindgen-test = "0.3"
-hex = "0.4"
-webbrowser = "0.8"
+#[dev-dependencies]
+#rusty-jwt-tools = { version = "0.5.0", path = "../jwt", features = ["test-utils"] }
+#rand = "0.8"
+#base64 = "0.21.0"
+#url = "2.3"
+#itertools = "0.11"
+#uuid = "1.2"
+#wasm-bindgen-test = "0.3"
+#hex = "0.4"
+#webbrowser = "0.8"
+#
+#openidconnect = "3.0.0-alpha.1"
+#html_parser = "0.6"
+#scraper = "0.14"
+#anyhow = "1.0"
+#tokio = { version = "1.5", features = ["macros"], default_features = false }
+#lazy_static = "1.4"
+#portpicker = "0.1"
+#pem = "3.0"
 
-openidconnect = "3.0.0-alpha.1"
-html_parser = "0.6"
-scraper = "0.14"
-anyhow = "1.0"
-tokio = { version = "1.5", features = ["macros"], default_features = false }
-lazy_static = "1.4"
-portpicker = "0.1"
-pem = "3.0"
+#[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
+#rusty-acme = { version = "0.5.0", path = "../acme" }
+#reqwest = { version = "0.11", features = ["json"], default_features = false }
+#tokio = { version = "1.5", features = ["macros"], default_features = false }
+#hyper = { version = "0.14", features = ["server"], default_features = false }
+#asserhttp = { version = "0.6", features = ["reqwest"] }
+#testcontainers = "0.14"
+#oauth2 = "4.3"
+#http = "0.2"
 
-[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
-rusty-acme = { version = "0.5.0", path = "../acme" }
-reqwest = { version = "0.11", features = ["json"], default_features = false }
-tokio = { version = "1.5", features = ["macros"], default_features = false }
-hyper = { version = "0.14", features = ["server"], default_features = false }
-asserhttp = { version = "0.6", features = ["reqwest"] }
-testcontainers = "0.14"
-oauth2 = "4.3"
-http = "0.2"
-
-[target.'cfg(target_family = "wasm")'.dev-dependencies]
-rusty-acme = { version = "0.5.0", path = "../acme" }
+#[target.'cfg(target_family = "wasm")'.dev-dependencies]
+#rusty-acme = { version = "0.5.0", path = "../acme" }
 
 [features]
 default = []
-identity-builder = ["dep:rcgen", "dep:rand", "dep:uuid", "dep:x509-cert", "dep:oid-registry", "dep:time"]
+identity-builder = ["dep:rand", "dep:uuid", "dep:x509-cert", "dep:oid-registry", "dep:time"]

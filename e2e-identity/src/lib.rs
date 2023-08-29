@@ -7,8 +7,8 @@ use rusty_acme::prelude::{AcmeChallenge, AcmeChallengeType};
 use rusty_jwt_tools::jwk::TryIntoJwk;
 use rusty_jwt_tools::prelude::{ClientId, Dpop, Htm, Pem, RustyJwtTools};
 
-#[cfg(feature = "identity-builder")]
-mod builder;
+// #[cfg(feature = "identity-builder")]
+// mod builder;
 mod error;
 mod types;
 
