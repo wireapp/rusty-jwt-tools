@@ -49,14 +49,14 @@ main = hspec $ do
             \-----BEGIN PUBLIC KEY-----\n\
             \MCowBQYDK2VwAyEAdYI38UdxksC0K4Qx6E9JK9YfGm+ehnY18oKmHL2YsZk=\n\
             \-----END PUBLIC KEY-----\n"
-      uid = fromMaybe (error "invalid user id") $ UUID.fromString "dbb07e94-7d29-4180-a790-a573def35dd5"
+      uid = fromMaybe (error "invalid user id") $ UUID.fromString "83a23b74-69c6-4bd5-931c-1c6406a832c2"
       proofExpiring2038 =
-            "eyJhbGciOiJFZERTQSIsInR5cCI6ImRwb3Arand0IiwiandrIjp7Imt0eSI6Ik9LUCIsImNydiI6IkVkMjU1MTkiLCJ4IjoidUhNR0paWllUbU9zOEdiaTdaRUJLT255TnJYYnJzNTI1dE1QQUZoYjBzbyJ9fQ.eyJpYXQiOjE2Nzg4MDUyNTgsImV4cCI6MjA4ODc3MzI1OCwibmJmIjoxNjc4ODA1MjU4LCJzdWIiOiJpbTp3aXJlYXBwPVpHSmlNRGRsT1RRM1pESTVOREU0TUdFM09UQmhOVGN6WkdWbU16VmtaRFUvN2M2MzExYTFjNDNjMmJhNkB3aXJlLmNvbSIsImp0aSI6ImQyOWFkYTQ2LTBjMzYtNGNiMS05OTVlLWFlMWNiYTY5M2IzNCIsIm5vbmNlIjoiYzB0RWNtOUNUME00TXpKU04zRjRkMEZIV0V4TGIxUm5aMDQ1U3psSFduTSIsImh0bSI6IlBPU1QiLCJodHUiOiJodHRwczovL3dpcmUuZXhhbXBsZS5jb20vY2xpZW50cy84OTYzMDI3MDY5ODc3MTAzNTI2L2FjY2Vzcy10b2tlbiIsImNoYWwiOiJaa3hVV25GWU1HbHFUVVpVU1hnNFdHdHBOa3h1WWpWU09XRnlVRU5hVGxnIn0.8p0lvdOPjJ8ogjjLP6QtOo216qD9ujP7y9vSOhdYb-O8ikmW09N00gjCf0iGT-ZkxBT-LfDE3eQx27tWQ3JPBQ"
+            "eyJhbGciOiJFZERTQSIsInR5cCI6ImRwb3Arand0IiwiandrIjp7Imt0eSI6Ik9LUCIsImNydiI6IkVkMjU1MTkiLCJ4Ijoick5GRFBEdEdsakZpbElYUFpfMlpUR0tfaVNqT2hrcjlXQXFNbGxtSm1WNCJ9fQ.eyJpYXQiOjE2OTMzODQ5ODcsImV4cCI6MTY5MzQ3MTM4NywibmJmIjoxNjkzMzg0OTgyLCJzdWIiOiJpbTp3aXJlYXBwPWc2STdkR25HUzlXVEhCeGtCcWd5d2cvYTU4ZjU1NjMyMmI5MDVjOEB3aXJlLmNvbSIsImp0aSI6IjUxYzFkNDUxLTM3NDktNDI1MC05ZGNjLTUzNzg5YTljNzY5MiIsIm5vbmNlIjoiT1RoaGVuazVkR3BuU0VwWllqQnFTR1ZzWjNWR1pESmljVzlMTUVacmRuTSIsImh0bSI6IlBPU1QiLCJodHUiOiJodHRwczovL3dpcmUuZXhhbXBsZS5jb20vY2xpZW50cy8xMTkyOTg0NzgyMjIwMDQwNzQ5Ni9hY2Nlc3MtdG9rZW4iLCJjaGFsIjoiVkVoa00xa3lSa015UlhoTk9ITmtiR3hNT0cwMmNuWmhkVGRLVVZWNFFYQSJ9.Q7IyWSGtKCM0UFxETriUH6vN9yNCa44erZiNHapBcQ6q1wVEFMxYZbN5DdWE3lxJTg7oQbVZnQcLErKv3CWlCQ"
 
-      clientId = 8963027069877103526
+      clientId = 11929847822200407496
       domain = "wire.com"
-      nonce = "c0tEcm9CT0M4MzJSN3F4d0FHWExLb1RnZ045SzlHWnM"
-      url = "https://wire.example.com/clients/8963027069877103526/access-token"
+      nonce = "OThhenk5dGpnSEpZYjBqSGVsZ3VGZDJicW9LMEZrdnM"
+      url = "https://wire.example.com/clients/11929847822200407496/access-token"
       method = "POST"
       maxSkewSeconds = 5
       expiration = 2136351646
