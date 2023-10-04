@@ -32,6 +32,9 @@ zeroize = { version = "1.5", features = ["zeroize_derive"] }
 biscuit = { version = "0.6.0-beta1", optional = true }
 getrandom = { version = "0.2.8", features = ["js"] }
 
+# TODO: remove when coarsetime > 0.1.28 released
+coarsetime = "=0.1.23"
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 rstest = "0.18"
