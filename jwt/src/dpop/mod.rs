@@ -40,8 +40,8 @@ impl Dpop {
     /// JWT header 'typ'
     pub const TYP: &'static str = "dpop+jwt";
 
-    /// we want "nbf" slightly in the past to prevent clock drifts or problems non-monotonic hosts
-    pub(crate) const NBF_LEEWAY_SECONDS: u64 = 5;
+    /// we want "nbf" & "iat" slightly in the past to prevent clock drifts or problems non-monotonic hosts
+    pub(crate) const NOW_LEEWAY_SECONDS: u64 = 3600;
 
     /// Create JWT claims (a JSON object) from DPoP fields
     pub fn into_jwt_claims(
@@ -51,11 +51,13 @@ impl Dpop {
         expiry: core::time::Duration,
     ) -> JWTClaims<Self> {
         let expiry = coarsetime::Duration::from_secs(expiry.as_secs());
-        let nbf = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NBF_LEEWAY_SECONDS);
-        Claims::with_custom_claims(self, expiry)
-            .invalid_before(nbf)
+        let now = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NOW_LEEWAY_SECONDS);
+        let mut claims = Claims::with_custom_claims(self, expiry)
+            .invalid_before(now)
             .with_jwt_id(new_jti())
             .with_nonce(nonce.to_string())
-            .with_subject(client_id.to_uri())
+            .with_subject(client_id.to_uri());
+        claims.issued_at = Some(now);
+        claims
     }
 }

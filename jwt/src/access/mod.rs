@@ -57,8 +57,8 @@ impl Access {
     /// Current wire-server API version
     pub const DEFAULT_SCOPE: &'static str = "wire_client_id";
 
-    /// we want "nbf" slightly in the past to prevent clock drifts or problems non-monotonic hosts
-    pub(crate) const NBF_LEEWAY_SECONDS: u64 = 5;
+    /// we want "nbf" & "iat" slightly in the past to prevent clock drifts or problems non-monotonic hosts
+    pub(crate) const NOW_LEEWAY_SECONDS: u64 = 3600;
 
     pub fn into_jwt_claims(
         self,
@@ -68,13 +68,15 @@ impl Access {
         audience: Htu,
         expiry: core::time::Duration,
     ) -> JWTClaims<Self> {
-        let nbf = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NBF_LEEWAY_SECONDS);
-        Claims::with_custom_claims(self, expiry.into())
-            .invalid_before(nbf)
+        let now = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NOW_LEEWAY_SECONDS);
+        let mut claims = Claims::with_custom_claims(self, expiry.into())
+            .invalid_before(now)
             .with_jwt_id(new_jti())
             .with_subject(client_id.to_uri())
             .with_nonce(nonce.to_string())
             .with_issuer(issuer)
-            .with_audience(audience)
+            .with_audience(audience);
+        claims.issued_at = Some(now);
+        claims
     }
 }
