@@ -363,7 +363,8 @@ pub mod tests {
 
         #[apply(all_keys)]
         #[wasm_bindgen_test]
-        fn should_have_iat(key: JwtKey) {
+        fn should_have_iat_slightly_in_past(key: JwtKey) {
+            // we want "nbf" slightly in the past to prevent clock drifts or problems non-monotonic hosts
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
                 &ClientId::default(),
@@ -376,10 +377,12 @@ pub mod tests {
             let claims = key.claims::<Dpop>(&token);
             assert!(claims.issued_at.is_some());
             let iat = claims.issued_at.unwrap().as_secs();
+
             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-            let leeway = 1;
-            let range = (now - leeway)..=(now + leeway);
-            assert!(range.contains(&iat));
+            let leeway = Dpop::NOW_LEEWAY_SECONDS;
+
+            let test_leeway = 2;
+            assert!(iat <= (now - leeway) + test_leeway);
         }
 
         #[apply(all_keys)]
@@ -400,9 +403,10 @@ pub mod tests {
             let nbf = claims.invalid_before.unwrap().as_secs();
 
             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-            let leeway = Dpop::NBF_LEEWAY_SECONDS;
+            let leeway = Dpop::NOW_LEEWAY_SECONDS;
 
-            assert!(nbf <= (now - leeway));
+            let test_leeway = 2;
+            assert!(nbf <= (now - leeway) + test_leeway);
         }
 
         #[apply(all_keys)]

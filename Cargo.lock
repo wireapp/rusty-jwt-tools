@@ -366,9 +366,9 @@ checksum = "702fc72eb24e5a1e48ce58027a675bc24edd52096d5397d4aea7c6dd9eca0bd1"
 
 [[package]]
 name = "coarsetime"
-version = "0.1.33"
+version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71367d3385c716342014ad17e3d19f7788ae514885a1f4c24f500260fb365e1a"
+checksum = "a90d114103adbc625300f346d4d09dfb4ab1c4a8df6868435dd903392ecf4354"
 dependencies = [
  "libc",
  "once_cell",
@@ -2820,6 +2820,7 @@ version = "0.5.1"
 dependencies = [
  "base64 0.21.5",
  "biscuit",
+ "coarsetime",
  "ed25519-compact",
  "either",
  "fluvio-wasm-timer",

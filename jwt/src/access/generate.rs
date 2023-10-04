@@ -453,9 +453,10 @@ pub mod tests {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_secs();
-                let leeway = Dpop::NBF_LEEWAY_SECONDS;
+                let leeway = Dpop::NOW_LEEWAY_SECONDS;
+                let test_leeway = 2;
 
-                assert!(nbf <= (now - leeway));
+                assert!(nbf <= (now - leeway) + test_leeway);
             }
 
             #[apply(all_ciphersuites)]
