@@ -1,7 +1,6 @@
 # Rust
 /target
 /debug
-/Cargo.lock
 
 # Idea
 .idea
