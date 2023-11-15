@@ -95,4 +95,7 @@ pub enum CertificateError {
     /// X509 lacks required standard fields
     #[error("X509 lacks required standard fields")]
     InvalidFormat,
+    /// Advertised public key does not match algorithm
+    #[error("Advertised public key does not match algorithm")]
+    InvalidPublicKey,
 }

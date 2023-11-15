@@ -21,6 +21,9 @@ impl ClientId {
     /// URI prefix for all subject URIs
     pub const URI_PREFIX: &'static str = "im:wireapp=";
 
+    /// Present in front of the handle. It's '@' URL encoded
+    pub const HANDLE_PREFIX: &'static str = "%40";
+
     /// Between user-id & client-id when converted to an URI
     pub const URI_DELIMITER: &'static str = "/";
 

@@ -2784,6 +2784,7 @@ dependencies = [
  "asn1-rs",
  "base64 0.21.5",
  "ed25519-compact",
+ "fluvio-wasm-timer",
  "getrandom 0.2.11",
  "hex",
  "jwt-simple",

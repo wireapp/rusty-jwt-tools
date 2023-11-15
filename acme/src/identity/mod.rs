@@ -5,12 +5,27 @@ use rusty_jwt_tools::prelude::*;
 use crate::error::CertificateError;
 use crate::prelude::*;
 
+mod status;
+mod thumbprint;
+
 #[derive(Debug, Clone)]
 pub struct WireIdentity {
     pub client_id: String,
     pub handle: String,
     pub display_name: String,
     pub domain: String,
+    pub status: IdentityStatus,
+    pub thumbprint: String,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum IdentityStatus {
+    /// All is fine
+    Valid,
+    /// The Certificate is expired
+    Expired,
+    /// The Certificate is revoked
+    Revoked,
 }
 
 pub trait WireIdentityReader {
@@ -29,12 +44,16 @@ impl WireIdentityReader for x509_cert::Certificate {
     fn extract_identity(&self) -> RustyAcmeResult<WireIdentity> {
         let (client_id, handle) = try_extract_san(&self.tbs_certificate)?;
         let (display_name, domain) = try_extract_subject(&self.tbs_certificate)?;
+        let status = status::extract_status(&self.tbs_certificate);
+        let thumbprint = thumbprint::try_compute_jwk_canonicalized_thumbprint(&self.tbs_certificate)?;
 
         Ok(WireIdentity {
             client_id,
             handle,
             display_name,
             domain,
+            status,
+            thumbprint,
         })
     }
 
@@ -118,11 +137,15 @@ fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String,
             _ => None,
         })
         .try_for_each(|name| -> RustyAcmeResult<()> {
+            // since both ClientId & handle are in the SAN we first try to parse the element as
+            // a ClientId (since it's the most characterizable) and else fallback to a handle
             if let Ok(cid) = ClientId::try_from_uri(name) {
                 client_id = Some(cid.to_qualified());
             } else if name.starts_with(ClientId::URI_PREFIX) {
                 let h = name
                     .strip_prefix(ClientId::URI_PREFIX)
+                    .ok_or(RustyAcmeError::ImplementationError)?
+                    .strip_prefix(ClientId::HANDLE_PREFIX)
                     .ok_or(RustyAcmeError::ImplementationError)?
                     .to_string();
                 handle = Some(h);
@@ -144,17 +167,33 @@ pub mod tests {
     wasm_bindgen_test_configure!(run_in_browser);
 
     const CERT: &str = r#"-----BEGIN CERTIFICATE-----
-MIICDDCCAbOgAwIBAgIRAPByYiuFhbbYasW+GKz5FBkwCgYIKoZIzj0EAwIwLjEN
-MAsGA1UEChMEd2lyZTEdMBsGA1UEAxMUd2lyZSBJbnRlcm1lZGlhdGUgQ0EwHhcN
-MjMwNzMxMTQwMjA4WhcNMzMwNzI4MTQwMjA4WjApMREwDwYDVQQKEwh3aXJlLmNv
-bTEUMBIGA1UEAxMLQWxpY2UgU21pdGgwKjAFBgMrZXADIQAF/hZvvmRkWMzqZ5jU
-LnGKO+y8G/Vz+olfTknk7c/8IqOB5TCB4jAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0l
-BAwwCgYIKwYBBQUHAwIwHQYDVR0OBBYEFGhAhRlgprn/FUxPfL+ehHvvAigpMB8G
-A1UdIwQYMBaAFB81Yl+jcBh8rnCo9MJtkZ+2vq5YMFwGA1UdEQRVMFOGFWltOndp
-cmVhcHA9YWxpY2Vfd2lyZYY6aW06d2lyZWFwcD1UNENveTR2ZFJ6aWFud2ZPZ1hw
-bjZBL2EzMzhlOWVhOWU4N2ZlY0B3aXJlLmNvbTAdBgwrBgEEAYKkZMYoQAEEDTAL
-AgEGBAR3aXJlBAAwCgYIKoZIzj0EAwIDRwAwRAIgCP+OnliYCy7PKs3rt+x4zUuF
-e2grybnLl5fsak6lFPUCIE4T8ZMlKkOZ9xeYdTlrUPT67hc++ZRAtcU03Kqiz8sm
+MIICGDCCAb+gAwIBAgIQHhoe3LLRoHP+EPY4KOTgATAKBggqhkjOPQQDAjAuMQ0w
+CwYDVQQKEwR3aXJlMR0wGwYDVQQDExR3aXJlIEludGVybWVkaWF0ZSBDQTAeFw0y
+MzExMTYxMDM3MjZaFw0zMzExMTMxMDM3MjZaMCkxETAPBgNVBAoTCHdpcmUuY29t
+MRQwEgYDVQQDEwtBbGljZSBTbWl0aDAqMAUGAytlcAMhANmHK7rIOLVhj/vmKmK1
+qei8Dor8Lu/FPOnXmKLZGKrfo4HyMIHvMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUE
+DDAKBggrBgEFBQcDAjAdBgNVHQ4EFgQUFlquvWRvc3MxFaLrNgzv+UdGoaswHwYD
+VR0jBBgwFoAUz40pQ/qEp4eFDfctCF0jmJB+5xswaQYDVR0RBGIwYIYhaW06d2ly
+ZWFwcD0lNDBhbGljZV93aXJlQHdpcmUuY29thjtpbTp3aXJlYXBwPXlsLThBX3da
+U2ZhUzJ1VjhWdU1FQncvN2U3OTcyM2E4YmRjNjk0ZkB3aXJlLmNvbTAdBgwrBgEE
+AYKkZMYoQAEEDTALAgEGBAR3aXJlBAAwCgYIKoZIzj0EAwIDRwAwRAIgRqbsOAF7
+OseMTgkjrKe3UO/UjDUGzW+jlDWOGLZsh5ECIDdNastqkvwOGfbWaeh+IuM6/oBz
+flIOs9TQGOVc0YL1
+-----END CERTIFICATE-----"#;
+
+    const CERT_EXPIRED: &str = r#"-----BEGIN CERTIFICATE-----
+MIICGDCCAb+gAwIBAgIQM1JQFaSAmNPtoyWrvmZNGjAKBggqhkjOPQQDAjAuMQ0w
+CwYDVQQKEwR3aXJlMR0wGwYDVQQDExR3aXJlIEludGVybWVkaWF0ZSBDQTAeFw0y
+MzExMTYxMDQ2MDVaFw0yMzExMTYxMTA2MDVaMCkxETAPBgNVBAoTCHdpcmUuY29t
+MRQwEgYDVQQDEwtBbGljZSBTbWl0aDAqMAUGAytlcAMhAEJioXny0jRMd1GAo9aq
+ywcUQBJwuc4ym1DxDBuTrFCzo4HyMIHvMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUE
+DDAKBggrBgEFBQcDAjAdBgNVHQ4EFgQU3OFsPDRVZrOLHbL7vGiVE9CzyKwwHwYD
+VR0jBBgwFoAUusKuRvUWmJgzjSYJL3ndc8W2414waQYDVR0RBGIwYIYhaW06d2ly
+ZWFwcD0lNDBhbGljZV93aXJlQHdpcmUuY29thjtpbTp3aXJlYXBwPXlhRld5M3Yt
+UUZDZms0X2VkLW9fNEEvNGU4NTI0ZWY0ZTIzMDY4YkB3aXJlLmNvbTAdBgwrBgEE
+AYKkZMYoQAEEDTALAgEGBAR3aXJlBAAwCgYIKoZIzj0EAwIDRwAwRAIgPA0RmEYk
+k9Jtg4ND98qu7qkUM3vtVVLiZkbCnRlFF04CIGCwhSo/78Kt8h6292SkT8c8eCS6
+4PmNd7NrZ71etdKR
 -----END CERTIFICATE-----"#;
 
     #[test]
@@ -163,9 +202,9 @@ e2grybnLl5fsak6lFPUCIE4T8ZMlKkOZ9xeYdTlrUPT67hc++ZRAtcU03Kqiz8sm
         let cert_der = pem::parse(CERT).unwrap();
         let identity = cert_der.contents().extract_identity().unwrap();
 
-        let expected_client_id = "T4Coy4vdRzianwfOgXpn6A:a338e9ea9e87fec@wire.com";
+        let expected_client_id = "yl-8A_wZSfaS2uV8VuMEBw:7e79723a8bdc694f@wire.com";
         assert_eq!(&identity.client_id, expected_client_id);
-        assert_eq!(&identity.handle, "alice_wire");
+        assert_eq!(&identity.handle, "alice_wire@wire.com");
         assert_eq!(&identity.display_name, "Alice Smith");
         assert_eq!(&identity.domain, "wire.com");
     }
@@ -175,7 +214,7 @@ e2grybnLl5fsak6lFPUCIE4T8ZMlKkOZ9xeYdTlrUPT67hc++ZRAtcU03Kqiz8sm
     fn should_find_created_at_claim() {
         let cert_der = pem::parse(CERT).unwrap();
         let created_at = cert_der.contents().extract_created_at().unwrap();
-        assert_eq!(created_at, 1690812128);
+        assert_eq!(created_at, 1700131046);
     }
 
     #[test]
@@ -185,7 +224,27 @@ e2grybnLl5fsak6lFPUCIE4T8ZMlKkOZ9xeYdTlrUPT67hc++ZRAtcU03Kqiz8sm
         let spki = cert_der.contents().extract_public_key().unwrap();
         assert_eq!(
             hex::encode(spki),
-            "05fe166fbe646458ccea6798d42e718a3becbc1bf573fa895f4e49e4edcffc22"
+            "d9872bbac838b5618ffbe62a62b5a9e8bc0e8afc2eefc53ce9d798a2d918aadf"
         );
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_have_valid_status() {
+        let cert_der = pem::parse(CERT).unwrap();
+        let identity = cert_der.contents().extract_identity().unwrap();
+        assert_eq!(&identity.status, &IdentityStatus::Valid);
+
+        let cert_der = pem::parse(CERT_EXPIRED).unwrap();
+        let identity = cert_der.contents().extract_identity().unwrap();
+        assert_eq!(&identity.status, &IdentityStatus::Expired);
+    }
+
+    #[test]
+    #[wasm_bindgen_test]
+    fn should_have_thumbprint() {
+        let cert_der = pem::parse(CERT).unwrap();
+        let identity = cert_der.contents().extract_identity().unwrap();
+        assert!(!identity.thumbprint.is_empty());
     }
 }
