@@ -29,6 +29,8 @@ p384 = "0.13"
 pem = "3.0"
 getrandom = { version = "0.2.8", features = ["js"] }
 
+fluvio-wasm-timer = "0.2"
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 hex = "0.4.3"
