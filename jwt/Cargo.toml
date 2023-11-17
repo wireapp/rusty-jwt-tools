@@ -28,7 +28,7 @@ json-patch = "0.3"
 rand = "0.8"
 rand_chacha = "0.3"
 jwt-simple = "0.11.3"
-zeroize = { version = "1.6", features = ["zeroize_derive"] }
+zeroize = { version = "1.7", features = ["zeroize_derive"] }
 biscuit = { version = "0.6.0-beta1", optional = true }
 getrandom = { version = "0.2.8", features = ["js"] }
 
