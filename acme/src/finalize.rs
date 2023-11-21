@@ -123,13 +123,14 @@ impl RustyAcme {
 
     // TODO: find a cleaner way to encode this reusing more x509-cert structs
     fn csr_attributes(identifier: WireIdentifier) -> RustyAcmeResult<x509_cert::attr::Attributes> {
-        let gn = |n: String| -> RustyAcmeResult<x509_cert::ext::pkix::name::GeneralName> {
-            let ia5_str = x509_cert::der::asn1::Ia5String::new(&n)?;
+        fn gn(n: impl AsRef<str>) -> RustyAcmeResult<x509_cert::ext::pkix::name::GeneralName> {
+            let ia5_str = x509_cert::der::asn1::Ia5String::new(n.as_ref())?;
             Ok(x509_cert::ext::pkix::name::GeneralName::UniformResourceIdentifier(
                 ia5_str,
             ))
-        };
-        let san = x509_cert::ext::pkix::SubjectAltName(vec![gn(identifier.client_id)?, gn(identifier.handle)?]);
+        }
+        let san =
+            x509_cert::ext::pkix::SubjectAltName(vec![gn(identifier.client_id)?, gn(identifier.handle.as_str())?]);
         let san = x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::OctetString, san.to_der()?)?;
 
         let san_oid = oid_registry::OID_X509_EXT_SUBJECT_ALT_NAME.to_der_vec()?;

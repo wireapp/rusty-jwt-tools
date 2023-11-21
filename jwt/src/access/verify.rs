@@ -40,6 +40,7 @@ impl RustyJwtTools {
     pub fn verify_access_token(
         access_token: &str,
         client_id: &ClientId,
+        handle: &QualifiedHandle,
         challenge: AcmeNonce,
         max_skew_secs: u16,
         max_expiration: u64,
@@ -57,6 +58,7 @@ impl RustyJwtTools {
             &backend_pk,
             client_kid,
             client_id,
+            handle,
             &challenge,
             max_expiration,
             issuer,
@@ -85,6 +87,7 @@ impl RustyJwtTools {
         backend_pk: &Pem,
         client_kid: String,
         client_id: &ClientId,
+        handle: &QualifiedHandle,
         challenge: &AcmeNonce,
         max_expiration: u64,
         issuer: Htu,
@@ -136,6 +139,8 @@ impl RustyJwtTools {
             alg,
             jwk,
             client_id,
+            handle,
+            None,
             &nonce,
             Some(&claims.custom.challenge),
             None,
@@ -1094,6 +1099,80 @@ pub mod tests {
 
         #[apply(all_ciphersuites)]
         #[test]
+        fn handle_should_match(ciphersuite: Ciphersuite) {
+            // should succeed when proof's 'handle' claim matches the supplied handle
+            let alice_handle = Handle::from("alice_wire").to_qualified("wire.com");
+            let bob_handle = Handle::from("bob_wire").to_qualified("wire.com");
+            let proof = DpopBuilder {
+                dpop: TestDpop {
+                    handle: Some(alice_handle.to_string()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            }
+            .build();
+            let access = AccessBuilder {
+                access: TestAccess {
+                    proof: Some(proof),
+                    ..ciphersuite.clone().into()
+                },
+                ..ciphersuite.clone().into()
+            }
+            .build();
+            let params = Params {
+                handle: alice_handle.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = verify_token(&access, params);
+            assert!(result.is_ok());
+
+            // should fail when 'handle' claim lacks in the proof
+            let proof = DpopBuilder {
+                dpop: TestDpop {
+                    handle: None,
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            }
+            .build();
+            let access = build_access(&ciphersuite, proof);
+            let params = Params {
+                handle: alice_handle.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = verify_token(&access, params);
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim("handle")
+            ));
+
+            // should fail when 'handle' claim mismatches the supplied handle
+            let proof = DpopBuilder {
+                dpop: TestDpop {
+                    handle: Some(alice_handle.to_string()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            }
+            .build();
+            let access = AccessBuilder {
+                access: TestAccess {
+                    proof: Some(proof),
+                    ..ciphersuite.clone().into()
+                },
+                ..ciphersuite.clone().into()
+            }
+            .build();
+            let params = Params {
+                handle: bob_handle,
+                ..ciphersuite.into()
+            };
+            let result = verify_token(&access, params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHandleMismatch));
+        }
+
+        #[apply(all_ciphersuites)]
+        #[test]
         fn htu_should_match_expected_issuer(ciphersuite: Ciphersuite) {
             // should succeed when 'htu' claim matches the issuer argument
             let issuer_a: Htu = "https://a.com/".try_into().unwrap();
@@ -1524,6 +1603,7 @@ pub mod tests {
     struct Params {
         pub ciphersuite: Ciphersuite,
         pub client_id: ClientId,
+        pub handle: QualifiedHandle,
         pub challenge: AcmeNonce,
         pub leeway: u16,
         pub max_expiration: u64,
@@ -1538,6 +1618,7 @@ pub mod tests {
             Self {
                 ciphersuite,
                 client_id: ClientId::default(),
+                handle: QualifiedHandle::default(),
                 challenge: AcmeNonce::default(),
                 leeway: 5,
                 max_expiration: 2136351646, // somewhere in 2037
@@ -1553,6 +1634,7 @@ pub mod tests {
         let Params {
             ciphersuite,
             client_id,
+            handle,
             challenge,
             leeway,
             max_expiration,
@@ -1586,6 +1668,7 @@ pub mod tests {
         RustyJwtTools::verify_access_token(
             access,
             &client_id,
+            &handle,
             challenge,
             leeway,
             max_expiration,

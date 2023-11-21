@@ -45,6 +45,8 @@ impl RustyJwtTools {
     pub fn generate_access_token(
         dpop_proof: &str,
         client_id: &ClientId,
+        handle: QualifiedHandle,
+        team: Team,
         backend_nonce: BackendNonce,
         uri: Htu,
         method: Htm,
@@ -61,6 +63,8 @@ impl RustyJwtTools {
             alg,
             jwk,
             client_id,
+            &handle,
+            Some(&team),
             &backend_nonce,
             None,
             Some(method),
@@ -565,7 +569,7 @@ pub mod tests {
         }
     }
 
-    mod validate_dpop {
+    mod validate_proof {
         use super::*;
 
         #[apply(all_ciphersuites)]
@@ -873,6 +877,106 @@ pub mod tests {
 
         #[apply(all_ciphersuites)]
         #[test]
+        fn handle(ciphersuite: Ciphersuite) {
+            // should succeed when expected handle matches the one in the proof
+            let handle = Handle::from("alice_wire").to_qualified("wire.com");
+            let dpop = DpopBuilder {
+                dpop: TestDpop {
+                    handle: Some(handle.to_string()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            };
+            let params = Params {
+                handle: handle.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(result.is_ok());
+
+            // Dpop 'handle' is absent
+            let dpop = DpopBuilder {
+                dpop: TestDpop {
+                    handle: None,
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            };
+            let params = Params {
+                handle: handle.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "handle"));
+
+            // should fail when backend handle and proof's 'handle' mismatch
+            let dpop = DpopBuilder {
+                dpop: TestDpop {
+                    handle: Some("alice_wire".to_string()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            };
+            let params = Params {
+                handle: Handle::from("bob_wire").to_qualified("wire.com"),
+                ..ciphersuite.into()
+            };
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHandleMismatch));
+        }
+
+        #[apply(all_ciphersuites)]
+        #[test]
+        fn team(ciphersuite: Ciphersuite) {
+            // should succeed when expected team matches the one in the proof
+            let team = Team::from("wire");
+            let dpop = DpopBuilder {
+                dpop: TestDpop {
+                    team: Some(team.as_ref().unwrap().to_string()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            };
+            let params = Params {
+                team: team.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(result.is_ok());
+
+            // Dpop 'team' is absent should be ok since it's an optional field
+            let dpop = DpopBuilder {
+                dpop: TestDpop {
+                    team: None,
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            };
+            let params = Params {
+                team: team.clone(),
+                ..ciphersuite.clone().into()
+            };
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(result.is_ok());
+
+            // should fail when backend team and proof's 'team' mismatch
+            let dpop = DpopBuilder {
+                dpop: TestDpop {
+                    team: Some("AAA".to_string()),
+                    ..Default::default()
+                },
+                ..ciphersuite.key.clone().into()
+            };
+            let params = Params {
+                team: "BBB".into(),
+                ..ciphersuite.into()
+            };
+            let result = access_token_with_dpop(&dpop.build(), params);
+            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopTeamMismatch));
+        }
+
+        #[apply(all_ciphersuites)]
+        #[test]
         fn challenge(ciphersuite: Ciphersuite) {
             // should succeed when 'chal' (ACME challenge) claim is present in dpop token
             let dpop = DpopBuilder {
@@ -1090,6 +1194,8 @@ pub mod tests {
         pub key: JwtKey,
         pub dpop: Dpop,
         pub client_id: ClientId,
+        pub handle: QualifiedHandle,
+        pub team: Team,
         pub backend_nonce: BackendNonce,
         pub uri: Htu,
         pub method: Htm,
@@ -1109,6 +1215,8 @@ pub mod tests {
                 key: ciphersuite.key,
                 dpop: Dpop::default(),
                 client_id: ClientId::default(),
+                handle: QualifiedHandle::default(),
+                team: Team::default(),
                 backend_nonce: BackendNonce::default(),
                 uri: Htu::default(),
                 method: Htm::default(),
@@ -1140,6 +1248,8 @@ pub mod tests {
     fn access_token_with_dpop(dpop: &str, params: Params) -> RustyJwtResult<String> {
         let Params {
             client_id,
+            handle,
+            team,
             backend_nonce,
             uri,
             method,
@@ -1154,6 +1264,8 @@ pub mod tests {
         RustyJwtTools::generate_access_token(
             dpop,
             &client_id,
+            handle,
+            team,
             backend_nonce,
             uri,
             method,

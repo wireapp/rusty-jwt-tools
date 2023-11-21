@@ -93,13 +93,6 @@ impl VerifyJwt for &str {
             return Err(RustyJwtError::TokenLivesTooLong);
         }
 
-        /*if let Some((expected_cnf, actual_cnf)) = expected_cnf.zip(actual_cnf) {
-            let actual_cnf = actual_cnf(&claims);
-            if expected_cnf != actual_cnf {
-                return Err(RustyJwtError::InvalidJwkThumbprint);
-            }
-        }*/
-
         Ok(claims)
     }
 }
@@ -130,6 +123,7 @@ pub fn jwt_error_mapping(e: jwt_simple::Error) -> RustyJwtError {
         r if r.starts_with("missing field `api_version`") => RustyJwtError::MissingTokenClaim("api_version"),
         r if r.starts_with("missing field `client_id`") => RustyJwtError::MissingTokenClaim("client_id"),
         r if r.starts_with("missing field `scope`") => RustyJwtError::MissingTokenClaim("scope"),
+        r if r.starts_with("missing field `handle`") => RustyJwtError::MissingTokenClaim("handle"),
         _ => RustyJwtError::InvalidToken(reason),
     }
 }

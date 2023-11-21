@@ -30,9 +30,11 @@ pub mod prelude {
     pub use model::{
         alg::{HashAlgorithm, JwsAlgorithm, JwsEcAlgorithm, JwsEdAlgorithm},
         client_id::ClientId,
+        handle::{Handle, QualifiedHandle},
         nonce::{AcmeNonce, BackendNonce},
         pem::Pem,
         pk::AnyPublicKey,
+        team::Team,
     };
     pub use oidc::{
         context::Context,

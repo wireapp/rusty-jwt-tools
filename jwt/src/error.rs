@@ -83,6 +83,12 @@ pub enum RustyJwtError {
     /// DPoP token 'nonce' claim mismatches with the expected [crate::prelude::BackendNonce]
     #[error("DPoP token 'nonce' claim mismatches with the expected backend_nonce")]
     DpopNonceMismatch,
+    /// DPoP token 'handle' claim mismatches with the expected handle
+    #[error("DPoP token 'handle' claim mismatches with the expected handle")]
+    DpopHandleMismatch,
+    /// DPoP token 'team' claim mismatches with the expected team
+    #[error("DPoP token 'team' claim mismatches with the expected team")]
+    DpopTeamMismatch,
     /// DPoP token 'chal' claim mismatches with the expected [crate::prelude::AcmeNonce]
     #[error("DPoP token 'chal' claim mismatches with the expected challenge")]
     DpopChallengeMismatch,
@@ -107,6 +113,9 @@ pub enum RustyJwtError {
     /// Verified a token with an unsupported scope
     #[error("Verified a token with an unsupported scope")]
     UnsupportedScope,
+    /// Handle claim is in the wrong format
+    #[error("Handle claim is in the wrong format")]
+    InvalidHandle,
     /// We have done something terribly wrong
     #[error("We have done something terribly wrong and it needs to be fixed")]
     ImplementationError,

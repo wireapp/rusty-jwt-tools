@@ -11,7 +11,7 @@ mod thumbprint;
 #[derive(Debug, Clone)]
 pub struct WireIdentity {
     pub client_id: String,
-    pub handle: String,
+    pub handle: QualifiedHandle,
     pub display_name: String,
     pub domain: String,
     pub status: IdentityStatus,
@@ -118,7 +118,7 @@ fn try_extract_subject(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(Str
 }
 
 /// extract Subject Alternative Name to pick client-id & display name
-fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String, String)> {
+fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String, QualifiedHandle)> {
     let extensions = cert.extensions.as_ref().ok_or(CertificateError::InvalidFormat)?;
 
     let san = extensions
@@ -141,13 +141,7 @@ fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String,
             // a ClientId (since it's the most characterizable) and else fallback to a handle
             if let Ok(cid) = ClientId::try_from_uri(name) {
                 client_id = Some(cid.to_qualified());
-            } else if name.starts_with(ClientId::URI_PREFIX) {
-                let h = name
-                    .strip_prefix(ClientId::URI_PREFIX)
-                    .ok_or(RustyAcmeError::ImplementationError)?
-                    .strip_prefix(ClientId::HANDLE_PREFIX)
-                    .ok_or(RustyAcmeError::ImplementationError)?
-                    .to_string();
+            } else if let Ok(h) = QualifiedHandle::try_from(name) {
                 handle = Some(h);
             }
             Ok(())
@@ -204,7 +198,7 @@ k9Jtg4ND98qu7qkUM3vtVVLiZkbCnRlFF04CIGCwhSo/78Kt8h6292SkT8c8eCS6
 
         let expected_client_id = "yl-8A_wZSfaS2uV8VuMEBw:7e79723a8bdc694f@wire.com";
         assert_eq!(&identity.client_id, expected_client_id);
-        assert_eq!(&identity.handle, "alice_wire@wire.com");
+        assert_eq!(identity.handle.as_str(), "im:wireapp=%40alice_wire@wire.com");
         assert_eq!(&identity.display_name, "Alice Smith");
         assert_eq!(&identity.domain, "wire.com");
     }

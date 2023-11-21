@@ -28,6 +28,8 @@ impl RustyJwtToolsFfi {
         dpop_proof: *const c_char,
         user: *const c_char,
         client_id: u64,
+        handle: *const c_char,
+        team: *const c_char,
         domain: *const c_char,
         backend_nonce: *const c_char,
         uri: *const c_char,
@@ -53,7 +55,9 @@ impl RustyJwtToolsFfi {
             return Box::into_raw(Box::new(Err(HsError::InvalidUserId)));
         };
         let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
+        let team = unsafe { CStr::from_ptr(team).to_bytes() }.try_into();
         let client_id = ClientId::try_from_raw_parts(user.as_ref(), client_id, domain);
+        let handle: Result<Handle, _> = unsafe { CStr::from_ptr(handle).to_bytes() }.try_into();
         let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() });
         let uri = unsafe { CStr::from_ptr(uri).to_bytes() }.try_into();
         let method = unsafe { CStr::from_ptr(method).to_bytes() }.try_into();
@@ -62,12 +66,15 @@ impl RustyJwtToolsFfi {
         let hash_algorithm = HashAlgorithm::SHA256;
         let expiry = core::time::Duration::from_secs(expiry_secs);
 
-        if let (Ok(dpop), Ok(client_id), Ok(nonce), Ok(uri), Ok(method), Ok(kp)) =
-            (dpop, client_id, backend_nonce, uri, method, backend_kp)
+        if let (Ok(dpop), Ok(client_id), Ok(handle), Ok(team), Ok(nonce), Ok(uri), Ok(method), Ok(kp)) =
+            (dpop, client_id, handle, team, backend_nonce, uri, method, backend_kp)
         {
+            let handle = handle.to_qualified(&client_id.domain);
             let res = RustyJwtTools::generate_access_token(
                 dpop,
                 &client_id,
+                handle,
+                team,
                 nonce,
                 uri,
                 method,
@@ -216,6 +223,10 @@ pub enum HsError {
     UnsupportedApiVersion = 39,
     /// Bubbling up errors
     UnsupportedScope = 40,
+    /// Client handle does not match the supplied handle
+    DpopHandleMismatch = 41,
+    /// Client team does not match the supplied team
+    DpopTeamMismatch = 42,
 }
 
 impl From<RustyJwtError> for HsError {
@@ -229,6 +240,8 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::InvalidToken(_) => Self::InvalidDpopSignature,
             RustyJwtError::TokenSubMismatch => Self::ClientIdMismatch,
             RustyJwtError::DpopNonceMismatch => Self::BackendNonceMismatch,
+            RustyJwtError::DpopHandleMismatch => Self::DpopHandleMismatch,
+            RustyJwtError::DpopTeamMismatch => Self::DpopTeamMismatch,
             RustyJwtError::MissingTokenClaim("jti") => Self::MissingJti,
             RustyJwtError::MissingTokenClaim("chal") => Self::MissingChallenge,
             RustyJwtError::MissingTokenClaim("iat") => Self::MissingIat,

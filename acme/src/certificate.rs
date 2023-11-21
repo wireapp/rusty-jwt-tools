@@ -57,11 +57,7 @@ impl RustyAcme {
             return Err(CertificateError::DisplayNameMismatch.into());
         }
 
-        let identifier_handle = identifier
-            .handle
-            .trim_start_matches(ClientId::URI_PREFIX)
-            .trim_start_matches(ClientId::HANDLE_PREFIX);
-        let invalid_handle = cert_identity.handle != identifier_handle;
+        let invalid_handle = cert_identity.handle != identifier.handle;
         if invalid_handle {
             return Err(CertificateError::HandleMismatch.into());
         }
