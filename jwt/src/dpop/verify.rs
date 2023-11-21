@@ -34,6 +34,8 @@ pub trait VerifyDpop {
         alg: JwsAlgorithm,
         jwk: &Jwk,
         client_id: &ClientId,
+        handle: &QualifiedHandle,
+        team: Option<&Team>,
         backend_nonce: &BackendNonce,
         challenge: Option<&AcmeNonce>,
         htm: Option<Htm>,
@@ -49,6 +51,8 @@ impl VerifyDpop for &str {
         alg: JwsAlgorithm,
         jwk: &Jwk,
         client_id: &ClientId,
+        handle: &QualifiedHandle,
+        team: Option<&Team>,
         backend_nonce: &BackendNonce,
         challenge: Option<&AcmeNonce>,
         htm: Option<Htm>,
@@ -76,6 +80,14 @@ impl VerifyDpop for &str {
         if let Some(chal) = challenge {
             if chal != &claims.custom.challenge {
                 return Err(RustyJwtError::DpopChallengeMismatch);
+            }
+        }
+        if &claims.custom.handle != handle {
+            return Err(RustyJwtError::DpopHandleMismatch);
+        }
+        if let Some((expected_team, claim_team)) = team.zip(claims.custom.team.as_ref()) {
+            if expected_team != &claim_team.as_str().into() {
+                return Err(RustyJwtError::DpopTeamMismatch);
             }
         }
         Ok(claims)

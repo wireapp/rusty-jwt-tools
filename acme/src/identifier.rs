@@ -9,13 +9,18 @@ pub enum AcmeIdentifier {
 }
 
 impl AcmeIdentifier {
-    pub fn try_new(display_name: String, domain: String, client_id: ClientId, handle: String) -> RustyAcmeResult<Self> {
+    pub fn try_new(
+        display_name: String,
+        domain: String,
+        client_id: ClientId,
+        handle: QualifiedHandle,
+    ) -> RustyAcmeResult<Self> {
         let client_id = client_id.to_uri();
         let identifier = WireIdentifier {
             display_name,
+            handle,
             domain,
             client_id,
-            handle,
         };
         let identifier = serde_json::to_string(&identifier)?;
         Ok(Self::WireappId(identifier))
@@ -41,7 +46,7 @@ impl Default for AcmeIdentifier {
     }
 }
 
-#[derive(Default, Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct WireIdentifier {
     #[serde(rename = "name")]
     pub display_name: String,
@@ -50,5 +55,5 @@ pub struct WireIdentifier {
     #[serde(rename = "client-id")]
     pub client_id: String,
     #[serde(rename = "handle")]
-    pub handle: String,
+    pub handle: QualifiedHandle,
 }

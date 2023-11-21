@@ -298,8 +298,11 @@ pub mod tests {
             let claims = jwt_claims(token);
             assert!(claims.get("jti").unwrap().as_str().is_some());
             assert!(claims.get("htm").unwrap().as_str().is_some());
+            assert!(claims.get("htu").unwrap().as_str().is_some());
             assert!(claims.get("nonce").unwrap().as_str().is_some());
             assert!(claims.get("chal").unwrap().as_str().is_some());
+            assert!(claims.get("handle").unwrap().as_str().is_some());
+            assert!(claims.get("team").unwrap().as_str().is_some());
             assert!(claims.get("sub").unwrap().as_str().is_some());
             assert!(claims.get("iat").unwrap().as_u64().is_some());
             assert!(claims.get("exp").unwrap().as_u64().is_some());
@@ -450,6 +453,46 @@ pub mod tests {
             let generated_nonce: BackendNonce = claims.nonce.unwrap().into();
             assert!(!generated_nonce.is_empty());
             assert_eq!(generated_nonce, nonce);
+        }
+
+        #[apply(all_keys)]
+        #[wasm_bindgen_test]
+        fn should_have_handle(key: JwtKey) {
+            let handle = Handle::from("beltram_wire").to_qualified("wire.com");
+            let token = RustyJwtTools::generate_dpop_token(
+                Dpop {
+                    handle: handle.clone(),
+                    ..Default::default()
+                },
+                &ClientId::default(),
+                BackendNonce::default().clone(),
+                Duration::from_days(1).into(),
+                key.alg,
+                &key.kp,
+            )
+            .unwrap();
+            let claims = key.claims::<Dpop>(&token);
+            assert_eq!(claims.custom.handle, handle);
+        }
+
+        #[apply(all_keys)]
+        #[wasm_bindgen_test]
+        fn should_have_team(key: JwtKey) {
+            let team = "wire";
+            let token = RustyJwtTools::generate_dpop_token(
+                Dpop {
+                    team: Some(team.to_string()),
+                    ..Default::default()
+                },
+                &ClientId::default(),
+                BackendNonce::default().clone(),
+                Duration::from_days(1).into(),
+                key.alg,
+                &key.kp,
+            )
+            .unwrap();
+            let claims = key.claims::<Dpop>(&token);
+            assert_eq!(claims.custom.team.unwrap(), team.to_string());
         }
 
         #[apply(all_keys)]

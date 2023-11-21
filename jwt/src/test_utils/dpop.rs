@@ -11,6 +11,10 @@ pub struct TestDpop {
     pub htu: Option<Htu>,
     #[serde(rename = "chal", skip_serializing_if = "Option::is_none")]
     pub challenge: Option<AcmeNonce>,
+    #[serde(rename = "handle", skip_serializing_if = "Option::is_none")]
+    pub handle: Option<String>,
+    #[serde(rename = "team", skip_serializing_if = "Option::is_none")]
+    pub team: Option<String>,
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub extra_claims: Option<serde_json::Value>,
 }
@@ -22,6 +26,8 @@ impl Default for TestDpop {
             htm: Some(dpop.htm),
             htu: Some(dpop.htu),
             challenge: Some(dpop.challenge),
+            handle: Some(QualifiedHandle::default().to_string()),
+            team: dpop.team,
             extra_claims: None,
         }
     }
