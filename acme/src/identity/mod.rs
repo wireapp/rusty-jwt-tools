@@ -1,11 +1,11 @@
 use x509_cert::der::Decode as _;
 
 use rusty_jwt_tools::prelude::*;
+use rusty_x509_check::IdentityStatus;
 
 use crate::error::CertificateError;
 use crate::prelude::*;
 
-mod status;
 mod thumbprint;
 
 #[derive(Debug, Clone)]
@@ -16,16 +16,6 @@ pub struct WireIdentity {
     pub domain: String,
     pub status: IdentityStatus,
     pub thumbprint: String,
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum IdentityStatus {
-    /// All is fine
-    Valid,
-    /// The Certificate is expired
-    Expired,
-    /// The Certificate is revoked
-    Revoked,
 }
 
 pub trait WireIdentityReader {
@@ -44,7 +34,7 @@ impl WireIdentityReader for x509_cert::Certificate {
     fn extract_identity(&self) -> RustyAcmeResult<WireIdentity> {
         let (client_id, handle) = try_extract_san(&self.tbs_certificate)?;
         let (display_name, domain) = try_extract_subject(&self.tbs_certificate)?;
-        let status = status::extract_status(&self.tbs_certificate);
+        let status = IdentityStatus::from_cert(self);
         let thumbprint = thumbprint::try_compute_jwk_canonicalized_thumbprint(&self.tbs_certificate)?;
 
         Ok(WireIdentity {
@@ -105,9 +95,10 @@ fn try_extract_subject(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(Str
 
     let mut subjects = cert.subject.0.iter().flat_map(|n| n.0.iter());
     subjects.try_for_each(|s| -> RustyAcmeResult<()> {
-        if s.oid.as_bytes() == oid_registry::OID_X509_ORGANIZATION_NAME.as_bytes() {
+        let oid = s.oid.as_bytes();
+        if oid == oid_registry::OID_X509_ORGANIZATION_NAME.as_bytes() {
             domain = Some(std::str::from_utf8(s.value.value())?);
-        } else if s.oid.as_bytes() == oid_registry::OID_X509_COMMON_NAME.as_bytes() {
+        } else if oid == oid_registry::OID_X509_COMMON_NAME.as_bytes() {
             display_name = Some(std::str::from_utf8(s.value.value())?);
         }
         Ok(())
@@ -123,8 +114,10 @@ fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String,
 
     let san = extensions
         .iter()
-        .find(|e| e.extn_id.as_bytes() == oid_registry::OID_X509_EXT_SUBJECT_ALT_NAME.as_bytes())
-        .map(|e| x509_cert::ext::pkix::SubjectAltName::from_der(e.extn_value.as_bytes()))
+        .find_map(|e| {
+            (e.extn_id.as_bytes() == oid_registry::OID_X509_EXT_SUBJECT_ALT_NAME.as_bytes())
+                .then(|| x509_cert::ext::pkix::SubjectAltName::from_der(e.extn_value.as_bytes()))
+        })
         .transpose()?
         .ok_or(CertificateError::InvalidFormat)?;
 

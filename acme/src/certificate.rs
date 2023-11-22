@@ -33,7 +33,7 @@ impl RustyAcme {
                 let cert = x509_cert::Certificate::from_der(cert_pem.contents())?;
                 // only verify that leaf has the right identity fields
                 if i == 0 {
-                    Self::verify_leaf_certificate(order.clone(), cert)?;
+                    Self::verify_leaf_certificate(&order, cert)?;
                 }
                 acc.push(cert_pem.contents().to_vec());
                 Ok(acc)
@@ -42,11 +42,15 @@ impl RustyAcme {
 
     /// Ensure that the generated certificate matches our expectations (i.e. that the acme server is configured the right way)
     /// We verify that the fields in the certificate match the ones in the ACME order
-    fn verify_leaf_certificate(mut order: AcmeOrder, cert: Certificate) -> RustyAcmeResult<()> {
+    fn verify_leaf_certificate(order: &AcmeOrder, cert: Certificate) -> RustyAcmeResult<()> {
         // TODO: verify that cert is signed by enrollment.sign_kp
         let cert_identity = cert.extract_identity()?;
-        let identifier = order.identifiers.pop().ok_or(RustyAcmeError::ImplementationError)?;
-        let identifier = identifier.to_wire_identifier()?;
+        let identifier = order
+            .identifiers
+            .first()
+            .ok_or(RustyAcmeError::ImplementationError)?
+            .to_wire_identifier()?;
+
         let invalid_client_id =
             ClientId::try_from_qualified(&cert_identity.client_id)? != ClientId::try_from_uri(&identifier.client_id)?;
         if invalid_client_id {
