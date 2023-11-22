@@ -1,0 +1,22 @@
+[package]
+name = "rusty-x509-check"
+description = "Utilities to assert a X.509 certificate's validity and revocation status"
+version = "0.6.1"
+edition = "2021"
+repository = "https://github.com/wireapp/rusty-jwt-tools"
+license = "MPL-2.0"
+publish = false
+
+[dependencies]
+fluvio-wasm-timer = "0.2"
+flagset = "0.4"
+x509-cert = "0.2"
+const-oid = "0.9"
+thiserror = "1.0"
+
+[dependencies.certval]
+git = "https://github.com/wireapp/rust-pki.git"
+branch = "wire/force-send-sync"
+package = "certval"
+default-features = false
+features = ["revocation"]

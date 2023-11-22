@@ -6,6 +6,7 @@ targets = [
 [advisories]
 # TODO: use more conservative values when we come close to production
 vulnerability = "warn"
+ignore = ["RUSTSEC-2023-0071"]
 
 [licenses]
 unlicensed = "deny"
@@ -25,6 +26,14 @@ license-files = [
 ]
 
 [[licenses.clarify]]
+name = "pkiprocmacros"
+expression = "Apache-2.0 OR MIT"
+license-files = [
+    { path = "../certval/LICENSE-APACHE", hash = 0x001c7e6c },
+    { path = "../certval/LICENSE-MIT", hash = 0x001c7e6c }
+]
+
+[[licenses.clarify]]
 name = "webpki"
 expression = "ISC"
 license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
@@ -37,6 +46,11 @@ license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
 [sources]
 private = [
     "https://github.com/wireapp",
+]
+allow-git = [
+    "https://github.com/carl-wallace/rust-pki",
+    "https://github.com/RustCrypto/formats",
+    "https://github.com/briansmith/ring"
 ]
 
 [bans]

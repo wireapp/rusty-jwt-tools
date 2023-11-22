@@ -13,6 +13,9 @@ pub enum RustyAcmeError {
     /// Error while building a JWT
     #[error(transparent)]
     JwtError(#[from] rusty_jwt_tools::prelude::RustyJwtError),
+    /// Error related to various X509 processing facilities/tools/checks
+    #[error(transparent)]
+    X509CheckError(#[from] rusty_x509_check::RustyX509CheckError),
     /// Failed mapping an ASN.1 ObjectIdentifier
     #[error(transparent)]
     OidError(#[from] x509_cert::der::oid::Error),
@@ -58,6 +61,7 @@ pub enum RustyAcmeError {
     /// Error while finalizing an order
     #[error(transparent)]
     FinalizeError(#[from] crate::finalize::AcmeFinalizeError),
+    /// UTF-8 parsing error
     #[error(transparent)]
     Utf8(#[from] std::str::Utf8Error),
     /// Invalid/incomplete certificate
