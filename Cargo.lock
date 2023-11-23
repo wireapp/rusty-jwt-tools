@@ -4023,6 +4023,7 @@ dependencies = [
  "uuid",
  "wasm-bindgen-test",
  "webbrowser",
+ "wire-e2e-identity",
  "x509-cert",
  "zeroize",
 ]
