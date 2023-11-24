@@ -72,7 +72,7 @@ impl AccessGenerate {
             htm,
             htu: htu.clone(),
             handle: handle.clone(),
-            team: self.team.clone(),
+            team: self.team.clone().into(),
             extra_claims: None,
         };
         let nonce: BackendNonce = self.nonce.into();

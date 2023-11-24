@@ -481,7 +481,7 @@ pub mod tests {
             let team = "wire";
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop {
-                    team: Some(team.to_string()),
+                    team: team.into(),
                     ..Default::default()
                 },
                 &ClientId::default(),
@@ -492,7 +492,7 @@ pub mod tests {
             )
             .unwrap();
             let claims = key.claims::<Dpop>(&token);
-            assert_eq!(claims.custom.team.unwrap(), team.to_string());
+            assert_eq!(claims.custom.team.as_ref().unwrap().as_str(), team.to_string());
         }
 
         #[apply(all_keys)]

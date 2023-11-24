@@ -140,7 +140,7 @@ impl RustyJwtTools {
             jwk,
             client_id,
             handle,
-            None,
+            &None.into(),
             &nonce,
             Some(&claims.custom.challenge),
             None,

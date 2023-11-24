@@ -7,6 +7,7 @@ use crate::prelude::{RustyJwtError, RustyJwtResult};
 #[derive(
     Debug, Clone, serde::Serialize, serde::Deserialize, derive_more::From, derive_more::Into, derive_more::Deref,
 )]
+#[serde(transparent)]
 pub struct Team(pub Option<String>);
 
 impl From<String> for Team {

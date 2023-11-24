@@ -144,7 +144,7 @@ fn verifiable_presentation_credential() {
             htm,
             challenge: challenge.clone(),
             handle,
-            team: Some(team.to_string()),
+            team: team.into(),
             extra_claims: Some(vp),
         };
 
