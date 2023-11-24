@@ -31,7 +31,7 @@ fn e2e_jwt() {
             htm,
             challenge: challenge.clone(),
             handle: handle.clone(),
-            team: Some(team.to_string()),
+            team: team.into(),
             extra_claims: None,
         };
 

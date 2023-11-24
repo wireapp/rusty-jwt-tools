@@ -27,7 +27,7 @@ impl Default for TestDpop {
             htu: Some(dpop.htu),
             challenge: Some(dpop.challenge),
             handle: Some(QualifiedHandle::default().to_string()),
-            team: dpop.team,
+            team: dpop.team.0,
             extra_claims: None,
         }
     }

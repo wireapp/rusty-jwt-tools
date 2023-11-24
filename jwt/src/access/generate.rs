@@ -64,7 +64,7 @@ impl RustyJwtTools {
             jwk,
             client_id,
             &handle,
-            Some(&team),
+            &team,
             &backend_nonce,
             None,
             Some(method),
