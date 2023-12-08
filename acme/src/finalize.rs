@@ -16,16 +16,24 @@ impl RustyAcme {
         order: &AcmeOrder,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
-        kp: &Pem,
+        acme_kp: &Pem,
+        signing_kp: &Pem,
         previous_nonce: String,
     ) -> RustyAcmeResult<AcmeJws> {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
 
         let id = order.identifiers.first().ok_or(RustyAcmeError::ImplementationError)?;
-        let csr = Self::generate_csr(alg, id.to_wire_identifier()?, kp)?;
+        let csr = Self::generate_csr(alg, id.to_wire_identifier()?, signing_kp)?;
         let payload = AcmeFinalizeRequest { csr };
-        let req = AcmeJws::new(alg, previous_nonce, &order.finalize, Some(&acct_url), Some(payload), kp)?;
+        let req = AcmeJws::new(
+            alg,
+            previous_nonce,
+            &order.finalize,
+            Some(&acct_url),
+            Some(payload),
+            acme_kp,
+        )?;
         Ok(req)
     }
 

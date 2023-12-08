@@ -43,6 +43,7 @@ impl RustyAcme {
     /// Ensure that the generated certificate matches our expectations (i.e. that the acme server is configured the right way)
     /// We verify that the fields in the certificate match the ones in the ACME order
     fn verify_leaf_certificate(mut order: AcmeOrder, cert: Certificate) -> RustyAcmeResult<()> {
+        // TODO: verify that cert is signed by enrollment.sign_kp
         let cert_identity = cert.extract_identity()?;
         let identifier = order.identifiers.pop().ok_or(RustyAcmeError::ImplementationError)?;
         let identifier = identifier.to_wire_identifier()?;
