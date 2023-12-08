@@ -24,9 +24,8 @@ pub mod prelude {
         credential::RustyCredential,
         datetime::{iso8601, Datetime},
         id::Id,
-        issuer::{Issuer, IssuerData},
-        presentation::RustyPresentation,
-        proof::{Proof, ProofPurpose, ProofValue},
+        issuer::Issuer,
+        proof::Proof,
         util::ObjectOrArray,
         CredentialSubject, JsonObject,
     };
@@ -51,6 +50,7 @@ pub mod tests {
     use wasm_bindgen_test::*;
 
     use crate::oidc::proof::{ProofPurpose, ProofValue};
+    use crate::prelude::{IssuerData, RustyPresentation};
 
     use super::prelude::*;
 
