@@ -1,4 +1,6 @@
-#![doc = include_str ! ("../../README.md")]
+//! # Rusty JWT Tools
+//!
+//! A collection of JWT utilities.
 #![deny(missing_docs)]
 #![allow(clippy::single_component_path_imports)]
 extern crate core;
