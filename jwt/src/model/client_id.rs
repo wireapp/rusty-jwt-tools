@@ -1,4 +1,8 @@
+use crate::model::DEFAULT_URL;
 use base64::Engine;
+use const_format::concatcp;
+use percent_encoding::percent_decode_str;
+use url::Url;
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -18,14 +22,17 @@ impl ClientId {
     #[cfg(test)]
     pub const DEFAULT_USER: Uuid = uuid::uuid!("4af3df2e-5c01-422f-baa1-d75546b92aa7");
 
-    /// URI prefix for all subject URIs
-    pub const URI_PREFIX: &'static str = "im:wireapp=";
+    /// URI scheme for all subject URIs
+    pub const URI_RAW_SCHEME: &'static str = "wireapp";
 
-    /// Between user-id & client-id when converted to an URI
-    pub const URI_DELIMITER: &'static str = "/";
+    /// URI scheme for all subject URIs
+    pub const URI_SCHEME: &'static str = concatcp!(ClientId::URI_RAW_SCHEME, "://");
 
-    /// Between user-id & client-id when parsed from Wire clients
-    pub const CLIENT_DELIMITER: &'static str = ":";
+    /// user-id & device-id separator
+    pub const DELIMITER: &'static str = ":";
+
+    /// user-id & device-id separator when ClientId is represented as a URI
+    pub const URI_DELIMITER: &'static str = "!";
 
     /// Constructor
     pub fn try_new(user_id: impl AsRef<str>, device_id: u64, domain: &str) -> RustyJwtResult<Self> {
@@ -48,26 +55,35 @@ impl ClientId {
         })
     }
 
-    /// Parse from an URI e.g. `im:wireapp={userId}/{clientId}@{domain}`
+    /// Parse from an URI e.g. `wireapp://{userId}%21{clientId}@{domain}` where '%21' is '!' percent encoded
     pub fn try_from_uri(client_id: &str) -> RustyJwtResult<Self> {
-        let client_id = client_id
-            .strip_prefix(Self::URI_PREFIX)
-            .ok_or(RustyJwtError::InvalidClientId)?;
-        Self::parse_client_id(client_id, Self::URI_DELIMITER)
+        let uri = client_id.parse::<Url>()?;
+        if uri.scheme() != Self::URI_RAW_SCHEME {
+            return Err(RustyJwtError::InvalidIdentifierScheme(uri.scheme().to_string()));
+        }
+
+        let username = percent_decode_str(uri.username()).decode_utf8()?;
+        let (user_id, device_id) = username.split_once('!').ok_or(RustyJwtError::InvalidClientId)?;
+
+        let user_id = Self::parse_user_id(user_id)?;
+        let device_id = Self::parse_device_id(device_id)?;
+        let domain = uri.host_str().ok_or(RustyJwtError::InvalidClientId)?.to_string();
+        Ok(Self {
+            user_id,
+            device_id,
+            domain: domain.to_string(),
+        })
     }
 
-    /// Constructor for clientId usually used by Wire client application. Does not have the prefix
-    /// and uses ':' instead of '/' as delimiter
-    /// e.g. `im:wireapp={userId}:{clientId}@{domain}`
+    /// Constructor for clientId usually used by Wire client application. It is not a URI (does not have a scheme)
+    /// e.g. `wireapp://{userId}!{clientId}@{domain}`
     pub fn try_from_qualified(client_id: &str) -> RustyJwtResult<Self> {
-        Self::parse_client_id(client_id, Self::CLIENT_DELIMITER)
-    }
-
-    fn parse_client_id(client_id: &str, delimiter: &'static str) -> RustyJwtResult<Self> {
-        let (user_id, rest) = client_id.split_once(delimiter).ok_or(RustyJwtError::InvalidClientId)?;
+        let (user_id, rest) = client_id
+            .split_once(Self::DELIMITER)
+            .ok_or(RustyJwtError::InvalidClientId)?;
         let user_id = Self::parse_user_id(user_id)?;
         let (device_id, domain) = rest.split_once('@').ok_or(RustyJwtError::InvalidClientId)?;
-        let device_id = u64::from_str_radix(device_id, 16).map_err(|_| RustyJwtError::InvalidClientId)?;
+        let device_id = Self::parse_device_id(device_id)?;
         Ok(Self {
             user_id,
             device_id,
@@ -77,26 +93,43 @@ impl ClientId {
 
     /// Into JWT 'sub' claim
     pub fn to_uri(&self) -> String {
-        format!("{}{}", Self::URI_PREFIX, self.format(Self::URI_DELIMITER))
+        // sadly this is the only way to have a Url builder :/
+        let mut uri = DEFAULT_URL.clone();
+        let user_id = self.base64_encoded_user_id();
+        let device_id = self.hex_encoded_device_id();
+        let client_id = format!("{user_id}{}{device_id}", ClientId::URI_DELIMITER);
+        uri.set_username(&client_id).unwrap();
+        uri.set_host(Some(&self.domain)).unwrap();
+        uri.to_string()
     }
 
-    /// Without URI prefix
+    /// Without URI scheme
     pub fn to_qualified(&self) -> String {
-        self.format(Self::CLIENT_DELIMITER)
+        let user_id = self.base64_encoded_user_id();
+        let delimiter = Self::DELIMITER;
+        let device_id = self.hex_encoded_device_id();
+        let host = &self.domain;
+        format!("{user_id}{delimiter}{device_id}@{host}")
     }
 
-    fn format(&self, delimiter: &str) -> String {
+    fn base64_encoded_user_id(&self) -> String {
         let user_id = self.user_id.as_bytes().as_slice();
-        let user_id = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(user_id);
-        format!("{user_id}{}{:x}@{}", delimiter, self.device_id, self.domain)
+        base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(user_id)
     }
 
-    fn parse_user_id(user_id: impl AsRef<[u8]>) -> RustyJwtResult<Uuid> {
+    fn hex_encoded_device_id(&self) -> String {
+        format!("{:x}", self.device_id)
+    }
+
+    fn parse_user_id(user_id: &str) -> RustyJwtResult<Uuid> {
         let user_id = base64::prelude::BASE64_URL_SAFE_NO_PAD
             .decode(user_id)
             .map_err(|_| RustyJwtError::InvalidClientId)?;
-        let user_id = Uuid::from_slice(&user_id)?;
-        Ok(user_id)
+        Ok(Uuid::from_slice(&user_id)?)
+    }
+
+    fn parse_device_id(device_id: &str) -> RustyJwtResult<u64> {
+        u64::from_str_radix(device_id, 16).map_err(|_| RustyJwtError::InvalidClientId)
     }
 }
 
@@ -201,13 +234,28 @@ pub mod tests {
             let base64_user = "SvPfLlwBQi-6oddVRrkqpw";
             let hex_client = "ffffffffffffffff";
             assert_eq!(
-                &client_id.to_uri(),
-                &format!(
-                    "{}{base64_user}{}{hex_client}@{domain}",
-                    ClientId::URI_PREFIX,
-                    ClientId::URI_DELIMITER
-                )
+                client_id.to_uri(),
+                format!("wireapp://{base64_user}!{hex_client}@{domain}",)
             );
+        }
+
+        #[test]
+        #[wasm_bindgen_test]
+        fn should_be_a_valid_uri() {
+            let domain = "wire.com";
+            let user = Uuid::new_v4().to_string();
+            let client_id = ClientId::try_new(user, u64::MAX, domain).unwrap();
+            assert!(Url::parse(&client_id.to_uri()).is_ok());
+        }
+
+        #[test]
+        #[wasm_bindgen_test]
+        fn uri_should_have_the_expected_host() {
+            let user = Uuid::new_v4().to_string();
+            let domain = "wire.com";
+            let client_id = ClientId::try_new(user, u64::MAX, domain).unwrap();
+            let uri = Url::parse(&client_id.to_uri()).unwrap();
+            assert_eq!(uri.host_str().unwrap(), domain);
         }
     }
 
@@ -224,49 +272,46 @@ pub mod tests {
             #[test]
             #[wasm_bindgen_test]
             fn should_succeed() {
-                let subject = format!("{}{USER_ID}/{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let subject = format!("wireapp://{USER_ID}!{CLIENT_ID}@{DOMAIN}");
                 let parsed = ClientId::try_from_uri(&subject).unwrap();
-                assert_eq!(
-                    parsed,
-                    ClientId {
-                        user_id: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
-                        device_id: 6699,
-                        domain: DOMAIN.to_string(),
-                    }
-                );
+                let expected_client_id = ClientId {
+                    user_id: Uuid::from_str(&ClientId::DEFAULT_USER.to_string()).unwrap(),
+                    device_id: 6699,
+                    domain: DOMAIN.to_string(),
+                };
+                assert_eq!(parsed, expected_client_id);
+
+                // should percent decode the URI username before parsing the ClientId
+                let subject = format!("wireapp://{USER_ID}%21{CLIENT_ID}@{DOMAIN}");
+                let parsed = ClientId::try_from_uri(&subject).unwrap();
+
+                assert_eq!(parsed, expected_client_id);
             }
 
             #[test]
             #[wasm_bindgen_test]
             fn should_fail_when_invalid_uuid_user() {
                 let invalid_user = format!("{}abcd", USER_ID);
-                let subject = format!("{}{invalid_user}/{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let subject = format!("{}{invalid_user}:{CLIENT_ID}@{DOMAIN}", ClientId::URI_SCHEME);
                 let parsed = ClientId::try_from_uri(&subject);
                 assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
             }
 
             #[test]
             #[wasm_bindgen_test]
-            fn should_fail_when_invalid_uri_prefix() {
-                let subject = format!("im:not:wireapp={USER_ID}/{CLIENT_ID}@{DOMAIN}");
+            fn should_fail_when_invalid_scheme() {
+                let subject = format!("http://{USER_ID}:{CLIENT_ID}@{DOMAIN}");
                 let parsed = ClientId::try_from_uri(&subject);
-                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
+                assert!(
+                    matches!(parsed.unwrap_err(), RustyJwtError::InvalidIdentifierScheme(scheme) if scheme == "http")
+                );
             }
 
             #[test]
             #[wasm_bindgen_test]
             fn should_fail_when_invalid_delimiter() {
                 let delimiter = "@";
-                let subject = format!("{}{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
-                let parsed = ClientId::try_from_uri(&subject);
-                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
-            }
-
-            #[test]
-            #[wasm_bindgen_test]
-            fn should_fail_when_using_client_delimiter() {
-                let delimiter = ClientId::CLIENT_DELIMITER;
-                let subject = format!("{}{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let subject = format!("{}{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}", ClientId::URI_SCHEME);
                 let parsed = ClientId::try_from_uri(&subject);
                 assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
             }
@@ -274,8 +319,8 @@ pub mod tests {
             #[test]
             #[wasm_bindgen_test]
             fn should_fail_when_invalid_hex_client() {
-                let invalid_client = "1g2g";
-                let subject = format!("{}{USER_ID}/{invalid_client}@{DOMAIN}", ClientId::URI_PREFIX);
+                let invalid_device_id = "1g2g";
+                let subject = format!("{}{USER_ID}:{invalid_device_id}@{DOMAIN}", ClientId::URI_SCHEME);
                 let parsed = ClientId::try_from_uri(&subject);
                 assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
             }
@@ -284,13 +329,13 @@ pub mod tests {
             #[wasm_bindgen_test]
             fn should_fail_when_client_too_large() {
                 let invalid_client = u128::MAX;
-                let subject = format!("{}{USER_ID}/{invalid_client:x}@{DOMAIN}", ClientId::URI_PREFIX);
+                let subject = format!("{}{USER_ID}:{invalid_client:x}@{DOMAIN}", ClientId::URI_SCHEME);
                 let parsed = ClientId::try_from_uri(&subject);
                 assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
             }
         }
 
-        mod client {
+        mod qualified {
             use super::*;
 
             #[test]
@@ -320,7 +365,7 @@ pub mod tests {
             #[test]
             #[wasm_bindgen_test]
             fn should_fail_when_uri_prefix() {
-                let subject = format!("{}{USER_ID}:{CLIENT_ID}@{DOMAIN}", ClientId::URI_PREFIX);
+                let subject = format!("{}{USER_ID}:{CLIENT_ID}@{DOMAIN}", ClientId::URI_SCHEME);
                 let parsed = ClientId::try_from_qualified(&subject);
                 assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
             }
@@ -329,15 +374,6 @@ pub mod tests {
             #[wasm_bindgen_test]
             fn should_fail_when_invalid_delimiter() {
                 let delimiter = "@";
-                let subject = format!("{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}");
-                let parsed = ClientId::try_from_qualified(&subject);
-                assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
-            }
-
-            #[test]
-            #[wasm_bindgen_test]
-            fn should_fail_when_using_uri_delimiter() {
-                let delimiter = ClientId::URI_DELIMITER;
                 let subject = format!("{USER_ID}{delimiter}{CLIENT_ID}@{DOMAIN}");
                 let parsed = ClientId::try_from_qualified(&subject);
                 assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));

@@ -141,7 +141,7 @@ fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String,
             // a ClientId (since it's the most characterizable) and else fallback to a handle
             if let Ok(cid) = ClientId::try_from_uri(name) {
                 client_id = Some(cid.to_qualified());
-            } else if let Ok(h) = QualifiedHandle::try_from(name) {
+            } else if let Ok(h) = name.parse::<QualifiedHandle>() {
                 handle = Some(h);
             }
             Ok(())
@@ -161,33 +161,33 @@ pub mod tests {
     wasm_bindgen_test_configure!(run_in_browser);
 
     const CERT: &str = r#"-----BEGIN CERTIFICATE-----
-MIICGDCCAb+gAwIBAgIQHhoe3LLRoHP+EPY4KOTgATAKBggqhkjOPQQDAjAuMQ0w
-CwYDVQQKEwR3aXJlMR0wGwYDVQQDExR3aXJlIEludGVybWVkaWF0ZSBDQTAeFw0y
-MzExMTYxMDM3MjZaFw0zMzExMTMxMDM3MjZaMCkxETAPBgNVBAoTCHdpcmUuY29t
-MRQwEgYDVQQDEwtBbGljZSBTbWl0aDAqMAUGAytlcAMhANmHK7rIOLVhj/vmKmK1
-qei8Dor8Lu/FPOnXmKLZGKrfo4HyMIHvMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUE
-DDAKBggrBgEFBQcDAjAdBgNVHQ4EFgQUFlquvWRvc3MxFaLrNgzv+UdGoaswHwYD
-VR0jBBgwFoAUz40pQ/qEp4eFDfctCF0jmJB+5xswaQYDVR0RBGIwYIYhaW06d2ly
-ZWFwcD0lNDBhbGljZV93aXJlQHdpcmUuY29thjtpbTp3aXJlYXBwPXlsLThBX3da
-U2ZhUzJ1VjhWdU1FQncvN2U3OTcyM2E4YmRjNjk0ZkB3aXJlLmNvbTAdBgwrBgEE
-AYKkZMYoQAEEDTALAgEGBAR3aXJlBAAwCgYIKoZIzj0EAwIDRwAwRAIgRqbsOAF7
-OseMTgkjrKe3UO/UjDUGzW+jlDWOGLZsh5ECIDdNastqkvwOGfbWaeh+IuM6/oBz
-flIOs9TQGOVc0YL1
+MIICGjCCAcCgAwIBAgIRAJaZdl+hZDl9qSSju5kmWNAwCgYIKoZIzj0EAwIwLjEN
+MAsGA1UEChMEd2lyZTEdMBsGA1UEAxMUd2lyZSBJbnRlcm1lZGlhdGUgQ0EwHhcN
+MjQwMTA1MTQ1MzAyWhcNMzQwMTAyMTQ1MzAyWjApMREwDwYDVQQKEwh3aXJlLmNv
+bTEUMBIGA1UEAxMLQWxpY2UgU21pdGgwKjAFBgMrZXADIQChy/GdWnVyNKWvsB+D
+BoxYb+qpVN9QIBXeYdmp1hobOqOB8jCB7zAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0l
+BAwwCgYIKwYBBQUHAwIwHQYDVR0OBBYEFOM5yRKA3dHSlYnjEzcuWoiMWm+TMB8G
+A1UdIwQYMBaAFBP7HtkE3WdbqzE6Ll4aIB2jFM2LMGkGA1UdEQRiMGCGIHdpcmVh
+cHA6Ly8lNDBhbGljZV93aXJlQHdpcmUuY29thjx3aXJlYXBwOi8vb2Jha2pQT0hR
+MkNrTmIwck9yTk0zQSUyMWJhNTRlOGFjZThiNGM5MGRAd2lyZS5jb20wHQYMKwYB
+BAGCpGTGKEABBA0wCwIBBgQEd2lyZQQAMAoGCCqGSM49BAMCA0gAMEUCIDRaadkt
+pPSLrZ+qy07VJOhE/ypOS6oDItpaq/HPxoTUAiEA7EKzmAFv+/zIEA7lAZjNJ+x4
+dHnOydGcC6TZ9zo0pIM=
 -----END CERTIFICATE-----"#;
 
     const CERT_EXPIRED: &str = r#"-----BEGIN CERTIFICATE-----
-MIICGDCCAb+gAwIBAgIQM1JQFaSAmNPtoyWrvmZNGjAKBggqhkjOPQQDAjAuMQ0w
+MIICGTCCAb+gAwIBAgIQb84UE+pSF517knYRMfo5ozAKBggqhkjOPQQDAjAuMQ0w
 CwYDVQQKEwR3aXJlMR0wGwYDVQQDExR3aXJlIEludGVybWVkaWF0ZSBDQTAeFw0y
-MzExMTYxMDQ2MDVaFw0yMzExMTYxMTA2MDVaMCkxETAPBgNVBAoTCHdpcmUuY29t
-MRQwEgYDVQQDEwtBbGljZSBTbWl0aDAqMAUGAytlcAMhAEJioXny0jRMd1GAo9aq
-ywcUQBJwuc4ym1DxDBuTrFCzo4HyMIHvMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUE
-DDAKBggrBgEFBQcDAjAdBgNVHQ4EFgQU3OFsPDRVZrOLHbL7vGiVE9CzyKwwHwYD
-VR0jBBgwFoAUusKuRvUWmJgzjSYJL3ndc8W2414waQYDVR0RBGIwYIYhaW06d2ly
-ZWFwcD0lNDBhbGljZV93aXJlQHdpcmUuY29thjtpbTp3aXJlYXBwPXlhRld5M3Yt
-UUZDZms0X2VkLW9fNEEvNGU4NTI0ZWY0ZTIzMDY4YkB3aXJlLmNvbTAdBgwrBgEE
-AYKkZMYoQAEEDTALAgEGBAR3aXJlBAAwCgYIKoZIzj0EAwIDRwAwRAIgPA0RmEYk
-k9Jtg4ND98qu7qkUM3vtVVLiZkbCnRlFF04CIGCwhSo/78Kt8h6292SkT8c8eCS6
-4PmNd7NrZ71etdKR
+NDAxMDUxNDUxMjVaFw0yNDAxMDUxNDU0MjVaMCkxETAPBgNVBAoTCHdpcmUuY29t
+MRQwEgYDVQQDEwtBbGljZSBTbWl0aDAqMAUGAytlcAMhAAbao8C3jBq8DxniGYmO
+lq6W1tlkNeRMs8aQ3SvIKMR3o4HyMIHvMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUE
+DDAKBggrBgEFBQcDAjAdBgNVHQ4EFgQUwTyA2moMyOKoHgJ8Y+dJezNuO8gwHwYD
+VR0jBBgwFoAUC7y0skJjTvA8UA3bHr1JoAzOxqgwaQYDVR0RBGIwYIYgd2lyZWFw
+cDovLyU0MGFsaWNlX3dpcmVAd2lyZS5jb22GPHdpcmVhcHA6Ly9OQjNjVnJRZFNi
+Ni1Dd2tmQWljUnpnJTIxNWNkNGViYjFmNzU0ODA5ZUB3aXJlLmNvbTAdBgwrBgEE
+AYKkZMYoQAEEDTALAgEGBAR3aXJlBAAwCgYIKoZIzj0EAwIDSAAwRQIgfwfd5vXm
+EoOKgYLyKNa24aewZZObydD+k0hFs4iKddICIQDf70uv+h0tHw/WNf15mZ8NGkJm
+OfqfZA1YMtN5NLz/AA==
 -----END CERTIFICATE-----"#;
 
     #[test]
@@ -196,9 +196,8 @@ k9Jtg4ND98qu7qkUM3vtVVLiZkbCnRlFF04CIGCwhSo/78Kt8h6292SkT8c8eCS6
         let cert_der = pem::parse(CERT).unwrap();
         let identity = cert_der.contents().extract_identity().unwrap();
 
-        let expected_client_id = "yl-8A_wZSfaS2uV8VuMEBw:7e79723a8bdc694f@wire.com";
-        assert_eq!(&identity.client_id, expected_client_id);
-        assert_eq!(identity.handle.as_str(), "im:wireapp=%40alice_wire@wire.com");
+        assert_eq!(&identity.client_id, "obakjPOHQ2CkNb0rOrNM3A:ba54e8ace8b4c90d@wire.com");
+        assert_eq!(identity.handle.as_str(), "wireapp://%40alice_wire@wire.com");
         assert_eq!(&identity.display_name, "Alice Smith");
         assert_eq!(&identity.domain, "wire.com");
     }
@@ -208,7 +207,7 @@ k9Jtg4ND98qu7qkUM3vtVVLiZkbCnRlFF04CIGCwhSo/78Kt8h6292SkT8c8eCS6
     fn should_find_created_at_claim() {
         let cert_der = pem::parse(CERT).unwrap();
         let created_at = cert_der.contents().extract_created_at().unwrap();
-        assert_eq!(created_at, 1700131046);
+        assert_eq!(created_at, 1704466382);
     }
 
     #[test]
@@ -218,7 +217,7 @@ k9Jtg4ND98qu7qkUM3vtVVLiZkbCnRlFF04CIGCwhSo/78Kt8h6292SkT8c8eCS6
         let spki = cert_der.contents().extract_public_key().unwrap();
         assert_eq!(
             hex::encode(spki),
-            "d9872bbac838b5618ffbe62a62b5a9e8bc0e8afc2eefc53ce9d798a2d918aadf"
+            "a1cbf19d5a757234a5afb01f83068c586feaa954df502015de61d9a9d61a1b3a"
         );
     }
 

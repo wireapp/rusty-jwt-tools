@@ -69,7 +69,10 @@ impl RustyJwtToolsFfi {
         if let (Ok(dpop), Ok(client_id), Ok(handle), Ok(team), Ok(nonce), Ok(uri), Ok(method), Ok(kp)) =
             (dpop, client_id, handle, team, backend_nonce, uri, method, backend_kp)
         {
-            let handle = handle.to_qualified(&client_id.domain);
+            let handle = match handle.try_to_qualified(&client_id.domain).map_err(HsError::from) {
+                Ok(handle) => handle,
+                Err(e) => return Box::into_raw(Box::new(Err(e))),
+            };
             let res = RustyJwtTools::generate_access_token(
                 dpop,
                 &client_id,

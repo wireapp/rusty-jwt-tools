@@ -33,6 +33,8 @@ biscuit = { version = "0.6.0-beta1", optional = true }
 getrandom = { version = "0.2.8", features = ["js"] }
 derive_more = { version = "0.99.17", features = ["from", "into", "deref"] }
 const_format = "0.2"
+lazy_static = "1.4"
+percent-encoding = "2.3"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

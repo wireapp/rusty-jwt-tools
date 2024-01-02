@@ -1101,8 +1101,8 @@ pub mod tests {
         #[test]
         fn handle_should_match(ciphersuite: Ciphersuite) {
             // should succeed when proof's 'handle' claim matches the supplied handle
-            let alice_handle = Handle::from("alice_wire").to_qualified("wire.com");
-            let bob_handle = Handle::from("bob_wire").to_qualified("wire.com");
+            let alice_handle = Handle::from("alice_wire").try_to_qualified("wire.com").unwrap();
+            let bob_handle = Handle::from("bob_wire").try_to_qualified("wire.com").unwrap();
             let proof = DpopBuilder {
                 dpop: TestDpop {
                     handle: Some(alice_handle.to_string()),

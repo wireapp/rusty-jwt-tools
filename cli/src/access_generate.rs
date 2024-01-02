@@ -26,7 +26,7 @@ pub struct AccessGenerate {
     htu: String,
     /// qualified wire client id
     ///
-    /// e.g. 'im:wireapp=ODM5NDJkOWRlYmI4NGNhZWIzNzdmM2JmNjYwNzJjNmI/7b52de7af952ba14@wire.com'
+    /// e.g. 'wireapp://lJGYPz0ZRq2kvc_XpdaDlA!7b52de7af952ba14@wire.com'
     #[arg(short = 'i', long)]
     client_id: String,
     /// Wire handle
@@ -65,7 +65,9 @@ impl AccessGenerate {
         let htm = Htm::Post;
         let htu: Htu = self.htu.as_str().try_into().unwrap();
         let client_id = ClientId::try_from_uri(&self.client_id).expect("Invalid 'client_id'");
-        let handle = Handle::from(self.handle.clone()).to_qualified(&client_id.domain);
+        let handle = Handle::from(self.handle.clone())
+            .try_to_qualified(&client_id.domain)
+            .unwrap();
 
         let dpop = Dpop {
             challenge,
