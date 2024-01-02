@@ -18,6 +18,7 @@ pub mod util;
 
 /// exports
 pub mod prelude {
+    #[allow(unused_imports)]
     pub use super::{
         context::Context,
         credential::RustyCredential,
