@@ -458,7 +458,7 @@ pub mod tests {
         #[apply(all_keys)]
         #[wasm_bindgen_test]
         fn should_have_handle(key: JwtKey) {
-            let handle = Handle::from("beltram_wire").to_qualified("wire.com");
+            let handle = Handle::from("beltram_wire").try_to_qualified("wire.com").unwrap();
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop {
                     handle: handle.clone(),

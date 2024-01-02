@@ -25,7 +25,7 @@ fn e2e_jwt() {
         let leeway: u16 = 5;
         let expiry = Duration::from_days(1).into();
         let max_expiration: u64 = 2136351646; // somewhere in 2037
-        let handle = Handle::from(handle).to_qualified(domain);
+        let handle = Handle::from(handle).try_to_qualified(domain).unwrap();
         let dpop = Dpop {
             htu: htu.clone(),
             htm,

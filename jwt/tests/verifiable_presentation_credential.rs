@@ -138,7 +138,7 @@ fn verifiable_presentation_credential() {
         let htu: Htu = "https://wire.example.com/client/token".try_into().unwrap();
         let htm = Htm::Post;
         let expiry = Duration::from_days(1).into();
-        let handle = Handle::from(handle).to_qualified(domain);
+        let handle = Handle::from(handle).try_to_qualified(domain).unwrap();
         let dpop = Dpop {
             htu: htu.clone(),
             htm,

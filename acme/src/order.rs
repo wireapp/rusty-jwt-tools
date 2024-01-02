@@ -22,7 +22,7 @@ impl RustyAcme {
         let acct_url = account.acct_url()?;
 
         let domain = client_id.domain.clone();
-        let handle = handle.to_qualified(&domain);
+        let handle = handle.try_to_qualified(&domain)?;
         let identifiers = vec![AcmeIdentifier::try_new(
             display_name.to_string(),
             domain,

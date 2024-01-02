@@ -879,7 +879,7 @@ pub mod tests {
         #[test]
         fn handle(ciphersuite: Ciphersuite) {
             // should succeed when expected handle matches the one in the proof
-            let handle = Handle::from("alice_wire").to_qualified("wire.com");
+            let handle = Handle::from("alice_wire").try_to_qualified("wire.com").unwrap();
             let dpop = DpopBuilder {
                 dpop: TestDpop {
                     handle: Some(handle.to_string()),
@@ -918,7 +918,7 @@ pub mod tests {
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                handle: Handle::from("bob_wire").to_qualified("wire.com"),
+                handle: Handle::from("bob_wire").try_to_qualified("wire.com").unwrap(),
                 ..ciphersuite.into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);

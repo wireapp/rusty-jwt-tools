@@ -116,6 +116,9 @@ pub enum RustyJwtError {
     /// Handle claim is in the wrong format
     #[error("Handle claim is in the wrong format")]
     InvalidHandle,
+    /// Invalid identifier (client id or handle) scheme
+    #[error("Invalid identifier scheme '{0}', should be 'wireapp'")]
+    InvalidIdentifierScheme(String),
     /// We have done something terribly wrong
     #[error("We have done something terribly wrong and it needs to be fixed")]
     ImplementationError,
