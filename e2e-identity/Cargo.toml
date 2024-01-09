@@ -49,7 +49,7 @@ openidconnect = "3.0.0-alpha.1"
 html_parser = "0.6"
 scraper = "0.14"
 anyhow = "1.0"
-tokio = { version = "1.5", features = ["macros"], default_features = false }
+tokio = { version = "1.35", features = ["macros"], default_features = false }
 lazy_static = "1.4"
 portpicker = "0.1"
 pem = "3.0"
@@ -57,7 +57,7 @@ pem = "3.0"
 [target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
 rusty-acme = { version = "0.7.0", path = "../acme" }
 reqwest = { version = "0.11", features = ["json"], default_features = false }
-tokio = { version = "1.5", features = ["macros"], default_features = false }
+tokio = { version = "1.35", features = ["macros"], default_features = false }
 hyper = { version = "0.14", features = ["server"], default_features = false }
 asserhttp = { version = "0.6", features = ["reqwest"] }
 testcontainers = "0.15"
