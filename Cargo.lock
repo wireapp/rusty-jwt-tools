@@ -2714,9 +2714,9 @@ checksum = "c707298afce11da2efef2f600116fa93ffa7a032b5d7b628aa17711ec81383ca"
 
 [[package]]
 name = "reqwest"
-version = "0.11.22"
+version = "0.11.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "046cd98826c46c2ac8ddecae268eb5c2e58628688a5fc7a2643704a73faba95b"
+checksum = "37b1ae8d9ac08420c66222fb9096fc5de435c3c48542bc5336c51892cffafb41"
 dependencies = [
  "base64 0.21.5",
  "bytes",
@@ -2946,7 +2946,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-acme"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "asn1-rs",
  "base64 0.21.5",
@@ -2972,7 +2972,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-cli"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -2984,7 +2984,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "base64 0.21.5",
  "biscuit",
@@ -3018,7 +3018,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools-ffi"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "rusty-jwt-tools",
  "uuid",
@@ -4197,7 +4197,7 @@ dependencies = [
 
 [[package]]
 name = "wire-e2e-identity"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "asserhttp",
