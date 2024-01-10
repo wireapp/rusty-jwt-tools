@@ -1,6 +1,6 @@
 module RustyJwtToolsHs where
 
-import Control.Exception
+import Control.Exception hiding (handle)
 import Control.Monad.IO.Class
 import Data.ByteString (ByteString)
 import Data.Maybe ()
@@ -19,6 +19,8 @@ foreign import ccall unsafe "generate_dpop_access_token"
     CString ->
     CString ->
     Word64 ->
+    CString ->
+    CString ->
     CString ->
     CString ->
     CString ->
@@ -43,13 +45,15 @@ createToken ::
   CString ->
   CString ->
   CString ->
+  CString ->
+  CString ->
   Word32 ->
   Word64 ->
   Word64 ->
   CString ->
   IO (Maybe (Ptr JwtResponse))
-createToken dpopProof user client domain nonce uri method maxSkewSecs expiration now backendKeys = do
-  ptr <- generate_dpop_access_token dpopProof user client domain nonce uri method maxSkewSecs expiration now backendKeys
+createToken dpopProof user client handle teamId domain nonce uri method maxSkewSecs expiration now backendKeys = do
+  ptr <- generate_dpop_access_token dpopProof user client handle teamId domain nonce uri method maxSkewSecs expiration now backendKeys
   if ptr /= nullPtr
     then pure $ Just ptr
     else pure Nothing
@@ -74,6 +78,8 @@ generateDpopAccessToken ::
   UUID ->
   Word64 ->
   Text ->
+  UUID ->
+  Text ->
   ByteString ->
   Text ->
   Text ->
@@ -82,10 +88,12 @@ generateDpopAccessToken ::
   Word64 ->
   ByteString ->
   m (Either String ByteString)
-generateDpopAccessToken dpopProof user client domain nonce uri method maxSkewSecs expiration now backendKeys = do
+generateDpopAccessToken dpopProof user client handle teamId domain nonce uri method maxSkewSecs expiration now backendKeys = do
   let before = do
         dpopProofCStr <- newCString (cs dpopProof)
         userCStr <- newCString (cs (toText user))
+        handleCStr <- newCString (cs handle)
+        teamIdCStr <- newCString (cs (toText teamId))
         domainCStr <- newCString (cs domain)
         nonceCStr <- newCString (cs nonce)
         uriCStr <- newCString (cs uri)
@@ -95,6 +103,8 @@ generateDpopAccessToken dpopProof user client domain nonce uri method maxSkewSec
           dpopProofCStr
           userCStr
           client
+          handleCStr
+          teamIdCStr
           domainCStr
           nonceCStr
           uriCStr
