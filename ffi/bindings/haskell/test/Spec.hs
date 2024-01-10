@@ -16,6 +16,8 @@ main = hspec $ do
           proofExpiring2038
           uid
           clientId
+          handle
+          teamId
           domain
           "foobar"
           url
@@ -24,6 +26,7 @@ main = hspec $ do
           expiration
           now
           pubKeyBundle
+      pending
       actual `shouldBe` Left "Error: 9"
     it "should return a valid access token" $ do
       actual <-
@@ -31,6 +34,8 @@ main = hspec $ do
           proofExpiring2038
           uid
           clientId
+          handle
+          teamId
           domain
           nonce
           url
@@ -39,6 +44,7 @@ main = hspec $ do
           expiration
           now
           pubKeyBundle
+      pending
       isRight actual `shouldBe` True
 
     where
@@ -61,3 +67,6 @@ main = hspec $ do
       maxSkewSeconds = 5
       expiration = 2136351646
       now = 360
+      handle = "horst"
+      teamId = fromMaybe (error "invalid team id") $ UUID.fromString "d82c9fa1-b8c5-4023-82d6-cacee85e6a2b"
+
