@@ -230,6 +230,10 @@ pub enum HsError {
     DpopHandleMismatch = 41,
     /// Client team does not match the supplied team
     DpopTeamMismatch = 42,
+    /// Invalid handle format
+    InvalidHandle = 43,
+    /// Scheme should be 'wireapp'
+    InvalidIdentifierScheme = 44,
 }
 
 impl From<RustyJwtError> for HsError {
@@ -274,6 +278,8 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::InvalidClientId => Self::InvalidClientId,
             RustyJwtError::UnsupportedApiVersion => Self::UnsupportedApiVersion,
             RustyJwtError::UnsupportedScope => Self::UnsupportedScope,
+            RustyJwtError::InvalidHandle => Self::InvalidHandle,
+            RustyJwtError::InvalidIdentifierScheme(_) => Self::InvalidIdentifierScheme,
             _ => Self::UnknownError,
         }
     }
