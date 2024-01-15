@@ -206,9 +206,9 @@ checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
 name = "base64"
-version = "0.21.6"
+version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c79fed4cdb43e993fcdadc7e58a09fd0e3e649c4436fa11da71c9f1f3ee7feb9"
+checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
 
 [[package]]
 name = "base64ct"
@@ -247,7 +247,7 @@ name = "biscuit"
 version = "0.6.0-beta1"
 source = "git+https://github.com/beltram/biscuit?tag=v0.6.2-pre.core-crypto-0.7.0#fe28ef69c3e0b2a42a9e736a7cde8bdd448ffe69"
 dependencies = [
- "base64 0.21.6",
+ "base64 0.21.7",
  "chrono",
  "data-encoding",
  "num-bigint",
@@ -1728,7 +1728,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5754487a088f527b1407df470db8e654e4064dccbbe1fe850e0773721e9962b7"
 dependencies = [
  "anyhow",
- "base64 0.21.6",
+ "base64 0.21.7",
  "flate2",
  "once_cell",
  "openssl",
@@ -2299,7 +2299,7 @@ version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b8fcc794035347fb64beda2d3b462595dd2753e3f268d89c5aae77e8cf2c310"
 dependencies = [
- "base64 0.21.6",
+ "base64 0.21.7",
  "serde",
 ]
 
@@ -2849,7 +2849,7 @@ version = "0.11.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37b1ae8d9ac08420c66222fb9096fc5de435c3c48542bc5336c51892cffafb41"
 dependencies = [
- "base64 0.21.6",
+ "base64 0.21.7",
  "bytes",
  "encoding_rs",
  "futures-core",
@@ -3062,7 +3062,7 @@ version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c74cae0a4cf6ccbbf5f359f08efdf8ee7e1dc532573bf0db71968cb56b1448c"
 dependencies = [
- "base64 0.21.6",
+ "base64 0.21.7",
 ]
 
 [[package]]
@@ -3077,10 +3077,10 @@ dependencies = [
 
 [[package]]
 name = "rusty-acme"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "asn1-rs",
- "base64 0.21.6",
+ "base64 0.21.7",
  "ed25519-compact",
  "fluvio-wasm-timer",
  "getrandom 0.2.12",
@@ -3104,7 +3104,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-cli"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -3116,9 +3116,9 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
- "base64 0.21.6",
+ "base64 0.21.7",
  "biscuit",
  "const_format",
  "derive_more",
@@ -3152,7 +3152,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools-ffi"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "rusty-jwt-tools",
  "uuid",
@@ -3160,7 +3160,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-x509-check"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "certval",
  "const-oid",
@@ -3363,7 +3363,7 @@ version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64cd236ccc1b7a29e7e2739f27c0b2dd199804abc4290e32f59f3b68d6405c23"
 dependencies = [
- "base64 0.21.6",
+ "base64 0.21.7",
  "chrono",
  "hex",
  "indexmap 1.9.3",
@@ -4371,11 +4371,11 @@ dependencies = [
 
 [[package]]
 name = "wire-e2e-identity"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "asserhttp",
- "base64 0.21.6",
+ "base64 0.21.7",
  "derive_more",
  "hex",
  "html_parser",
