@@ -73,9 +73,9 @@ impl<'a> E2eTest<'a> {
             r#"{{
         	"subject": {{
         	    "organization": "{org}",
-        	    "commonName": {{{{ toJson .Oidc.preferred_username }}}}
+        	    "commonName": {{{{ toJson .Oidc.name }}}}
         	}},
-        	"uris": [{{{{ toJson .Oidc.name }}}}, {{{{ toJson .Dpop.sub }}}}],
+        	"uris": [{{{{ toJson .Oidc.handle }}}}, {{{{ toJson .Dpop.sub }}}}],
         	"keyUsage": ["digitalSignature"],
         	"extKeyUsage": ["clientAuth"]
         }}"#
