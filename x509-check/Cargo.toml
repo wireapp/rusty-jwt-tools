@@ -1,7 +1,7 @@
 [package]
 name = "rusty-x509-check"
 description = "Utilities to assert a X.509 certificate's validity and revocation status"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2021"
 repository = "https://github.com/wireapp/rusty-jwt-tools"
 license = "MPL-2.0"
