@@ -65,7 +65,7 @@ impl Access {
         client_id: &ClientId,
         nonce: BackendNonce,
         issuer: Htu,
-        audience: Htu,
+        audience: url::Url,
         expiry: core::time::Duration,
     ) -> JWTClaims<Self> {
         let now = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NOW_LEEWAY_SECONDS);

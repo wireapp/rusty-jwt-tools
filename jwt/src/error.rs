@@ -80,6 +80,9 @@ pub enum RustyJwtError {
     /// JWT token token lacks a claim
     #[error("JWT token token lacks '{0}' claim")]
     MissingTokenClaim(&'static str),
+    /// JWT token has an invalid "aud" claim
+    #[error("JWT token has an invalid 'aud' claim")]
+    InvalidAudience,
     /// DPoP token 'nonce' claim mismatches with the expected [crate::prelude::BackendNonce]
     #[error("DPoP token 'nonce' claim mismatches with the expected backend_nonce")]
     DpopNonceMismatch,

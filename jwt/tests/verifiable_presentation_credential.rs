@@ -136,6 +136,7 @@ fn verifiable_presentation_credential() {
         let (domain, team, handle) = ("wire.com", "wire", "beltram_wire");
         let alice = ClientId::try_new(&user, client, domain).unwrap();
         let htu: Htu = "https://wire.example.com/client/token".try_into().unwrap();
+        let audience = "https://stepca:32902/acme/wire/challenge/I16phsvAPGbruDHr5Bh6akQVPKP6OO5v/dF2LHNmGI20R8rzzcgnrCSv789XcFEyL".parse().unwrap();
         let htm = Htm::Post;
         let expiry = Duration::from_days(1).into();
         let handle = Handle::from(handle).try_to_qualified(domain).unwrap();
@@ -148,7 +149,8 @@ fn verifiable_presentation_credential() {
             extra_claims: Some(vp),
         };
 
-        let client_dpop = RustyJwtTools::generate_dpop_token(dpop, &alice, nonce.clone(), expiry, alg, &key).unwrap();
+        let client_dpop =
+            RustyJwtTools::generate_dpop_token(dpop, &alice, nonce.clone(), audience, expiry, alg, &key).unwrap();
 
         // println!("2. dpop:\nhttps://jwt.io/#id_token={client_dpop}\n");
         println!("https://jwt.io/#id_token={client_dpop}\n");

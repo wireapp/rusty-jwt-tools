@@ -17,6 +17,7 @@ fn e2e_jwt() {
         let cid = random::<u64>();
         let (domain, team, handle) = ("wire.com", "wire", "beltram_wire");
         let alice = ClientId::try_new(&user, cid, domain).unwrap();
+        let audience = "https://stepca:32902/acme/wire/challenge/I16phsvAPGbruDHr5Bh6akQVPKP6OO5v/dF2LHNmGI20R8rzzcgnrCSv789XcFEyL".parse().unwrap();
         let htu: Htu = format!("https://wire.example.com/clients/{cid}/access-token")
             .as_str()
             .try_into()
@@ -36,7 +37,8 @@ fn e2e_jwt() {
         };
 
         // Wire app generates a DPoP JWT token
-        let client_dpop = RustyJwtTools::generate_dpop_token(dpop, &alice, nonce.clone(), expiry, alg, &key).unwrap();
+        let client_dpop =
+            RustyJwtTools::generate_dpop_token(dpop, &alice, nonce.clone(), audience, expiry, alg, &key).unwrap();
 
         println!(
             "1. generate dpop:\nclient signature key:\n{key}\nDpop token:\nhttps://jwt.io/#id_token={client_dpop}\n"

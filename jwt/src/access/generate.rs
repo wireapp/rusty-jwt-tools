@@ -103,7 +103,13 @@ impl RustyJwtTools {
 
         let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
         let claims = {
-            let audience = proof_claims.custom.htu.clone();
+            let audience = proof_claims
+                .audiences
+                .ok_or(RustyJwtError::MissingTokenClaim("aud"))?
+                .into_string()
+                .map_err(|_| RustyJwtError::InvalidAudience)?
+                .parse::<url::Url>()
+                .map_err(|_| RustyJwtError::InvalidAudience)?;
             let cnf = JwkThumbprint::generate(client_jwk, hash)?;
             Access {
                 challenge: proof_claims.custom.challenge,
@@ -1205,6 +1211,7 @@ pub mod tests {
         pub hash_alg: HashAlgorithm,
         pub api_version: u32,
         pub expiry: core::time::Duration,
+        pub audience: url::Url,
     }
 
     impl From<Ciphersuite> for Params {
@@ -1226,6 +1233,7 @@ pub mod tests {
                 hash_alg: ciphersuite.hash,
                 api_version: Access::DEFAULT_WIRE_SERVER_API_VERSION,
                 expiry: core::time::Duration::from_secs(Access::DEFAULT_EXPIRY),
+                audience: "https://stepca:32902/acme/wire/challenge/I16phsvAPGbruDHr5Bh6akQVPKP6OO5v/dF2LHNmGI20R8rzzcgnrCSv789XcFEyL".parse().unwrap(),
             }
         }
     }
@@ -1237,11 +1245,13 @@ pub mod tests {
             dpop,
             client_id,
             backend_nonce,
+            audience,
             ..
         } = params.clone();
         let expiry = Duration::from_days(1).into();
         let dpop =
-            RustyJwtTools::generate_dpop_token(dpop, &client_id, backend_nonce, expiry, dpop_alg, &key.kp).unwrap();
+            RustyJwtTools::generate_dpop_token(dpop, &client_id, backend_nonce, audience, expiry, dpop_alg, &key.kp)
+                .unwrap();
         access_token_with_dpop(&dpop, params)
     }
 
