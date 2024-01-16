@@ -3077,7 +3077,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-acme"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "asn1-rs",
  "base64 0.21.7",
@@ -3104,7 +3104,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-cli"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "anyhow",
  "clap",
@@ -3116,7 +3116,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "base64 0.21.7",
  "biscuit",
@@ -3152,7 +3152,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools-ffi"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "rusty-jwt-tools",
  "uuid",
@@ -3160,7 +3160,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-x509-check"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "certval",
  "const-oid",
@@ -4371,7 +4371,7 @@ dependencies = [
 
 [[package]]
 name = "wire-e2e-identity"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "anyhow",
  "asserhttp",
@@ -4426,7 +4426,7 @@ dependencies = [
 [[package]]
 name = "x509-ocsp"
 version = "0.2.1"
-source = "git+https://github.com/RustCrypto/formats#5239c33847c6968101eda9c187af36274865fb21"
+source = "git+https://github.com/RustCrypto/formats#69384ad6584a1f1e0b90e8373dc06a452ae83604"
 dependencies = [
  "const-oid",
  "der 0.7.8",
