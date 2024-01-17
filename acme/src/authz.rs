@@ -1,3 +1,5 @@
+use base64::Engine;
+
 use rusty_jwt_tools::prelude::*;
 
 use crate::chall::AcmeChallengeType;
@@ -26,6 +28,19 @@ impl RustyAcme {
     /// [RFC 8555 Section 7.5](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5)
     pub fn new_authz_response(response: serde_json::Value) -> RustyAcmeResult<AcmeAuthz> {
         let authz = serde_json::from_value::<AcmeAuthz>(response)?;
+        for c in &authz.challenges {
+            // see https://datatracker.ietf.org/doc/html/rfc8555#section-8.1
+            let token = base64::prelude::BASE64_URL_SAFE_NO_PAD
+                .decode(&c.token)
+                .map_err(|_| AcmeAuthzError::InvalidBase64Token)?;
+
+            // token have enough entropy (at least 16 bytes)
+            // see https://datatracker.ietf.org/doc/html/rfc8555#section-11.3
+            const RECOMMENDED_TOKEN_ENTROPY: usize = 128 / 8;
+            if token.len() < RECOMMENDED_TOKEN_ENTROPY {
+                return Err(AcmeAuthzError::InvalidTokenEntropy.into());
+            }
+        }
         match authz.status {
             AuthzStatus::Pending => {}
             AuthzStatus::Invalid => return Err(AcmeAuthzError::Invalid)?,
@@ -57,6 +72,12 @@ pub enum AcmeAuthzError {
     /// The client deactivated this authorization
     #[error("The client deactivated this authorization")]
     Deactivated,
+    /// The Challenge tokens must be base64 URL strings
+    #[error("The Challenge tokens must be base64 URL strings")]
+    InvalidBase64Token,
+    /// The Challenge token must have at least 128 bits of entropy
+    #[error("The Challenge token must have at least 128 bits of entropy")]
+    InvalidTokenEntropy,
 }
 
 /// Result of an authorization creation
