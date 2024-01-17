@@ -29,6 +29,12 @@ impl RustyAcme {
         pems.into_iter()
             .enumerate()
             .try_fold(vec![], move |mut acc, (i, cert_pem)| -> RustyAcmeResult<Vec<Vec<u8>>> {
+                // see https://datatracker.ietf.org/doc/html/rfc8555#section-11.4
+                if cert_pem.tag() != "CERTIFICATE" {
+                    return Err(RustyAcmeError::SmallstepImplementationError(
+                        "Something other than x509 certificates was returned by the ACME server",
+                    ));
+                }
                 use x509_cert::der::Decode as _;
                 let cert = x509_cert::Certificate::from_der(cert_pem.contents())?;
                 // only verify that leaf has the right identity fields
