@@ -35,7 +35,7 @@ impl RustyAcme {
         for token in tokens {
             // see https://datatracker.ietf.org/doc/html/rfc8555#section-8.1
             let token = base64::prelude::BASE64_URL_SAFE_NO_PAD
-                .decode(&token)
+                .decode(token)
                 .map_err(|_| AcmeAuthzError::InvalidBase64Token)?;
 
             // token have enough entropy (at least 16 bytes)
