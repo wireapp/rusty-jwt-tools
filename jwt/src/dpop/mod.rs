@@ -55,10 +55,12 @@ impl Dpop {
         nonce: BackendNonce,
         client_id: &ClientId,
         expiry: core::time::Duration,
+        audience: url::Url,
     ) -> JWTClaims<Self> {
         let expiry = coarsetime::Duration::from_secs(expiry.as_secs());
         let now = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NOW_LEEWAY_SECONDS);
         let mut claims = Claims::with_custom_claims(self, expiry)
+            .with_audience(audience)
             .invalid_before(now)
             .with_jwt_id(new_jti())
             .with_nonce(nonce.to_string())

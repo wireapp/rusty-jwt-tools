@@ -16,6 +16,8 @@ main = hspec $ do
           proofExpiring2038
           uid
           clientId
+          handle
+          teamId
           domain
           "foobar"
           url
@@ -31,6 +33,8 @@ main = hspec $ do
           proofExpiring2038
           uid
           clientId
+          handle
+          teamId
           domain
           nonce
           url
@@ -40,7 +44,6 @@ main = hspec $ do
           now
           pubKeyBundle
       isRight actual `shouldBe` True
-
     where
       pubKeyBundle =
             "-----BEGIN PRIVATE KEY-----\n\
@@ -49,15 +52,18 @@ main = hspec $ do
             \-----BEGIN PUBLIC KEY-----\n\
             \MCowBQYDK2VwAyEAdYI38UdxksC0K4Qx6E9JK9YfGm+ehnY18oKmHL2YsZk=\n\
             \-----END PUBLIC KEY-----\n"
-      uid = fromMaybe (error "invalid user id") $ UUID.fromString "dbb07e94-7d29-4180-a790-a573def35dd5"
+      uid = fromMaybe (error "invalid user id") $ UUID.fromString "b20b8c78-b26d-43a4-af24-f72a3cb6f606"
       proofExpiring2038 =
-            "eyJhbGciOiJFZERTQSIsInR5cCI6ImRwb3Arand0IiwiandrIjp7Imt0eSI6Ik9LUCIsImNydiI6IkVkMjU1MTkiLCJ4IjoidUhNR0paWllUbU9zOEdiaTdaRUJLT255TnJYYnJzNTI1dE1QQUZoYjBzbyJ9fQ.eyJpYXQiOjE2Nzg4MDUyNTgsImV4cCI6MjA4ODc3MzI1OCwibmJmIjoxNjc4ODA1MjU4LCJzdWIiOiJpbTp3aXJlYXBwPVpHSmlNRGRsT1RRM1pESTVOREU0TUdFM09UQmhOVGN6WkdWbU16VmtaRFUvN2M2MzExYTFjNDNjMmJhNkB3aXJlLmNvbSIsImp0aSI6ImQyOWFkYTQ2LTBjMzYtNGNiMS05OTVlLWFlMWNiYTY5M2IzNCIsIm5vbmNlIjoiYzB0RWNtOUNUME00TXpKU04zRjRkMEZIV0V4TGIxUm5aMDQ1U3psSFduTSIsImh0bSI6IlBPU1QiLCJodHUiOiJodHRwczovL3dpcmUuZXhhbXBsZS5jb20vY2xpZW50cy84OTYzMDI3MDY5ODc3MTAzNTI2L2FjY2Vzcy10b2tlbiIsImNoYWwiOiJaa3hVV25GWU1HbHFUVVpVU1hnNFdHdHBOa3h1WWpWU09XRnlVRU5hVGxnIn0.8p0lvdOPjJ8ogjjLP6QtOo216qD9ujP7y9vSOhdYb-O8ikmW09N00gjCf0iGT-ZkxBT-LfDE3eQx27tWQ3JPBQ"
+            "eyJhbGciOiJFZERTQSIsImp3ayI6eyJjcnYiOiJFZDI1NTE5Iiwia3R5IjoiT0tQIiwieCI6Im5MSkdOLU9hNkpzcTNLY2xaZ2dMbDdVdkFWZG1CMFE2QzNONUJDZ3BoSHcifSwidHlwIjoiZHBvcCtqd3QifQ.eyJjaGFsIjoid2EyVnJrQ3RXMXNhdUoyRDN1S1k4cmM3eTRrbDR1c0giLCJleHAiOjE4MzExMjYxNjMsImhhbmRsZSI6IndpcmVhcHA6Ly8lNDBwaHVoaGliZGhxYnF4cnpibnNhZndAZXhhbXBsZS5jb20iLCJodG0iOiJQT1NUIiwiaHR1IjoiaHR0cHM6Ly9leGFtcGxlLmNvbS9jbGllbnRzL2NjNmU2NDBlMjk2ZThiYmEvYWNjZXNzLXRva2VuIiwiaWF0IjoxNzA0OTgyMTYzLCJqdGkiOiI2ZmM1OWU3Zi1iNjY2LTRmZmMtYjczOC00ZjQ3NjBjODg0Y2EiLCJuYmYiOjE3MDQ5ODIxNjMsIm5vbmNlIjoiVnZHYnc2ZVZUTkdTUWJLNVNlaVNiQSIsInN1YiI6IndpcmVhcHA6Ly9zZ3VNZUxKdFE2U3ZKUGNxUExiMkJnIWNjNmU2NDBlMjk2ZThiYmFAZXhhbXBsZS5jb20iLCJ0ZWFtIjoiNDAyNTE2ODAtMzVlMS00Mzc0LWIzYWEtNzU2MDBkZTc5ZTMzIn0.JgVXD2_E4j4sLcvD284Fj4z_6xmwA0czcP8wzHZmqPpel60HUqDVKDx5GmiWbFWix-E7ZXvYfvZ7NmxlDrgmAg"
 
-      clientId = 8963027069877103526
-      domain = "wire.com"
-      nonce = "c0tEcm9CT0M4MzJSN3F4d0FHWExLb1RnZ045SzlHWnM"
-      url = "https://wire.example.com/clients/8963027069877103526/access-token"
+      clientId = 14730821443162901434
+      domain = "example.com"
+      nonce = "VvGbw6eVTNGSQbK5SeiSbA"
+      url = "https://example.com/clients/cc6e640e296e8bba/access-token"
       method = "POST"
-      maxSkewSeconds = 5
-      expiration = 2136351646
-      now = 360
+      maxSkewSeconds = 1
+      expiration = 1831212562
+      now = 1704982162
+      handle = "phuhhibdhqbqxrzbnsafw"
+      teamId = fromMaybe (error "invalid team id") $ UUID.fromString "40251680-35e1-4374-b3aa-75600de79e33"
+

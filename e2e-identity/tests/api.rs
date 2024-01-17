@@ -144,12 +144,7 @@ fn e2e_api() {
         };
 
         // extract challenges
-        let (dpop_chall, oidc_chall) = {
-            (
-                authz.wire_dpop_challenge.clone().unwrap(),
-                authz.wire_oidc_challenge.clone().unwrap(),
-            )
-        };
+        let (dpop_chall, oidc_chall) = { (authz.wire_dpop_challenge.clone(), authz.wire_oidc_challenge.clone()) };
 
         // HEAD http://wire-server/nonce
         let backend_nonce = { BackendNonce::from(utils::rand_base64_str(32)) };
@@ -214,7 +209,9 @@ fn e2e_api() {
 
                 let (leeway, max_expiry) = (3600, 2136351646);
 
-                let kid = JwkThumbprint::generate(&enrollment.jwk, hash_algorithm).unwrap().kid;
+                let kid = JwkThumbprint::generate(&enrollment.acme_jwk, hash_algorithm)
+                    .unwrap()
+                    .kid;
 
                 rusty_jwt_cli::access_verify::AccessVerify {
                     access_token: Some(access_token_file),

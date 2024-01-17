@@ -1,6 +1,6 @@
-use crate::prelude::*;
-use jwt_simple::prelude::*;
 use rusty_jwt_tools::prelude::*;
+
+use crate::prelude::*;
 
 impl RustyAcme {
     /// client id challenge request to `POST /acme/challenge/{token}`
@@ -32,21 +32,13 @@ impl RustyAcme {
         oidc_chall: AcmeChallenge,
         account: &AcmeAccount,
         alg: JwsAlgorithm,
-        hash_alg: HashAlgorithm,
         kp: &Pem,
-        jwk: &Jwk,
         previous_nonce: String,
     ) -> RustyAcmeResult<AcmeJws> {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
-
-        let thumbprint = JwkThumbprint::generate(jwk, hash_alg)?.kid;
-        let chall_token = oidc_chall.token;
-        let keyauth = format!("{chall_token}.{thumbprint}");
-
         let payload = Some(serde_json::json!({
             "id_token": id_token,
-            "keyauth": keyauth,
         }));
         let req = AcmeJws::new(alg, previous_nonce, &oidc_chall.url, Some(&acct_url), payload, kp)?;
         Ok(req)
@@ -136,9 +128,10 @@ pub enum AcmeChallengeType {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
     use serde_json::json;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

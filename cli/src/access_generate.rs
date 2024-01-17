@@ -79,9 +79,10 @@ impl AccessGenerate {
         };
         let nonce: BackendNonce = self.nonce.into();
         let expiry = core::time::Duration::from_secs(self.expiry);
+        let audience = "https://stepca:32902/acme/wire/challenge/I16phsvAPGbruDHr5Bh6akQVPKP6OO5v/dF2LHNmGI20R8rzzcgnrCSv789XcFEyL".parse().unwrap();
 
         let client_dpop_token =
-            RustyJwtTools::generate_dpop_token(dpop, &client_id, nonce.clone(), expiry, alg, &client_kp)
+            RustyJwtTools::generate_dpop_token(dpop, &client_id, nonce.clone(), audience, expiry, alg, &client_kp)
                 .expect("Failed generating client Dpop token");
 
         let leeway: u16 = 5;
