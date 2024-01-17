@@ -28,10 +28,14 @@ impl RustyAcme {
     /// [RFC 8555 Section 7.5](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5)
     pub fn new_authz_response(response: serde_json::Value) -> RustyAcmeResult<AcmeAuthz> {
         let authz = serde_json::from_value::<AcmeAuthz>(response)?;
-        for c in &authz.challenges {
+
+        let tokens = authz.challenges.iter().map(|c| &c.token).collect::<Vec<_>>();
+        // .collect::<std::collections::HashSet<_>>(); // TODO: pending a fix on stepca side to guarantee challenges token uniqueness
+
+        for token in tokens {
             // see https://datatracker.ietf.org/doc/html/rfc8555#section-8.1
             let token = base64::prelude::BASE64_URL_SAFE_NO_PAD
-                .decode(&c.token)
+                .decode(&token)
                 .map_err(|_| AcmeAuthzError::InvalidBase64Token)?;
 
             // token have enough entropy (at least 16 bytes)
