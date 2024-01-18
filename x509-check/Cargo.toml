@@ -16,7 +16,7 @@ thiserror = "1.0"
 
 [dependencies.certval]
 git = "https://github.com/wireapp/rust-pki.git"
-branch = "wire/force-send-sync"
+branch = "wire/ed25519"
 package = "certval"
 default-features = false
 features = ["revocation"]
