@@ -64,6 +64,8 @@ fn check_cpr(cpr: CertificationPathResults) -> RustyX509CheckResult<()> {
     if let Some(validation_status) = get_validation_status(&cpr) {
         return match validation_status {
             certval::PathValidationStatus::Valid => Ok(()),
+            // No CRL is available, this is fine
+            certval::PathValidationStatus::RevocationStatusNotDetermined => Ok(()),
             validation_status => Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(
                 validation_status,
             ))),
@@ -193,8 +195,8 @@ impl PkiEnvironment {
 
         for path in &mut paths {
             let mut cpr = CertificationPathResults::new();
-            check_validity(&self.pe, &cps, path, &mut cpr)?;
-            verify_signatures(&self.pe, &cps, path, &mut cpr)?;
+            let _ = check_validity(&self.pe, &cps, path, &mut cpr);
+            let _ = verify_signatures(&self.pe, &cps, path, &mut cpr);
             check_cpr(cpr)?;
         }
 
@@ -249,9 +251,9 @@ impl PkiEnvironment {
 
         for path in &mut paths {
             let mut cpr = CertificationPathResults::new();
-            validate_path_rfc5280(&self.pe, &cps, path, &mut cpr)?;
+            let _ = validate_path_rfc5280(&self.pe, &cps, path, &mut cpr);
             if perform_revocation_check {
-                check_revocation(&self.pe, &cps, path, &mut cpr)?;
+                let _ = check_revocation(&self.pe, &cps, path, &mut cpr);
             }
             check_cpr(cpr)?;
         }
