@@ -34,3 +34,4 @@ fluvio-wasm-timer = "0.2"
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 hex = "0.4.3"
+rusty-jwt-tools = { version = "0.8.5", path = "../jwt", features = ["test-utils"] }
