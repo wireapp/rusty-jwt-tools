@@ -2,7 +2,7 @@ use x509_cert::Certificate;
 
 use rusty_jwt_tools::prelude::*;
 
-use crate::{error::CertificateError, prelude::*};
+use crate::{error::CertificateError, identifier::CanonicalIdentifier, prelude::*};
 
 impl RustyAcme {
     /// For fetching the generated certificate
@@ -25,6 +25,7 @@ impl RustyAcme {
 
     /// see [RFC 8555 Section 7.4.2](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2)
     pub fn certificate_response(response: String, order: AcmeOrder) -> RustyAcmeResult<Vec<Vec<u8>>> {
+        order.verify()?;
         let pems: Vec<pem::Pem> = pem::parse_many(response)?;
         pems.into_iter()
             .enumerate()
@@ -39,7 +40,7 @@ impl RustyAcme {
                 let cert = x509_cert::Certificate::from_der(cert_pem.contents())?;
                 // only verify that leaf has the right identity fields
                 if i == 0 {
-                    Self::verify_leaf_certificate(&order, cert)?;
+                    Self::verify_leaf_certificate(cert, &order.try_get_coalesce_identifier()?)?;
                 }
                 acc.push(cert_pem.contents().to_vec());
                 Ok(acc)
@@ -48,34 +49,29 @@ impl RustyAcme {
 
     /// Ensure that the generated certificate matches our expectations (i.e. that the acme server is configured the right way)
     /// We verify that the fields in the certificate match the ones in the ACME order
-    fn verify_leaf_certificate(order: &AcmeOrder, cert: Certificate) -> RustyAcmeResult<()> {
+    fn verify_leaf_certificate(cert: Certificate, identifier: &CanonicalIdentifier) -> RustyAcmeResult<()> {
         // TODO: verify that cert is signed by enrollment.sign_kp
         let cert_identity = cert.extract_identity()?;
-        let identifier = order
-            .identifiers
-            .first()
-            .ok_or(RustyAcmeError::ImplementationError)?
-            .to_wire_identifier()?;
 
         let invalid_client_id =
             ClientId::try_from_qualified(&cert_identity.client_id)? != ClientId::try_from_uri(&identifier.client_id)?;
         if invalid_client_id {
-            return Err(CertificateError::ClientIdMismatch.into());
+            return Err(CertificateError::ClientIdMismatch)?;
         }
 
         let invalid_display_name = cert_identity.display_name != identifier.display_name;
         if invalid_display_name {
-            return Err(CertificateError::DisplayNameMismatch.into());
+            return Err(CertificateError::DisplayNameMismatch)?;
         }
 
         let invalid_handle = cert_identity.handle != identifier.handle;
         if invalid_handle {
-            return Err(CertificateError::HandleMismatch.into());
+            return Err(CertificateError::HandleMismatch)?;
         }
 
         let invalid_domain = cert_identity.domain != identifier.domain;
         if invalid_domain {
-            return Err(CertificateError::DomainMismatch.into());
+            return Err(CertificateError::DomainMismatch)?;
         }
         Ok(())
     }
