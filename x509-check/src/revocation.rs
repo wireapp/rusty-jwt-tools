@@ -131,6 +131,9 @@ impl PkiEnvironment {
                 .as_secs()
         };
 
+        let mut cps = CertificationPathSettings::new();
+        set_time_of_interest(&mut cps, toi);
+
         // Make a Certificate source for intermediate CA certs
         let mut cert_source = CertSource::new();
         for (i, cert) in params.intermediates.iter().enumerate() {
@@ -139,6 +142,8 @@ impl PkiEnvironment {
                 bytes: cert.to_der()?,
             });
         }
+
+        cert_source.initialize(&cps)?;
 
         // Make a TrustAnchor source
         let mut trust_anchors = TaSource::new();
