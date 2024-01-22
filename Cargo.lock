@@ -356,7 +356,7 @@ dependencies = [
 [[package]]
 name = "certval"
 version = "0.1.4"
-source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/force-send-sync#85fc10353c5715450dfa4ebb091379defa0d20e9"
+source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/force-send-sync#c6010f30aaaa7814172c93733324fd0def8f098e"
 dependencies = [
  "cfg-if",
  "ciborium",
@@ -2648,7 +2648,7 @@ checksum = "2900ede94e305130c13ddd391e0ab7cbaeb783945ae07a279c268cb05109c6cb"
 [[package]]
 name = "pkiprocmacros"
 version = "0.1.2"
-source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/force-send-sync#85fc10353c5715450dfa4ebb091379defa0d20e9"
+source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/force-send-sync#c6010f30aaaa7814172c93733324fd0def8f098e"
 dependencies = [
  "proc-macro2",
  "quote",
