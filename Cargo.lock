@@ -3209,7 +3209,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-acme"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "asn1-rs",
  "base64 0.21.7",
@@ -3236,7 +3236,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-cli"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "anyhow",
  "clap",
@@ -3248,7 +3248,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "base64 0.21.7",
  "biscuit",
@@ -3284,7 +3284,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools-ffi"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "rusty-jwt-tools",
  "uuid",
@@ -3292,7 +3292,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-x509-check"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "certval",
  "const-oid",
@@ -4573,7 +4573,7 @@ dependencies = [
 
 [[package]]
 name = "wire-e2e-identity"
-version = "0.8.5"
+version = "0.8.6"
 dependencies = [
  "anyhow",
  "asserhttp",
