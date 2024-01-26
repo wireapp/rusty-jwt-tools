@@ -1,3 +1,7 @@
+pub mod reexports {
+    pub use certval;
+}
+
 pub mod revocation;
 
 #[derive(Debug, thiserror::Error)]
