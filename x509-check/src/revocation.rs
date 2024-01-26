@@ -65,7 +65,8 @@ fn check_cpr(cpr: CertificationPathResults) -> RustyX509CheckResult<()> {
         return match validation_status {
             certval::PathValidationStatus::Valid => Ok(()),
             // No CRL is available, this is fine
-            certval::PathValidationStatus::RevocationStatusNotDetermined => Ok(()),
+            certval::PathValidationStatus::RevocationStatusNotDetermined
+            | certval::PathValidationStatus::RevocationStatusNotAvailable => Ok(()),
             validation_status => Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(
                 validation_status,
             ))),
