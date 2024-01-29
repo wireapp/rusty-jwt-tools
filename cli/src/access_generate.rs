@@ -34,6 +34,11 @@ pub struct AccessGenerate {
     /// e.g. 'beltram_wire'
     #[arg(long)]
     handle: String,
+    /// Wire Display Name
+    ///
+    /// e.g. 'Beltram Maldant'
+    #[arg(long)]
+    display_name: String,
     /// Wire team the user belongs to
     ///
     /// e.g. 'wire'
@@ -72,6 +77,7 @@ impl AccessGenerate {
         let dpop = Dpop {
             challenge,
             htm,
+            display_name: self.display_name.clone(),
             htu: htu.clone(),
             handle: handle.clone(),
             team: self.team.clone().into(),
@@ -93,6 +99,7 @@ impl AccessGenerate {
             &client_dpop_token,
             &client_id,
             handle,
+            &self.display_name,
             self.team.into(),
             nonce,
             htu,
