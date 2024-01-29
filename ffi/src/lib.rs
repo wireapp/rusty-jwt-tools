@@ -29,6 +29,7 @@ impl RustyJwtToolsFfi {
         user: *const c_char,
         client_id: u64,
         handle: *const c_char,
+        display_name: *const c_char,
         team: *const c_char,
         domain: *const c_char,
         backend_nonce: *const c_char,
@@ -58,6 +59,8 @@ impl RustyJwtToolsFfi {
         let team = unsafe { CStr::from_ptr(team).to_bytes() }.try_into();
         let client_id = ClientId::try_from_raw_parts(user.as_ref(), client_id, domain);
         let handle: Result<Handle, _> = unsafe { CStr::from_ptr(handle).to_bytes() }.try_into();
+        let display_name = unsafe { CStr::from_ptr(display_name).to_bytes() };
+        let display_name = core::str::from_utf8(display_name);
         let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() });
         let uri = unsafe { CStr::from_ptr(uri).to_bytes() }.try_into();
         let method = unsafe { CStr::from_ptr(method).to_bytes() }.try_into();
@@ -66,9 +69,27 @@ impl RustyJwtToolsFfi {
         let hash_algorithm = HashAlgorithm::SHA256;
         let expiry = core::time::Duration::from_secs(expiry_secs);
 
-        if let (Ok(dpop), Ok(client_id), Ok(handle), Ok(team), Ok(nonce), Ok(uri), Ok(method), Ok(kp)) =
-            (dpop, client_id, handle, team, backend_nonce, uri, method, backend_kp)
-        {
+        if let (
+            Ok(dpop),
+            Ok(client_id),
+            Ok(handle),
+            Ok(display_name),
+            Ok(team),
+            Ok(nonce),
+            Ok(uri),
+            Ok(method),
+            Ok(kp),
+        ) = (
+            dpop,
+            client_id,
+            handle,
+            display_name,
+            team,
+            backend_nonce,
+            uri,
+            method,
+            backend_kp,
+        ) {
             let handle = match handle.try_to_qualified(&client_id.domain).map_err(HsError::from) {
                 Ok(handle) => handle,
                 Err(e) => return Box::into_raw(Box::new(Err(e))),
@@ -77,6 +98,7 @@ impl RustyJwtToolsFfi {
                 dpop,
                 &client_id,
                 handle,
+                display_name,
                 team,
                 nonce,
                 uri,
@@ -230,6 +252,8 @@ pub enum HsError {
     DpopHandleMismatch = 41,
     /// Client team does not match the supplied team
     DpopTeamMismatch = 42,
+    /// Client display name does not match the supplied display name
+    DpopDisplayNameMismatch = 43,
 }
 
 impl From<RustyJwtError> for HsError {
@@ -274,6 +298,7 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::InvalidClientId => Self::InvalidClientId,
             RustyJwtError::UnsupportedApiVersion => Self::UnsupportedApiVersion,
             RustyJwtError::UnsupportedScope => Self::UnsupportedScope,
+            RustyJwtError::DpopDisplayNameMismatch => Self::DpopDisplayNameMismatch,
             _ => Self::UnknownError,
         }
     }

@@ -313,6 +313,7 @@ pub mod tests {
             assert!(claims.get("chal").unwrap().as_str().is_some());
             assert!(claims.get("handle").unwrap().as_str().is_some());
             assert!(claims.get("team").unwrap().as_str().is_some());
+            assert!(claims.get("name").unwrap().as_str().is_some());
             assert!(claims.get("sub").unwrap().as_str().is_some());
             assert!(claims.get("iat").unwrap().as_u64().is_some());
             assert!(claims.get("exp").unwrap().as_u64().is_some());
@@ -491,6 +492,27 @@ pub mod tests {
             .unwrap();
             let claims = key.claims::<Dpop>(&token);
             assert_eq!(claims.custom.handle, handle);
+        }
+
+        #[apply(all_keys)]
+        #[wasm_bindgen_test]
+        fn should_have_display_name(key: JwtKey) {
+            let display_name = "John Doe";
+            let token = RustyJwtTools::generate_dpop_token(
+                Dpop {
+                    display_name: display_name.to_string(),
+                    ..Default::default()
+                },
+                &ClientId::default(),
+                BackendNonce::default().clone(),
+                "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
+                Duration::from_days(1).into(),
+                key.alg,
+                &key.kp,
+            )
+            .unwrap();
+            let claims = key.claims::<Dpop>(&token);
+            assert_eq!(&claims.custom.display_name, display_name);
         }
 
         #[apply(all_keys)]

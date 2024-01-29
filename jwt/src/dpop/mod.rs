@@ -20,7 +20,6 @@ mod verify;
 ///
 /// [1]: https://www.ietf.org/archive/id/draft-ietf-oauth-dpop-11.html
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
-#[cfg_attr(test, derive(Default))]
 pub struct Dpop {
     /// The HTTP method of the request to which the JWT is attached
     #[serde(rename = "htm")]
@@ -37,6 +36,9 @@ pub struct Dpop {
     /// Team the client belongs to e.g. `wire`
     #[serde(rename = "team")]
     pub team: Team,
+    /// Display name (aka Official Name) of the client
+    #[serde(rename = "name")]
+    pub display_name: String,
     /// Allows passing extra arbitrary data which will end up in DPoP token claims
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub extra_claims: Option<serde_json::Value>,
@@ -67,5 +69,20 @@ impl Dpop {
             .with_subject(client_id.to_uri());
         claims.issued_at = Some(now);
         claims
+    }
+}
+
+#[cfg(test)]
+impl Default for Dpop {
+    fn default() -> Self {
+        Self {
+            htm: Htm::default(),
+            htu: Htu::default(),
+            challenge: AcmeNonce::default(),
+            handle: QualifiedHandle::default(),
+            team: Team::default(),
+            display_name: "John Doe".to_string(),
+            extra_claims: None,
+        }
     }
 }

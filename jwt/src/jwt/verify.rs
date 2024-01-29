@@ -124,6 +124,7 @@ pub fn jwt_error_mapping(e: jwt_simple::Error) -> RustyJwtError {
         r if r.starts_with("missing field `client_id`") => RustyJwtError::MissingTokenClaim("client_id"),
         r if r.starts_with("missing field `scope`") => RustyJwtError::MissingTokenClaim("scope"),
         r if r.starts_with("missing field `handle`") => RustyJwtError::MissingTokenClaim("handle"),
+        r if r.starts_with("missing field `name`") => RustyJwtError::MissingTokenClaim("name"),
         _ => RustyJwtError::InvalidToken(reason),
     }
 }

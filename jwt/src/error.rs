@@ -89,6 +89,9 @@ pub enum RustyJwtError {
     /// DPoP token 'handle' claim mismatches with the expected handle
     #[error("DPoP token 'handle' claim mismatches with the expected handle")]
     DpopHandleMismatch,
+    /// DPoP token display name claim mismatches with the expected handle
+    #[error("DPoP token 'name' claim mismatches with the expected handle")]
+    DpopDisplayNameMismatch,
     /// DPoP token 'team' claim mismatches with the expected team
     #[error("DPoP token 'team' claim mismatches with the expected team")]
     DpopTeamMismatch,
