@@ -9,6 +9,7 @@ use certval::{
 };
 
 use x509_cert::der::{Decode, DecodePem, Encode};
+use x509_cert::ext::pkix::AuthorityKeyIdentifier;
 
 use crate::{revocation::cache::RevocationCache, RustyX509CheckError, RustyX509CheckResult};
 use crl_store::CrlStore;
@@ -86,29 +87,25 @@ impl PkiEnvironment {
     }
 
     pub fn extract_ski_aki_from_cert(cert: &x509_cert::Certificate) -> RustyX509CheckResult<(String, Option<String>)> {
-        let mut cert = PDVCertificate::try_from(cert.clone())?;
-        cert.parse_extensions(&[
-            const_oid::db::rfc5912::ID_CE_SUBJECT_KEY_IDENTIFIER,
-            const_oid::db::rfc5912::ID_CE_AUTHORITY_KEY_IDENTIFIER,
-        ]);
+        let cert = PDVCertificate::try_from(cert.clone())?;
 
         let ski = cert
             .get_extension(&const_oid::db::rfc5912::ID_CE_SUBJECT_KEY_IDENTIFIER)?
-            .and_then(|ext| match ext {
-                certval::PDVExtension::SubjectKeyIdentifier(ski) => String::from_utf8(ski.0.clone().into_bytes()).ok(),
-                _ => None,
-            })
-            .unwrap_or_default();
+            .ok_or(RustyX509CheckError::MissingSki)?;
+        let ski = match ski {
+            certval::PDVExtension::SubjectKeyIdentifier(ski) => hex::encode(ski.0.as_bytes()),
+            _ => return Err(RustyX509CheckError::ImplementationError),
+        };
 
         let aki = cert
             .get_extension(&const_oid::db::rfc5912::ID_CE_AUTHORITY_KEY_IDENTIFIER)?
             .and_then(|ext| match ext {
-                certval::PDVExtension::AuthorityKeyIdentifier(aki) => aki
-                    .key_identifier
-                    .clone()
-                    .and_then(|ki| String::from_utf8(ki.into_bytes()).ok()),
+                certval::PDVExtension::AuthorityKeyIdentifier(AuthorityKeyIdentifier { key_identifier, .. }) => {
+                    key_identifier.as_ref()
+                }
                 _ => None,
-            });
+            })
+            .map(|ki| hex::encode(ki.as_bytes()));
 
         Ok((ski, aki))
     }

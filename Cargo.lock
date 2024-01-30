@@ -3298,6 +3298,7 @@ dependencies = [
  "const-oid",
  "flagset",
  "fluvio-wasm-timer",
+ "hex",
  "thiserror",
  "x509-cert",
 ]

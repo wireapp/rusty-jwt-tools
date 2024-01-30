@@ -38,6 +38,9 @@ impl RustyAcme {
                 }
                 use x509_cert::der::Decode as _;
                 let cert = x509_cert::Certificate::from_der(cert_pem.contents())?;
+
+                rusty_x509_check::revocation::PkiEnvironment::extract_ski_aki_from_cert(&cert)?;
+
                 // only verify that leaf has the right identity fields
                 if i == 0 {
                     Self::verify_leaf_certificate(cert, &order.try_get_coalesce_identifier()?)?;
