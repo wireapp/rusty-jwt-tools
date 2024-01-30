@@ -21,6 +21,12 @@ pub enum RustyX509CheckError {
     /// Error when we have no idea what the cert status is
     #[error("Something went wrong, we cannot determine if this certificate is OK. You might want to ignore this")]
     CannotDetermineVerificationStatus,
+    /// Required 'Subject Key Identifier' extension is missing
+    #[error("Required 'Subject Key Identifier' extension is missing")]
+    MissingSki,
+    /// Implementation error
+    #[error("Implementation error")]
+    ImplementationError,
 }
 
 impl From<certval::Error> for RustyX509CheckError {
