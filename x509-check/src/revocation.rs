@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use certval::{
-    check_revocation, get_validation_status, populate_5280_pki_environment, set_require_ta_store, set_time_of_interest,
-    validate_path_rfc5280,
+    check_revocation, get_validation_status, populate_5280_pki_environment, set_forbid_self_signed_ee,
+    set_require_ta_store, set_time_of_interest, validate_path_rfc5280,
     validator::{path_validator::check_validity, PDVCertificate},
     verify_signatures, CertSource, CertVector, CertificationPathResults, CertificationPathSettings,
     ExtensionProcessing, TaSource, EXTS_OF_INTEREST,
@@ -244,6 +244,7 @@ impl PkiEnvironment {
         let mut cps = CertificationPathSettings::default();
         set_time_of_interest(&mut cps, self.toi);
         set_require_ta_store(&mut cps, true);
+        set_forbid_self_signed_ee(&mut cps, true);
 
         let mut end_identity_cert = PDVCertificate::try_from(end_identity_cert.clone())?;
         end_identity_cert.parse_extensions(EXTS_OF_INTEREST);
