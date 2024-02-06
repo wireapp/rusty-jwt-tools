@@ -63,7 +63,7 @@ impl std::fmt::Debug for PkiEnvironment {
 
 fn check_cpr(cpr: CertificationPathResults) -> RustyX509CheckResult<()> {
     if let Some(validation_status) = get_validation_status(&cpr) {
-        return match validation_status {
+        match validation_status {
             certval::PathValidationStatus::Valid => Ok(()),
             // No CRL is available, this is fine
             certval::PathValidationStatus::RevocationStatusNotDetermined
@@ -71,10 +71,10 @@ fn check_cpr(cpr: CertificationPathResults) -> RustyX509CheckResult<()> {
             validation_status => Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(
                 validation_status,
             ))),
-        };
+        }
+    } else {
+        Err(RustyX509CheckError::CannotDetermineVerificationStatus)
     }
-
-    Err(RustyX509CheckError::CannotDetermineVerificationStatus)
 }
 
 impl PkiEnvironment {
@@ -196,9 +196,17 @@ impl PkiEnvironment {
         let mut paths = vec![];
         self.pe.get_paths_for_target(&self.pe, &cert, &mut paths, 0, self.toi)?;
 
+        // if paths.is_empty() {
+        //     return Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(
+        //         certval::PathValidationStatus::NoPathsFound,
+        //     )));
+        // }
+
         for path in &mut paths {
             let mut cpr = CertificationPathResults::new();
             let _ = check_validity(&self.pe, &cps, path, &mut cpr);
+            check_cpr(cpr)?;
+            let mut cpr = CertificationPathResults::new();
             let _ = verify_signatures(&self.pe, &cps, path, &mut cpr);
             check_cpr(cpr)?;
         }
@@ -253,13 +261,21 @@ impl PkiEnvironment {
         self.pe
             .get_paths_for_target(&self.pe, &end_identity_cert, &mut paths, 0, self.toi)?;
 
+        if paths.is_empty() {
+            return Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(
+                certval::PathValidationStatus::NoPathsFound,
+            )));
+        }
+
         for path in &mut paths {
             let mut cpr = CertificationPathResults::new();
             let _ = validate_path_rfc5280(&self.pe, &cps, path, &mut cpr);
-            if perform_revocation_check {
-                let _ = check_revocation(&self.pe, &cps, path, &mut cpr);
-            }
             check_cpr(cpr)?;
+            if perform_revocation_check {
+                let mut cpr = CertificationPathResults::new();
+                let _ = check_revocation(&self.pe, &cps, path, &mut cpr);
+                check_cpr(cpr)?;
+            }
         }
 
         Ok(())
