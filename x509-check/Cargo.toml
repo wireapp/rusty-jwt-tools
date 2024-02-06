@@ -17,7 +17,7 @@ hex = "0.4"
 
 [dependencies.certval]
 git = "https://github.com/wireapp/rust-pki.git"
-branch = "wire/ed25519"
+branch = "wire/forbid-ss-ee"
 package = "certval"
 default-features = false
 features = ["revocation"]
