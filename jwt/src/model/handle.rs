@@ -51,7 +51,7 @@ impl TryFrom<&[u8]> for Handle {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 impl Default for Handle {
     fn default() -> Self {
         "beltram_wire".into()
@@ -89,7 +89,7 @@ impl ToString for QualifiedHandle {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 impl Default for QualifiedHandle {
     fn default() -> Self {
         Handle::default().try_to_qualified("wire.com").unwrap()

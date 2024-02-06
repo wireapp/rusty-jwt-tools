@@ -19,7 +19,8 @@ pub struct ClientId {
 }
 
 impl ClientId {
-    #[cfg(test)]
+    #[cfg(any(test, feature = "test-utils"))]
+    /// Default user
     pub const DEFAULT_USER: Uuid = uuid::uuid!("4af3df2e-5c01-422f-baa1-d75546b92aa7");
 
     /// URI scheme for all subject URIs
@@ -133,7 +134,7 @@ impl ClientId {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 impl serde::Serialize for ClientId {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -143,7 +144,7 @@ impl serde::Serialize for ClientId {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 impl<'de> serde::Deserialize<'de> for ClientId {
     fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
     where
@@ -153,19 +154,21 @@ impl<'de> serde::Deserialize<'de> for ClientId {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 impl Default for ClientId {
     fn default() -> Self {
         ClientId::try_new(Self::DEFAULT_USER.to_string(), 1223, "example.com").unwrap()
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 impl ClientId {
+    /// Alice
     pub fn alice() -> Self {
         Self::try_new("e1299f1d-180e-4339-b7c7-2715e1e6897f", 1234, "wire.com").unwrap()
     }
 
+    /// Bob
     pub fn bob() -> Self {
         Self::try_new("6ea667de-236b-4fed-8acd-778974ca615c", 5678, "wire.com").unwrap()
     }

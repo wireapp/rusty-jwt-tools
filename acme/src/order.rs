@@ -1,4 +1,6 @@
+use crate::identifier::CanonicalIdentifier;
 use rusty_jwt_tools::prelude::*;
+use std::collections::HashSet;
 
 use crate::prelude::*;
 
@@ -23,16 +25,14 @@ impl RustyAcme {
 
         let domain = client_id.domain.clone();
         let handle = handle.try_to_qualified(&domain)?;
-        let identifiers = vec![AcmeIdentifier::try_new(
-            display_name.to_string(),
-            domain,
-            client_id,
-            handle,
-        )?];
+        let device_identifier =
+            AcmeIdentifier::try_new_device(client_id, handle.clone(), display_name.to_string(), domain.clone())?;
+        let user_identifier = AcmeIdentifier::try_new_user(handle, display_name.to_string(), domain)?;
+
         let not_before = time::OffsetDateTime::now_utc();
         let not_after = not_before + expiry;
         let payload = AcmeOrderRequest {
-            identifiers,
+            identifiers: vec![device_identifier, user_identifier],
             not_before: Some(not_before),
             not_after: Some(not_after),
         };
@@ -130,6 +130,9 @@ pub enum AcmeOrderError {
     /// This order is expired
     #[error("This order is expired")]
     Expired,
+    /// This order should only have the 2 Wire identifiers
+    #[error("This order should only have the 2 Wire identifiers")]
+    WrongIdentifiers,
 }
 
 /// For creating an order
@@ -157,8 +160,8 @@ pub struct AcmeOrderRequest {
 pub struct AcmeOrder {
     pub status: AcmeOrderStatus,
     pub finalize: url::Url,
-    pub identifiers: Vec<AcmeIdentifier>,
-    pub authorizations: Vec<url::Url>,
+    pub identifiers: [AcmeIdentifier; 2],
+    pub authorizations: [url::Url; 2],
     #[serde(skip_serializing_if = "Option::is_none", with = "time::serde::rfc3339::option")]
     pub expires: Option<time::OffsetDateTime>,
     #[serde(skip_serializing_if = "Option::is_none", with = "time::serde::rfc3339::option")]
@@ -169,6 +172,24 @@ pub struct AcmeOrder {
 
 impl AcmeOrder {
     pub fn verify(&self) -> RustyAcmeResult<()> {
+        let [ref a, ref b] = self
+            .identifiers
+            .iter()
+            .collect::<HashSet<_>>() // ensures uniqueness
+            .iter()
+            .map(|i| i.to_wire_identifier())
+            .collect::<RustyAcmeResult<Vec<_>>>()?[..]
+        else {
+            return Err(AcmeOrderError::WrongIdentifiers)?;
+        };
+
+        let same_handle = a.handle == b.handle;
+        let same_display_name = a.display_name == b.display_name;
+        let same_domain = a.domain == b.domain;
+        if !(same_handle && same_display_name && same_domain) {
+            return Err(AcmeOrderError::WrongIdentifiers)?;
+        }
+
         let now = time::OffsetDateTime::now_utc().unix_timestamp();
 
         let is_expired = self
@@ -200,6 +221,24 @@ impl AcmeOrder {
 
         Ok(())
     }
+
+    /// A Wire Order has 2 identifiers. For simplification purposes, since they share most of their fields together we
+    /// merge them to access the fields
+    pub fn try_get_coalesce_identifier(&self) -> RustyAcmeResult<CanonicalIdentifier> {
+        self.identifiers
+            .iter()
+            .find_map(|i| match i {
+                AcmeIdentifier::WireappDevice(_) => Some(i.to_wire_identifier()),
+                _ => None,
+            })
+            .transpose()?
+            .ok_or(RustyAcmeError::OrderError(AcmeOrderError::WrongIdentifiers))?
+            .try_into()
+    }
+
+    pub fn try_get_user_authorization(&self) -> RustyAcmeResult<AcmeAuthz> {
+        todo!()
+    }
 }
 
 #[cfg(test)]
@@ -212,9 +251,12 @@ impl Default for AcmeOrder {
             finalize: "https://acme-server/acme/order/n8LovurSfUFeeGSzD8nuGQwOUeIfSjhs/finalize"
                 .parse()
                 .unwrap(),
-            identifiers: vec![AcmeIdentifier::default()],
-            authorizations: vec![
-                "https://acme-server/acme/wire-acme/authz/s8t8j1johmOCgsLbynUbXujO6pG7RbEd"
+            identifiers: [AcmeIdentifier::new_user(), AcmeIdentifier::new_device()],
+            authorizations: [
+                "https://acme-server/acme/wire/authz/0DpEeMVjTpOk615lIRvihqEyZLW8CsMH"
+                    .parse()
+                    .unwrap(),
+                "https://acme-server/acme/wire/authz/0hKeQhgRIpQKynZ8qGQo2Y0EXqEVSQ4j"
                     .parse()
                     .unwrap(),
             ],
@@ -253,8 +295,8 @@ pub mod tests {
         fn can_deserialize_sample_request() {
             let rfc_sample = json!({
                 "identifiers": [
-                  { "type": "wireapp-id", "value": "www.example.org" },
-                  { "type": "wireapp-id", "value": "example.org" }
+                  { "type": "wireapp-user", "value": "www.example.org" },
+                  { "type": "wireapp-device", "value": "example.org" }
                 ],
                 "notBefore": "2016-01-01T00:04:00+04:00",
                 "notAfter": "2016-01-08T00:04:00+04:00"
@@ -271,8 +313,8 @@ pub mod tests {
                 "notBefore": "2016-01-01T00:00:00Z",
                 "notAfter": "2016-01-08T00:00:00Z",
                 "identifiers": [
-                  { "type": "wireapp-id", "value": "www.example.org" },
-                  { "type": "wireapp-id", "value": "example.org" }
+                  { "type": "wireapp-user", "value": "www.example.org" },
+                  { "type": "wireapp-device", "value": "example.org" }
                 ],
                 "authorizations": [
                   "https://example.com/acme/authz/PAniVnsZcis",
@@ -340,6 +382,39 @@ pub mod tests {
             assert!(matches!(
                 order.verify().unwrap_err(),
                 RustyAcmeError::OrderError(AcmeOrderError::Expired)
+            ));
+        }
+
+        #[test]
+        #[wasm_bindgen_test]
+        fn should_fail_when_wrong_number_identifiers() {
+            let now = time::OffsetDateTime::now_utc();
+            let tomorrow = now + time::Duration::days(1);
+            let default_order = AcmeOrder {
+                expires: Some(tomorrow),
+                not_before: Some(now),
+                not_after: Some(tomorrow),
+                ..Default::default()
+            };
+
+            // homogeneous identifiers
+            let order = AcmeOrder {
+                identifiers: [AcmeIdentifier::new_user(), AcmeIdentifier::new_user()],
+                ..default_order.clone()
+            };
+            assert!(matches!(
+                order.verify().unwrap_err(),
+                RustyAcmeError::OrderError(AcmeOrderError::WrongIdentifiers)
+            ));
+
+            // homogeneous identifiers
+            let order = AcmeOrder {
+                identifiers: [AcmeIdentifier::new_device(), AcmeIdentifier::new_device()],
+                ..default_order.clone()
+            };
+            assert!(matches!(
+                order.verify().unwrap_err(),
+                RustyAcmeError::OrderError(AcmeOrderError::WrongIdentifiers)
             ));
         }
     }

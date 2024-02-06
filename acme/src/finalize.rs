@@ -5,6 +5,7 @@ use x509_cert::der::Encode;
 
 use rusty_jwt_tools::prelude::*;
 
+use crate::identifier::CanonicalIdentifier;
 use crate::{
     order::{AcmeOrderError, AcmeOrderStatus},
     prelude::*,
@@ -22,9 +23,8 @@ impl RustyAcme {
     ) -> RustyAcmeResult<AcmeJws> {
         // Extract the account URL from previous response which created a new account
         let acct_url = account.acct_url()?;
-
-        let id = order.identifiers.first().ok_or(RustyAcmeError::ImplementationError)?;
-        let csr = Self::generate_csr(alg, id.to_wire_identifier()?, signing_kp)?;
+        order.verify()?;
+        let csr = Self::generate_csr(alg, order.try_get_coalesce_identifier()?, signing_kp)?;
         let payload = AcmeFinalizeRequest { csr };
         let req = AcmeJws::new(
             alg,
@@ -37,7 +37,7 @@ impl RustyAcme {
         Ok(req)
     }
 
-    fn generate_csr(alg: JwsAlgorithm, identifier: WireIdentifier, kp: &Pem) -> RustyAcmeResult<String> {
+    fn generate_csr(alg: JwsAlgorithm, identifier: CanonicalIdentifier, kp: &Pem) -> RustyAcmeResult<String> {
         let algorithm = Self::csr_alg(alg)?;
         let cert_info = x509_cert::request::CertReqInfo {
             version: x509_cert::request::Version::V1,
@@ -66,7 +66,7 @@ impl RustyAcme {
         Self::into_asn1_alg(oid, None)
     }
 
-    fn csr_subject(identifier: &WireIdentifier) -> RustyAcmeResult<x509_cert::name::DistinguishedName> {
+    fn csr_subject(identifier: &CanonicalIdentifier) -> RustyAcmeResult<x509_cert::name::DistinguishedName> {
         let dn_domain_oid = oid_registry::OID_X509_ORGANIZATION_NAME.as_bytes().try_into()?;
         let dn_domain_value =
             x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Utf8String, identifier.domain.as_bytes())?;
@@ -130,7 +130,7 @@ impl RustyAcme {
     }
 
     // TODO: find a cleaner way to encode this reusing more x509-cert structs
-    fn csr_attributes(identifier: WireIdentifier) -> RustyAcmeResult<x509_cert::attr::Attributes> {
+    fn csr_attributes(identifier: CanonicalIdentifier) -> RustyAcmeResult<x509_cert::attr::Attributes> {
         fn gn(n: impl AsRef<str>) -> RustyAcmeResult<x509_cert::ext::pkix::name::GeneralName> {
             let ia5_str = x509_cert::der::asn1::Ia5String::new(n.as_ref())?;
             Ok(x509_cert::ext::pkix::name::GeneralName::UniformResourceIdentifier(
@@ -280,8 +280,8 @@ pub mod tests {
                 "notBefore": "2016-01-01T00:00:00Z",
                 "notAfter": "2016-01-08T00:00:00Z",
                 "identifiers": [
-                    { "type": "wireapp-id", "value": "www.example.org" },
-                    { "type": "wireapp-id", "value": "example.org" }
+                    { "type": "wireapp-user", "value": "www.example.org" },
+                    { "type": "wireapp-device", "value": "example.org" }
                 ],
                 "authorizations": [
                     "https://example.com/acme/authz/PAniVnsZcis",

@@ -1,14 +1,14 @@
 [package]
 name = "rusty-jwt-cli"
 description = "Cli to handle JWTs"
-version = "0.8.5"
+version = "0.8.6"
 edition = "2021"
 repository = "https://github.com/wireapp/rusty-jwt-tools"
 license = "MPL-2.0"
 publish = false
 
 [dependencies]
-rusty-jwt-tools = { version = "0.8.5", path = "../jwt" }
+rusty-jwt-tools = { version = "0.8.6", path = "../jwt" }
 clap = { version = "4.4", features = ["derive"] }
 anyhow = "1.0"
 jwt-simple = { workspace = true }

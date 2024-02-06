@@ -32,6 +32,7 @@ async fn demo_should_succeed() {
 
 #[cfg(not(ci))]
 #[tokio::test]
+#[ignore] // since we cannot customize the id token
 async fn demo_with_dex_should_succeed() {
     let demo = E2eTest::new_internal(true, JwsAlgorithm::Ed25519, OidcProvider::Dex);
     let test = demo.start(docker()).await;
@@ -146,7 +147,8 @@ mod acme_server {
                     // same nonce is used for both 'new_order' & 'new_authz'
                     let (order, order_url, _previous_nonce) =
                         test.new_order(&directory, &account, previous_nonce.clone()).await?;
-                    let (_, previous_nonce) = test.new_authz(&account, order.clone(), previous_nonce).await?;
+                    let (_, _, previous_nonce) =
+                        test.new_authorization(&account, order.clone(), previous_nonce).await?;
                     Ok((test, (order, order_url, previous_nonce)))
                 })
             }),
@@ -167,9 +169,9 @@ mod acme_server {
         let (real_chall_setter, rc1, rc2) = (real_chall.clone(), real_chall.clone(), real_chall.clone());
 
         let flow = EnrollmentFlow {
-            extract_challenges: Box::new(|mut test, authz| {
+            extract_challenges: Box::new(|mut test, (authz_a, authz_b)| {
                 Box::pin(async move {
-                    let (dpop_chall, oidc_chall) = test.extract_challenges(authz)?;
+                    let (dpop_chall, oidc_chall) = test.extract_challenges(authz_b, authz_a)?;
                     *real_chall_setter.lock().unwrap() = Some(dpop_chall.clone());
                     // let's invert those challenges for the rest of the flow
                     Ok((test, (oidc_chall, dpop_chall)))
@@ -194,9 +196,7 @@ mod acme_server {
         };
         assert!(matches!(
             test.enrollment(flow).await.unwrap_err(),
-            TestError::Acme(RustyAcmeError::ClientImplementationError(
-                "a challenge is not supposed to be pending at this point. It must either be 'valid' or 'processing'."
-            ))
+            TestError::Acme(RustyAcmeError::ChallengeError(AcmeChallError::Invalid))
         ));
     }
 
@@ -493,7 +493,7 @@ mod dpop_challenge {
                         device_id: 42,
                         ..test.sub.clone()
                     };
-                    let htu: Htu = dpop_chall.target.unwrap().into();
+                    let htu: Htu = dpop_chall.target.into();
                     let backend_nonce: BackendNonce = nonce_r.lock().unwrap().clone().unwrap();
                     let acme_nonce: AcmeNonce = dpop_chall.token.as_str().into();
                     let handle = Handle::from(test.handle.as_str())
@@ -597,7 +597,7 @@ mod dpop_challenge {
             get_access_token: Box::new(|test, (dpop_chall, _)| {
                 Box::pin(async move {
                     let client_id = test.sub.clone();
-                    let htu: Htu = dpop_chall.target.unwrap().into();
+                    let htu: Htu = dpop_chall.target.into();
                     let backend_nonce: BackendNonce = nonce_r.lock().unwrap().clone().unwrap();
                     let handle = Handle::from(test.handle.as_str())
                         .try_to_qualified(&client_id.domain)
@@ -643,6 +643,33 @@ mod dpop_challenge {
                     )
                     .unwrap();
                     Ok((test, access_token))
+                })
+            }),
+            ..Default::default()
+        };
+        assert!(matches!(
+            test.enrollment(flow).await.unwrap_err(),
+            TestError::Acme(RustyAcmeError::ChallengeError(AcmeChallError::Invalid))
+        ));
+    }
+
+    /// We bind the DPoP challenge "uri" to the access token. It is then validated by the ACME server
+    #[tokio::test]
+    async fn should_fail_when_invalid_dpop_audience() {
+        let test = E2eTest::new().start(docker()).await;
+        let flow = EnrollmentFlow {
+            create_dpop_token: Box::new(|mut test, (mut dpop_chall, backend_nonce, handle, team, expiry)| {
+                Box::pin(async move {
+                    // change the url in the DPoP challenge to alter what's in the DPoP token, then restore it at the end
+                    let dpop_challenge_url = dpop_chall.url.clone();
+                    dpop_chall.url = "http://unknown.com".parse().unwrap();
+
+                    let client_dpop_token = test
+                        .create_dpop_token(&dpop_chall, backend_nonce, handle, team, expiry)
+                        .await?;
+
+                    dpop_chall.url = dpop_challenge_url;
+                    Ok((test, client_dpop_token))
                 })
             }),
             ..Default::default()
@@ -802,6 +829,30 @@ mod oidc_challenge {
                 Box::pin(async move {
                     let keyauth = rand_base64_str(32); // a random 'keyauth'
                     let id_token = test.fetch_id_token(&oidc_chall, keyauth).await?;
+                    Ok((test, id_token))
+                })
+            }),
+            ..Default::default()
+        };
+        assert!(matches!(
+            test.enrollment(flow).await.unwrap_err(),
+            TestError::Acme(RustyAcmeError::ChallengeError(AcmeChallError::Invalid))
+        ));
+    }
+
+    /// We add a "acme_aud" in the idToken which must match the OIDC challenge url
+    #[tokio::test]
+    async fn should_fail_when_invalid_audience() {
+        let test = E2eTest::new().start(docker()).await;
+        let flow = EnrollmentFlow {
+            fetch_id_token: Box::new(|mut test, (mut oidc_chall, keyauth)| {
+                Box::pin(async move {
+                    // alter the challenge url to alter the idToken audience, then restore the challenge url
+                    let backup_oidc_challenge_url = oidc_chall.url.clone();
+                    oidc_chall.url = "http://unknown.com".parse().unwrap();
+
+                    let id_token = test.fetch_id_token(&oidc_chall, keyauth).await?;
+                    oidc_chall.url = backup_oidc_challenge_url;
                     Ok((test, id_token))
                 })
             }),

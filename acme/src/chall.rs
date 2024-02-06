@@ -96,8 +96,36 @@ pub struct AcmeChallenge {
     /// Non-standard, Wire specific claim. Indicates the consumer from where it should get the challenge
     /// proof. Either from wire-server "/access-token" endpoint in case of a DPoP challenge, or from
     /// an OAuth token endpoint for an OIDC challenge
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub target: Option<url::Url>,
+    pub target: url::Url,
+}
+
+#[cfg(test)]
+impl AcmeChallenge {
+    pub fn new_device() -> Self {
+        Self {
+            status: None,
+            typ: AcmeChallengeType::WireDpop01,
+            url: "ttps://stepca/acme/wire/challenge/EitdRA8gzxuRCrHlppZJfQsB8Hjsklpj/DaugXj4rBw04OfjyWfucICoaOAGGzXFQ"
+                .parse()
+                .unwrap(),
+            token: "DGyRejmCefe7v4NfDGDKfA".to_string(),
+            target: "http://wire.com:21893/clients/aeddd6d37af25726/access-token"
+                .parse()
+                .unwrap(),
+        }
+    }
+
+    pub fn new_user() -> Self {
+        Self {
+            status: None,
+            typ: AcmeChallengeType::WireOidc01,
+            url: "https://stepca/acme/wire/challenge/EitdRA8gzxuRCrHlppZJfQsB8Hjsklpj/47eOxmrLEJR3aJl7X0hpnH4y0rU8uRo2"
+                .parse()
+                .unwrap(),
+            token: "4xQIED9iPLQo1fkPLBq1znAniwvcVsxQ".to_string(),
+            target: "http://keycloak:15170/realms/master".parse().unwrap(),
+        }
+    }
 }
 
 /// see [RFC 8555 Section 7.1.6](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.1.6)
@@ -144,7 +172,8 @@ pub mod tests {
             "type": "http-01",
             "url": "https://example.com/acme/chall/prV_B7yEyA4",
             "status": "pending",
-            "token": "LoqXcYV8q5ONbJQxbmR7SCTNo3tiAXDfowyjxAjEuX0"
+            "token": "LoqXcYV8q5ONbJQxbmR7SCTNo3tiAXDfowyjxAjEuX0",
+            "target": "https://example.com/target"
         });
         assert!(serde_json::from_value::<AcmeChallenge>(rfc_sample).is_ok());
 
@@ -154,7 +183,8 @@ pub mod tests {
             "type": "dns-01",
             "url": "https://example.com/acme/chall/Rg5dV14Gh1Q",
             "status": "pending",
-            "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA"
+            "token": "evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA",
+            "target": "https://example.com/target"
         });
         assert!(serde_json::from_value::<AcmeChallenge>(rfc_sample).is_ok());
     }

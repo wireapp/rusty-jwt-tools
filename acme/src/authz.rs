@@ -1,3 +1,5 @@
+use base64::Engine;
+
 use rusty_jwt_tools::prelude::*;
 
 use crate::chall::AcmeChallengeType;
@@ -26,6 +28,9 @@ impl RustyAcme {
     /// [RFC 8555 Section 7.5](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5)
     pub fn new_authz_response(response: serde_json::Value) -> RustyAcmeResult<AcmeAuthz> {
         let authz = serde_json::from_value::<AcmeAuthz>(response)?;
+
+        authz.verify()?;
+
         match authz.status {
             AuthzStatus::Pending => {}
             AuthzStatus::Invalid => return Err(AcmeAuthzError::Invalid)?,
@@ -57,6 +62,15 @@ pub enum AcmeAuthzError {
     /// The client deactivated this authorization
     #[error("The client deactivated this authorization")]
     Deactivated,
+    /// The Challenge tokens must be base64 URL strings
+    #[error("The Challenge tokens must be base64 URL strings")]
+    InvalidBase64Token,
+    /// The Challenge token must have at least 128 bits of entropy
+    #[error("The Challenge token must have at least 128 bits of entropy")]
+    InvalidTokenEntropy,
+    /// The Challenge type must match the identifier type
+    #[error("The Challenge type must match the identifier type")]
+    InvalidChallengeType,
 }
 
 /// Result of an authorization creation
@@ -70,19 +84,21 @@ pub struct AcmeAuthz {
     /// Expiration time as [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339)
     pub expires: Option<time::OffsetDateTime>,
     /// Challenges to complete later
-    pub challenges: Vec<AcmeChallenge>,
+    pub challenges: [AcmeChallenge; 1],
     /// DNS entry associated with those challenge
     pub identifier: AcmeIdentifier,
 }
 
 impl AcmeAuthz {
-    pub fn take_challenge(&mut self, typ: AcmeChallengeType) -> Option<AcmeChallenge> {
-        let index = self.challenges.iter().position(|c| c.typ == typ)?;
-        let challenge = self.challenges.remove(index);
-        Some(challenge)
-    }
-
     pub fn verify(&self) -> RustyAcmeResult<()> {
+        let [challenge] = &self.challenges;
+
+        if let (AcmeIdentifier::WireappUser(_), AcmeChallengeType::WireDpop01)
+        | (AcmeIdentifier::WireappDevice(_), AcmeChallengeType::WireOidc01) = (&self.identifier, challenge.typ)
+        {
+            return Err(AcmeAuthzError::InvalidChallengeType)?;
+        };
+
         let now = time::OffsetDateTime::now_utc().unix_timestamp();
 
         let is_expired = self
@@ -92,6 +108,21 @@ impl AcmeAuthz {
             .unwrap_or_default();
         if is_expired {
             return Err(AcmeAuthzError::Expired)?;
+        }
+
+        // RFC 8555 security considerations
+        let [ref challenge] = self.challenges;
+
+        // see https://datatracker.ietf.org/doc/html/rfc8555#section-8.1
+        let token = base64::prelude::BASE64_URL_SAFE_NO_PAD
+            .decode(&challenge.token)
+            .map_err(|_| AcmeAuthzError::InvalidBase64Token)?;
+
+        // token have enough entropy (at least 16 bytes)
+        // see https://datatracker.ietf.org/doc/html/rfc8555#section-11.3
+        const RECOMMENDED_TOKEN_ENTROPY: usize = 128 / 8;
+        if token.len() < RECOMMENDED_TOKEN_ENTROPY {
+            return Err(AcmeAuthzError::InvalidTokenEntropy.into());
         }
 
         Ok(())
@@ -104,14 +135,8 @@ impl Default for AcmeAuthz {
         Self {
             status: AuthzStatus::Pending,
             expires: Some(time::OffsetDateTime::now_utc()),
-            identifier: AcmeIdentifier::default(),
-            challenges: vec![AcmeChallenge {
-                status: None,
-                typ: AcmeChallengeType::WireDpop01,
-                url: "https://wire.com/acme/chall/prV_B7yEyA4".parse().unwrap(),
-                token: "DGyRejmCefe7v4NfDGDKfA".to_string(),
-                target: None,
-            }],
+            identifier: AcmeIdentifier::new_device(),
+            challenges: [AcmeChallenge::new_device()],
         }
     }
 }
@@ -147,19 +172,15 @@ pub mod tests {
                 "status": "pending",
                 "expires": "2016-01-02T14:09:30Z",
                 "identifier": {
-                    "type": "wireapp-id",
+                    "type": "wireapp-user",
                     "value": "www.example.org"
                 },
                 "challenges": [
                     {
                         "type": "http-01",
                         "url": "https://example.com/acme/chall/prV_B7yEyA4",
-                        "token": "DGyRejmCefe7v4NfDGDKfA"
-                    },
-                    {
-                        "type": "dns-01",
-                        "url": "https://example.com/acme/chall/Rg5dV14Gh1Q",
-                        "token": "DGyRejmCefe7v4NfDGDKfA"
+                        "token": "DGyRejmCefe7v4NfDGDKfA",
+                        "target": "https://example.com/target"
                     }
                 ]
             });
@@ -192,6 +213,32 @@ pub mod tests {
             assert!(matches!(
                 order.verify().unwrap_err(),
                 RustyAcmeError::AuthzError(AcmeAuthzError::Expired)
+            ));
+        }
+
+        #[test]
+        #[wasm_bindgen_test]
+        fn should_fail_when_challenge_type_mismatches_identifier_type() {
+            let tomorrow = time::OffsetDateTime::now_utc() + time::Duration::days(1);
+            let order = AcmeAuthz {
+                expires: Some(tomorrow),
+                identifier: AcmeIdentifier::new_user(),
+                challenges: [AcmeChallenge::new_device()],
+                ..Default::default()
+            };
+            assert!(matches!(
+                order.verify().unwrap_err(),
+                RustyAcmeError::AuthzError(AcmeAuthzError::InvalidChallengeType)
+            ));
+            let order = AcmeAuthz {
+                expires: Some(tomorrow),
+                identifier: AcmeIdentifier::new_device(),
+                challenges: [AcmeChallenge::new_user()],
+                ..Default::default()
+            };
+            assert!(matches!(
+                order.verify().unwrap_err(),
+                RustyAcmeError::AuthzError(AcmeAuthzError::InvalidChallengeType)
             ));
         }
     }

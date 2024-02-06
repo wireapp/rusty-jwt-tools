@@ -1,6 +1,6 @@
+use base64::prelude::*;
 use std::net::SocketAddr;
 use std::{collections::HashMap, path::PathBuf};
-use base64::prelude::*;
 
 use serde_json::json;
 use testcontainers::{clients::Cli, core::WaitFor, Container, Image, RunnableImage};
@@ -63,12 +63,13 @@ impl CaCfg {
                         "wire": {
                             "oidc": {
                                 "provider": {
-                                    "issuer": issuer,
-                                    "authorization_endpoint": "https://authorization_endpoint.com",
-                                    "token_endpoint": "https://token_endpoint.com",
-                                    "jwks_uri": jwks_uri,
-                                    "userinfo_endpoint": "https://userinfo_endpoint.com",
-                                    "id_token_signing_alg_values_supported": [
+                                    "discoveryBaseUrl": "",
+                                    "issuerUrl": issuer,
+                                    "authorizationUrl": "https://authorization_endpoint.com",
+                                    "tokenUrl": "https://token_endpoint.com",
+                                    "jwksUrl": jwks_uri,
+                                    "userInfoUrl": "https://userinfo_endpoint.com",
+                                    "signatureAlgorithms": [
                                         "RS256",
                                         "ES256",
                                         "ES384",
@@ -107,8 +108,10 @@ pub struct StepCaImage {
 }
 
 impl StepCaImage {
-    const NAME: &'static str = "quay.io/wire/smallstep-acme";
-    const TAG: &'static str = "0.0.42-test.109";
+    // const NAME: &'static str = "smallstep/step-ca";
+    const NAME: &'static str = "wire-smallstep-stepca";
+    // const TAG: &'static str = "0.25.3-rc3";
+    const TAG: &'static str = "latest";
     const CA_NAME: &'static str = "wire";
     pub const ACME_PROVISIONER: &'static str = "wire";
     pub const PORT: u16 = 9000;
@@ -142,7 +145,7 @@ impl StepCaImage {
             .unwrap()
             .insert("authority".to_string(), ca_cfg.cfg());
         std::fs::write(&cfg_file, serde_json::to_string_pretty(&cfg).unwrap()).unwrap();
-
+        
         let image = image
             .with_container_name(&ca_cfg.host)
             .with_network(NETWORK)

@@ -9,6 +9,7 @@ use certval::{
 };
 
 use x509_cert::der::{Decode, DecodePem, Encode};
+use x509_cert::ext::pkix::AuthorityKeyIdentifier;
 
 use crate::{revocation::cache::RevocationCache, RustyX509CheckError, RustyX509CheckResult};
 use crl_store::CrlStore;
@@ -64,6 +65,9 @@ fn check_cpr(cpr: CertificationPathResults) -> RustyX509CheckResult<()> {
     if let Some(validation_status) = get_validation_status(&cpr) {
         return match validation_status {
             certval::PathValidationStatus::Valid => Ok(()),
+            // No CRL is available, this is fine
+            certval::PathValidationStatus::RevocationStatusNotDetermined
+            | certval::PathValidationStatus::RevocationStatusNotAvailable => Ok(()),
             validation_status => Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(
                 validation_status,
             ))),
@@ -83,29 +87,25 @@ impl PkiEnvironment {
     }
 
     pub fn extract_ski_aki_from_cert(cert: &x509_cert::Certificate) -> RustyX509CheckResult<(String, Option<String>)> {
-        let mut cert = PDVCertificate::try_from(cert.clone())?;
-        cert.parse_extensions(&[
-            const_oid::db::rfc5912::ID_CE_SUBJECT_KEY_IDENTIFIER,
-            const_oid::db::rfc5912::ID_CE_AUTHORITY_KEY_IDENTIFIER,
-        ]);
+        let cert = PDVCertificate::try_from(cert.clone())?;
 
         let ski = cert
             .get_extension(&const_oid::db::rfc5912::ID_CE_SUBJECT_KEY_IDENTIFIER)?
-            .and_then(|ext| match ext {
-                certval::PDVExtension::SubjectKeyIdentifier(ski) => String::from_utf8(ski.0.clone().into_bytes()).ok(),
-                _ => None,
-            })
-            .unwrap_or_default();
+            .ok_or(RustyX509CheckError::MissingSki)?;
+        let ski = match ski {
+            certval::PDVExtension::SubjectKeyIdentifier(ski) => hex::encode(ski.0.as_bytes()),
+            _ => return Err(RustyX509CheckError::ImplementationError),
+        };
 
         let aki = cert
             .get_extension(&const_oid::db::rfc5912::ID_CE_AUTHORITY_KEY_IDENTIFIER)?
             .and_then(|ext| match ext {
-                certval::PDVExtension::AuthorityKeyIdentifier(aki) => aki
-                    .key_identifier
-                    .clone()
-                    .and_then(|ki| String::from_utf8(ki.into_bytes()).ok()),
+                certval::PDVExtension::AuthorityKeyIdentifier(AuthorityKeyIdentifier { key_identifier, .. }) => {
+                    key_identifier.as_ref()
+                }
                 _ => None,
-            });
+            })
+            .map(|ki| hex::encode(ki.as_bytes()));
 
         Ok((ski, aki))
     }
@@ -129,6 +129,9 @@ impl PkiEnvironment {
                 .as_secs()
         };
 
+        let mut cps = CertificationPathSettings::new();
+        set_time_of_interest(&mut cps, toi);
+
         // Make a Certificate source for intermediate CA certs
         let mut cert_source = CertSource::new();
         for (i, cert) in params.intermediates.iter().enumerate() {
@@ -137,6 +140,8 @@ impl PkiEnvironment {
                 bytes: cert.to_der()?,
             });
         }
+
+        cert_source.initialize(&cps)?;
 
         // Make a TrustAnchor source
         let mut trust_anchors = TaSource::new();
@@ -193,8 +198,8 @@ impl PkiEnvironment {
 
         for path in &mut paths {
             let mut cpr = CertificationPathResults::new();
-            check_validity(&self.pe, &cps, path, &mut cpr)?;
-            verify_signatures(&self.pe, &cps, path, &mut cpr)?;
+            let _ = check_validity(&self.pe, &cps, path, &mut cpr);
+            let _ = verify_signatures(&self.pe, &cps, path, &mut cpr);
             check_cpr(cpr)?;
         }
 
@@ -249,9 +254,9 @@ impl PkiEnvironment {
 
         for path in &mut paths {
             let mut cpr = CertificationPathResults::new();
-            validate_path_rfc5280(&self.pe, &cps, path, &mut cpr)?;
+            let _ = validate_path_rfc5280(&self.pe, &cps, path, &mut cpr);
             if perform_revocation_check {
-                check_revocation(&self.pe, &cps, path, &mut cpr)?;
+                let _ = check_revocation(&self.pe, &cps, path, &mut cpr);
             }
             check_cpr(cpr)?;
         }
