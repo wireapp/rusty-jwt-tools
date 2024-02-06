@@ -63,12 +63,13 @@ impl CaCfg {
                         "wire": {
                             "oidc": {
                                 "provider": {
-                                    "issuer": issuer,
-                                    "authorization_endpoint": "https://authorization_endpoint.com",
-                                    "token_endpoint": "https://token_endpoint.com",
-                                    "jwks_uri": jwks_uri,
-                                    "userinfo_endpoint": "https://userinfo_endpoint.com",
-                                    "id_token_signing_alg_values_supported": [
+                                    "discoveryBaseUrl": "",
+                                    "issuerUrl": issuer,
+                                    "authorizationUrl": "https://authorization_endpoint.com",
+                                    "tokenUrl": "https://token_endpoint.com",
+                                    "jwksUrl": jwks_uri,
+                                    "userInfoUrl": "https://userinfo_endpoint.com",
+                                    "signatureAlgorithms": [
                                         "RS256",
                                         "ES256",
                                         "ES384",
@@ -144,7 +145,7 @@ impl StepCaImage {
             .unwrap()
             .insert("authority".to_string(), ca_cfg.cfg());
         std::fs::write(&cfg_file, serde_json::to_string_pretty(&cfg).unwrap()).unwrap();
-
+        
         let image = image
             .with_container_name(&ca_cfg.host)
             .with_network(NETWORK)
