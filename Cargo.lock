@@ -303,9 +303,9 @@ dependencies = [
 
 [[package]]
 name = "boring"
-version = "4.4.1"
+version = "4.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10b0c9fe1472ffa70d4a0e579ef233799a7f23bc0148316a05d2c0c2bcdb1362"
+checksum = "8259fc1ea91894a550190683fbcda307d1ef85f2875d93a2b1ab3cab58b62fea"
 dependencies = [
  "bitflags 2.4.2",
  "boring-sys",
@@ -316,9 +316,9 @@ dependencies = [
 
 [[package]]
 name = "boring-sys"
-version = "4.4.1"
+version = "4.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c96a65d92a844441332b6ff4379551397218706a23320b99b0e95beb60c67cf4"
+checksum = "ace69f2e0d89d2c5e0874efe47f46259ff794fe8cbddfca72132c817611ad471"
 dependencies = [
  "bindgen",
  "cmake",
@@ -356,7 +356,7 @@ dependencies = [
 [[package]]
 name = "certval"
 version = "0.1.4"
-source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/forbid-ss-ee#a0f6647cc17d04e85fe728bdb3cf8e9f0a974149"
+source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/forbid-ss-ee#9f0bfbf494a02735d12e4a5987bb4d08061b970d"
 dependencies = [
  "cfg-if",
  "ciborium",
@@ -374,12 +374,14 @@ dependencies = [
  "pem-rfc7468 0.7.0",
  "pkiprocmacros",
  "readonly",
+ "regex",
  "rsa 0.9.6",
  "serde",
  "sha-1",
  "sha2",
  "spki 0.7.3",
  "subtle-encoding",
+ "url",
  "x509-cert",
  "x509-ocsp",
 ]
@@ -2139,19 +2141,18 @@ checksum = "51d515d32fb182ee37cda2ccdcb92950d6a3c2893aa280e540671c2cd0f3b1d9"
 
 [[package]]
 name = "num-integer"
-version = "0.1.45"
+version = "0.1.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "225d3389fb3509a24c93f5c29eb6bde2586b98d9f016636dff58d7c6f7569cd9"
+checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
 dependencies = [
- "autocfg",
  "num-traits",
 ]
 
 [[package]]
 name = "num-iter"
-version = "0.1.43"
+version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d03e6c028c5dc5cac6e2dec0efda81fc887605bb3d884578bb6d6bf7514e252"
+checksum = "d869c01cc0c455284163fd0092f1f93835385ccab5a98a0dcc497b2f8bf055a9"
 dependencies = [
  "autocfg",
  "num-integer",
@@ -2160,9 +2161,9 @@ dependencies = [
 
 [[package]]
 name = "num-traits"
-version = "0.2.17"
+version = "0.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39e3200413f237f41ab11ad6d161bc7239c84dcb631773ccd7de3dfe4b5c267c"
+checksum = "da0df0e5185db44f69b44f26786fe401b6c293d1907744beaa7fa62b2e5a517a"
 dependencies = [
  "autocfg",
  "libm",
@@ -2654,7 +2655,7 @@ checksum = "2900ede94e305130c13ddd391e0ab7cbaeb783945ae07a279c268cb05109c6cb"
 [[package]]
 name = "pkiprocmacros"
 version = "0.1.2"
-source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/forbid-ss-ee#a0f6647cc17d04e85fe728bdb3cf8e9f0a974149"
+source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/forbid-ss-ee#9f0bfbf494a02735d12e4a5987bb4d08061b970d"
 dependencies = [
  "proc-macro2",
  "quote",
