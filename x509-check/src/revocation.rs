@@ -162,10 +162,13 @@ impl PkiEnvironment {
 
         let mut pe = certval::environment::PkiEnvironment::default();
         populate_5280_pki_environment(&mut pe);
-        pe.add_certificate_source(Box::new(cert_source));
         pe.add_trust_anchor_source(Box::new(trust_anchors));
         pe.add_crl_source(Box::new(crl_source));
         pe.add_revocation_cache(Box::new(revocation_cache));
+
+        cert_source.find_all_partial_paths(&pe, &cps);
+
+        pe.add_certificate_source(Box::new(cert_source));
 
         Ok(Self { pe, toi })
     }
