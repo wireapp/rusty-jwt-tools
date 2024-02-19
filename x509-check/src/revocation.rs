@@ -1,13 +1,14 @@
 #![allow(dead_code)]
 
 use certval::{
-    check_revocation, get_validation_status, populate_5280_pki_environment, set_forbid_self_signed_ee,
+    check_revocation, get_validation_status, populate_5280_pki_environment, set_check_crls, set_forbid_self_signed_ee,
     set_require_ta_store, set_time_of_interest, validate_path_rfc5280,
     validator::{path_validator::check_validity, PDVCertificate},
-    verify_signatures, CertSource, CertVector, CertificationPathResults, CertificationPathSettings,
-    ExtensionProcessing, TaSource, EXTS_OF_INTEREST,
+    verify_signatures, CertSource, CertVector, CertificationPath, CertificationPathResults, CertificationPathSettings,
+    DeferDecodeSigned, ExtensionProcessing, PDVTrustAnchorChoice, TaSource, EXTS_OF_INTEREST,
 };
 
+use const_oid::AssociatedOid;
 use x509_cert::der::{Decode, DecodePem, Encode};
 use x509_cert::ext::pkix::AuthorityKeyIdentifier;
 
@@ -196,55 +197,95 @@ impl PkiEnvironment {
 
         let mut cert = PDVCertificate::try_from(cert.clone())?;
         cert.parse_extensions(EXTS_OF_INTEREST);
-        let mut paths = vec![];
-        self.pe.get_paths_for_target(&self.pe, &cert, &mut paths, 0, self.toi)?;
 
-        // if paths.is_empty() {
-        //     return Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(
-        //         certval::PathValidationStatus::NoPathsFound,
-        //     )));
-        // }
+        let ta = PDVTrustAnchorChoice::try_from(x509_cert::anchor::TrustAnchorChoice::Certificate(
+            cert.decoded_cert.clone(),
+        ))?;
+        let mut certification_path = CertificationPath::new(ta, vec![], cert);
 
-        for path in &mut paths {
-            let mut cpr = CertificationPathResults::new();
-            let _ = check_validity(&self.pe, &cps, path, &mut cpr);
-            check_cpr(cpr)?;
-            let mut cpr = CertificationPathResults::new();
-            let _ = verify_signatures(&self.pe, &cps, path, &mut cpr);
-            check_cpr(cpr)?;
-        }
+        check_validity(
+            &self.pe,
+            &cps,
+            &mut certification_path,
+            &mut CertificationPathResults::new(),
+        )?;
+
+        verify_signatures(
+            &self.pe,
+            &cps,
+            &mut certification_path,
+            &mut CertificationPathResults::new(),
+        )?;
 
         Ok(())
     }
 
+    #[inline]
+    #[deprecated = "This method is not to be used as it causes spurious verification failures because of re-encoding the DER repr of the CRL. Use `validate_crl_with_raw`"]
     pub fn validate_crl(&self, crl: &x509_cert::crl::CertificateList) -> RustyX509CheckResult<()> {
-        let spki_list = if let Ok(ta) = self.pe.get_trust_anchor_by_name(&crl.tbs_cert_list.issuer) {
-            vec![certval::source::ta_source::get_subject_public_key_info_from_trust_anchor(&ta.decoded_ta)]
-        } else {
+        let _ = self.validate_crl_with_raw(&crl.to_der()?)?;
+        Ok(())
+    }
+
+    pub fn validate_crl_with_raw(&self, crl_raw: &[u8]) -> RustyX509CheckResult<x509_cert::crl::CertificateList> {
+        let crl = x509_cert::crl::CertificateList::from_der(crl_raw)?;
+
+        let mut spki_list = vec![];
+        if let Some(aki) = crl.tbs_cert_list.crl_extensions.as_ref().and_then(|extensions| {
+            extensions
+                .iter()
+                .find(|ext| ext.extn_id == x509_cert::ext::pkix::AuthorityKeyIdentifier::OID)
+        }) {
+            let akid = aki.extn_value.as_bytes();
+            if let Ok(ta) = self.pe.get_trust_anchor(akid) {
+                spki_list
+                    .push(certval::source::ta_source::get_subject_public_key_info_from_trust_anchor(&ta.decoded_ta));
+            } else if let Ok(intermediates) = self.pe.get_intermediates_by_skid(akid) {
+                spki_list.extend(
+                    intermediates
+                        .into_iter()
+                        .map(|c| &c.decoded_cert.tbs_certificate.subject_public_key_info),
+                );
+            }
+        }
+
+        if let Ok(ta) = self.pe.get_trust_anchor_by_name(&crl.tbs_cert_list.issuer) {
+            let spki = certval::source::ta_source::get_subject_public_key_info_from_trust_anchor(&ta.decoded_ta);
+            if !spki_list.contains(&spki) {
+                spki_list.push(spki);
+            }
+        }
+
+        spki_list.extend(
             self.pe
                 .get_cert_by_name(&crl.tbs_cert_list.issuer)
                 .into_iter()
-                .map(|c| &c.decoded_cert.tbs_certificate.subject_public_key_info)
-                .collect()
-        };
+                .map(|c| &c.decoded_cert.tbs_certificate.subject_public_key_info),
+        );
 
-        for spki in spki_list {
-            if self
-                .pe
+        spki_list.dedup();
+
+        let crl_defer = DeferDecodeSigned::from_der(crl_raw)?;
+
+        let any_spki_verifies = spki_list.into_iter().any(|spki| {
+            self.pe
                 .verify_signature_message(
                     &self.pe,
-                    &crl.tbs_cert_list.to_der()?,
+                    &crl_defer.tbs_field,
                     crl.signature.raw_bytes(),
                     &crl.signature_algorithm,
                     spki,
                 )
                 .is_ok()
-            {
-                return Ok(());
-            }
-        }
+        });
 
-        Err(RustyX509CheckError::CertValError(certval::Error::Unrecognized))
+        if any_spki_verifies {
+            Ok(crl)
+        } else {
+            Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(
+                certval::PathValidationStatus::SignatureVerificationFailure,
+            )))
+        }
     }
 
     fn validate_cert_internal(
@@ -270,18 +311,36 @@ impl PkiEnvironment {
             )));
         }
 
-        for path in &mut paths {
-            let mut cpr = CertificationPathResults::new();
-            let _ = validate_path_rfc5280(&self.pe, &cps, path, &mut cpr);
-            check_cpr(cpr)?;
-            if perform_revocation_check {
-                let mut cpr = CertificationPathResults::new();
-                let _ = check_revocation(&self.pe, &cps, path, &mut cpr);
-                check_cpr(cpr)?;
-            }
-        }
+        let mut result = Ok(());
 
-        Ok(())
+        let any_path_validates = paths.into_iter().any(|mut path| {
+            let mut cpr = CertificationPathResults::new();
+            let _ = validate_path_rfc5280(&self.pe, &cps, &mut path, &mut cpr);
+            let r = check_cpr(cpr);
+            if r.is_err() {
+                result = r;
+                return false;
+            }
+
+            if perform_revocation_check {
+                set_check_crls(&mut cps, true);
+                let mut cpr = CertificationPathResults::new();
+                let _ = check_revocation(&self.pe, &cps, &mut path, &mut cpr);
+                let r = check_cpr(cpr);
+                if r.is_err() {
+                    result = r;
+                    return false;
+                }
+            }
+
+            true
+        });
+
+        if any_path_validates {
+            Ok(())
+        } else {
+            result
+        }
     }
 
     #[inline]
