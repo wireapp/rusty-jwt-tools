@@ -356,7 +356,7 @@ dependencies = [
 [[package]]
 name = "certval"
 version = "0.1.4"
-source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/stable#bc3532d9ba22e685db3f0403649e905ab9cd28f5"
+source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/stable#5c6c258279ccd09137008d8db88fd4d4cafe10df"
 dependencies = [
  "cfg-if",
  "ciborium",
@@ -2654,7 +2654,7 @@ checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
 [[package]]
 name = "pkiprocmacros"
 version = "0.1.2"
-source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/stable#bc3532d9ba22e685db3f0403649e905ab9cd28f5"
+source = "git+https://github.com/wireapp/rust-pki.git?branch=wire/stable#5c6c258279ccd09137008d8db88fd4d4cafe10df"
 dependencies = [
  "proc-macro2",
  "quote",
