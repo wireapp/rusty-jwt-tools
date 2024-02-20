@@ -16,6 +16,9 @@ pub struct WireIdentity {
     pub domain: String,
     pub status: IdentityStatus,
     pub thumbprint: String,
+    pub serial_number: String,
+    pub not_before: u64,
+    pub not_after: u64,
 }
 
 pub trait WireIdentityReader {
@@ -32,6 +35,9 @@ pub trait WireIdentityReader {
 
 impl WireIdentityReader for x509_cert::Certificate {
     fn extract_identity(&self) -> RustyAcmeResult<WireIdentity> {
+        let serial_number = hex::encode(self.tbs_certificate.serial_number.as_bytes());
+        let not_before = self.tbs_certificate.validity.not_before.to_unix_duration().as_secs();
+        let not_after = self.tbs_certificate.validity.not_after.to_unix_duration().as_secs();
         let (client_id, handle) = try_extract_san(&self.tbs_certificate)?;
         let (display_name, domain) = try_extract_subject(&self.tbs_certificate)?;
         let status = IdentityStatus::from_cert(self);
@@ -44,6 +50,9 @@ impl WireIdentityReader for x509_cert::Certificate {
             domain,
             status,
             thumbprint,
+            serial_number,
+            not_before,
+            not_after,
         })
     }
 
@@ -193,6 +202,9 @@ OfqfZA1YMtN5NLz/AA==
         assert_eq!(identity.handle.as_str(), "wireapp://%40alice_wire@wire.com");
         assert_eq!(&identity.display_name, "Alice Smith");
         assert_eq!(&identity.domain, "wire.com");
+        assert_eq!(&identity.serial_number, "009699765fa164397da924a3bb992658d0");
+        assert_eq!(identity.not_before, 1704466382);
+        assert_eq!(identity.not_after, 2019826382);
     }
 
     #[test]
