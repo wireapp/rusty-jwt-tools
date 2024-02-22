@@ -11,7 +11,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <keycloak.version>22.0.5</keycloak.version>
+        <keycloak.version>23.0.3</keycloak.version>
         <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
     </properties>
 
