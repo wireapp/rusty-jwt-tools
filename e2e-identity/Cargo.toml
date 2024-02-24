@@ -24,7 +24,7 @@ zeroize = "1.7"
 uuid = { version = "1.6", optional = true }
 rand = { version = "0.8", optional = true }
 x509-cert = { version = "0.2", optional = true }
-oid-registry = { version = "0.6", optional = true }
+oid-registry = { version = "0.7", optional = true }
 time = { version = "0.3", optional = true }
 
 [dependencies.rcgen]
