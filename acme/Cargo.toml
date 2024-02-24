@@ -22,7 +22,7 @@ url = { version = "2.5", features = ["serde"] }
 time = { version = "0.3", features = ["serde", "serde-well-known", "wasm-bindgen"] }
 x509-cert = "0.2"
 oid-registry = "0.6"
-asn1-rs = "0.5"
+asn1-rs = "0.6"
 signature = "2"
 ed25519-compact = "2.0"
 p256 = "0.13"
