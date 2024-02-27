@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 import Data.Either
+import Data.Maybe
 import Data.UUID as UUID
 import RustyJwtToolsHs
 import Test.Hspec
 import Prelude
-import Data.Maybe
 
 main :: IO ()
 main = hspec $ do
@@ -13,10 +13,11 @@ main = hspec $ do
     it "should return an error when given wrong nonce" $ do
       actual <-
         generateDpopAccessToken
-          proofExpiring2038
+          proof
           uid
           clientId
           handle
+          displayName
           teamId
           domain
           "foobar"
@@ -30,10 +31,11 @@ main = hspec $ do
     it "should return a valid access token" $ do
       actual <-
         generateDpopAccessToken
-          proofExpiring2038
+          proof
           uid
           clientId
           handle
+          displayName
           teamId
           domain
           nonce
@@ -44,26 +46,23 @@ main = hspec $ do
           now
           pubKeyBundle
       isRight actual `shouldBe` True
-    where
-      pubKeyBundle =
-            "-----BEGIN PRIVATE KEY-----\n\
-            \MC4CAQAwBQYDK2VwBCIEIMkvahkqR9sHJSmFeCl3B7aJjsQGgwy++cccWTbuDyy+\n\
-            \-----END PRIVATE KEY-----\n\
-            \-----BEGIN PUBLIC KEY-----\n\
-            \MCowBQYDK2VwAyEAdYI38UdxksC0K4Qx6E9JK9YfGm+ehnY18oKmHL2YsZk=\n\
-            \-----END PUBLIC KEY-----\n"
-      uid = fromMaybe (error "invalid user id") $ UUID.fromString "b20b8c78-b26d-43a4-af24-f72a3cb6f606"
-      proofExpiring2038 =
-            "eyJhbGciOiJFZERTQSIsImp3ayI6eyJjcnYiOiJFZDI1NTE5Iiwia3R5IjoiT0tQIiwieCI6Im5MSkdOLU9hNkpzcTNLY2xaZ2dMbDdVdkFWZG1CMFE2QzNONUJDZ3BoSHcifSwidHlwIjoiZHBvcCtqd3QifQ.eyJjaGFsIjoid2EyVnJrQ3RXMXNhdUoyRDN1S1k4cmM3eTRrbDR1c0giLCJleHAiOjE4MzExMjYxNjMsImhhbmRsZSI6IndpcmVhcHA6Ly8lNDBwaHVoaGliZGhxYnF4cnpibnNhZndAZXhhbXBsZS5jb20iLCJodG0iOiJQT1NUIiwiaHR1IjoiaHR0cHM6Ly9leGFtcGxlLmNvbS9jbGllbnRzL2NjNmU2NDBlMjk2ZThiYmEvYWNjZXNzLXRva2VuIiwiaWF0IjoxNzA0OTgyMTYzLCJqdGkiOiI2ZmM1OWU3Zi1iNjY2LTRmZmMtYjczOC00ZjQ3NjBjODg0Y2EiLCJuYmYiOjE3MDQ5ODIxNjMsIm5vbmNlIjoiVnZHYnc2ZVZUTkdTUWJLNVNlaVNiQSIsInN1YiI6IndpcmVhcHA6Ly9zZ3VNZUxKdFE2U3ZKUGNxUExiMkJnIWNjNmU2NDBlMjk2ZThiYmFAZXhhbXBsZS5jb20iLCJ0ZWFtIjoiNDAyNTE2ODAtMzVlMS00Mzc0LWIzYWEtNzU2MDBkZTc5ZTMzIn0.JgVXD2_E4j4sLcvD284Fj4z_6xmwA0czcP8wzHZmqPpel60HUqDVKDx5GmiWbFWix-E7ZXvYfvZ7NmxlDrgmAg"
+  where
+    pubKeyBundle = "-----BEGIN PRIVATE KEY-----\n\
+                   \MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5i88D4XpjBudqAkS\n\
+                   \3r4zMK0hEXT7i+xR3PyGfrPHcqahRANCAAQ84mdGFohHioIhOG/s8S2mHNXiKzdV\n\
+                   \ZTvpq663q4ErPGj7OP0P7Ef1QrXvHmTDOTx5YwUJ3OAxDXDOdSkD0zPt\n\
+                   \-----END PRIVATE KEY-----"
+    clientId = 14730821443162901434
+    domain = "example.com"
+    url = "https://example.com/clients/cc6e640e296e8bba/access-token"
+    method = "POST"
+    maxSkewSeconds = 1
+    now = 1704982162
 
-      clientId = 14730821443162901434
-      domain = "example.com"
-      nonce = "VvGbw6eVTNGSQbK5SeiSbA"
-      url = "https://example.com/clients/cc6e640e296e8bba/access-token"
-      method = "POST"
-      maxSkewSeconds = 1
-      expiration = 1831212562
-      now = 1704982162
-      handle = "phuhhibdhqbqxrzbnsafw"
-      teamId = fromMaybe (error "invalid team id") $ UUID.fromString "40251680-35e1-4374-b3aa-75600de79e33"
-
+    proof = "eyJhbGciOiJFUzI1NiIsInR5cCI6ImRwb3Arand0IiwiandrIjp7Imt0eSI6IkVDIiwiY3J2IjoiUC0yNTYiLCJ4IjoiUE9KblJoYUlSNHFDSVRodjdQRXRwaHpWNGlzM1ZXVTc2YXV1dDZ1Qkt6dyIsInkiOiJhUHM0X1Ffc1JfVkN0ZThlWk1NNVBIbGpCUW5jNERFTmNNNTFLUVBUTS0wIn19.eyJpYXQiOjE3MjU5NTY1MjUsImV4cCI6MTcyNjA0NjUyNSwibmJmIjoxNzI1OTU2NTI1LCJzdWIiOiJ3aXJlYXBwOi8vTkdyekQ2T0NRYmlwdWpHOS1UVXU2dyFjYzZlNjQwZTI5NmU4YmJhQGV4YW1wbGUuY29tIiwiYXVkIjoiaHR0cHM6Ly9zdGVwY2EvYWNtZS93aXJlL2NoYWxsZW5nZS9hYWEvYmJiIiwianRpIjoiMmQwNDMyOTMtNDg5My00NDU3LTk4NTAtZGUwOGQ0NDg2Njg2Iiwibm9uY2UiOiI0M0ZDSWMwVVFqaU5tdlBPSHoyenl3IiwiaHRtIjoiUE9TVCIsImh0dSI6Imh0dHBzOi8vZXhhbXBsZS5jb20vY2xpZW50cy9jYzZlNjQwZTI5NmU4YmJhL2FjY2Vzcy10b2tlbiIsImNoYWwiOiI0M0ZDSWMwVVFqaU5tdlBPSHoyenl3IiwiaGFuZGxlIjoid2lyZWFwcDovLyU0MGtjdmVwY2tieWZ5eWV4anNwc3pjeEBleGFtcGxlLmNvbSIsInRlYW0iOiI2ZTg1ZTA1My01MzZmLTQ1ODUtOGZjOC1jYWRhODc2ZTVlYzciLCJuYW1lIjoiam9lIn0.YJydGqugbKKq_IBdphLVVwJmyEg2ESItEZtqZu6AWprl5KFSZo7knbRDw2AGSREobBFElis8uaHqXo18w5htkg"
+    uid = fromMaybe (error "invalid user id") $ UUID.fromString "346af30f-a382-41b8-a9ba-31bdf9352eeb"
+    nonce = "43FCIc0UQjiNmvPOHz2zyw"
+    expiration = 1881935509
+    handle = "kcvepckbyfyyexjspszcx"
+    displayName = "joe"
+    teamId = fromMaybe (error "invalid team id") $ UUID.fromString "6e85e053-536f-4585-8fc8-cada876e5ec7"
