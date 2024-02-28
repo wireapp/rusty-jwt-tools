@@ -11,6 +11,9 @@
 # VSCode
 .vscode
 
+# nix
+.direnv
+
 ### Haskell ###
 dist
 dist-*
