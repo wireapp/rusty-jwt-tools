@@ -1,3 +1,6 @@
+use crate::revocation::PkiEnvironment;
+use certval::PathValidationStatus;
+
 pub mod reexports {
     pub use certval;
 }
@@ -48,29 +51,19 @@ pub enum IdentityStatus {
 }
 
 impl IdentityStatus {
-    pub fn from_cert(cert: &x509_cert::Certificate) -> Self {
-        if !is_time_valid(&cert.tbs_certificate) {
-            IdentityStatus::Expired
-        } else if is_revoked(cert) {
-            IdentityStatus::Revoked
-        } else {
-            IdentityStatus::Valid
+    pub fn from_cert(cert: &x509_cert::Certificate, env: Option<&PkiEnvironment>) -> Self {
+        match env.map(|e| e.validate_cert_and_revocation(cert)) {
+            Some(Err(RustyX509CheckError::CertValError(certval::Error::PathValidation(e)))) => match e {
+                PathValidationStatus::InvalidNotAfterDate => IdentityStatus::Expired,
+                PathValidationStatus::CertificateRevoked
+                | PathValidationStatus::CertificateRevokedEndEntity
+                | PathValidationStatus::NoPathsFound
+                | PathValidationStatus::CertificateRevokedIntermediateCa => IdentityStatus::Revoked,
+                _ => IdentityStatus::Valid,
+            },
+            _ => IdentityStatus::Valid,
         }
     }
-}
-
-fn is_time_valid(cert: &x509_cert::TbsCertificate) -> bool {
-    // 'not_before' < now < 'not_after'
-    let x509_cert::time::Validity { not_before, not_after } = cert.validity;
-
-    let now = fluvio_wasm_timer::SystemTime::now();
-    let Ok(now) = now.duration_since(fluvio_wasm_timer::UNIX_EPOCH) else {
-        return false;
-    };
-
-    let is_nbf = now >= not_before.to_unix_duration();
-    let is_naf = now < not_after.to_unix_duration();
-    is_nbf && is_naf
 }
 
 /// Extracts the CRL Distribution points that are FullName URIs from the Certificate
@@ -108,8 +101,4 @@ pub fn extract_crl_uris(
 /// Extracts the expiration date from a parsed CRL
 pub fn extract_expiration_from_crl(crl: &x509_cert::crl::CertificateList) -> Option<u64> {
     crl.tbs_cert_list.next_update.map(|t| t.to_unix_duration().as_secs())
-}
-
-pub fn is_revoked(_cert: &x509_cert::Certificate) -> bool {
-    false
 }

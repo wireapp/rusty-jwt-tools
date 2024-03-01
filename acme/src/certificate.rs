@@ -1,6 +1,7 @@
 use x509_cert::Certificate;
 
 use rusty_jwt_tools::prelude::*;
+use rusty_x509_check::revocation::PkiEnvironment;
 
 use crate::{error::CertificateError, identifier::CanonicalIdentifier, prelude::*};
 
@@ -24,7 +25,11 @@ impl RustyAcme {
     }
 
     /// see [RFC 8555 Section 7.4.2](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.4.2)
-    pub fn certificate_response(response: String, order: AcmeOrder) -> RustyAcmeResult<Vec<Vec<u8>>> {
+    pub fn certificate_response(
+        response: String,
+        order: AcmeOrder,
+        env: Option<&PkiEnvironment>,
+    ) -> RustyAcmeResult<Vec<Vec<u8>>> {
         order.verify()?;
         let pems: Vec<pem::Pem> = pem::parse_many(response)?;
         pems.into_iter()
@@ -39,11 +44,11 @@ impl RustyAcme {
                 use x509_cert::der::Decode as _;
                 let cert = x509_cert::Certificate::from_der(cert_pem.contents())?;
 
-                rusty_x509_check::revocation::PkiEnvironment::extract_ski_aki_from_cert(&cert)?;
+                PkiEnvironment::extract_ski_aki_from_cert(&cert)?;
 
                 // only verify that leaf has the right identity fields
                 if i == 0 {
-                    Self::verify_leaf_certificate(cert, &order.try_get_coalesce_identifier()?)?;
+                    Self::verify_leaf_certificate(cert, &order.try_get_coalesce_identifier()?, env)?;
                 }
                 acc.push(cert_pem.contents().to_vec());
                 Ok(acc)
@@ -52,9 +57,13 @@ impl RustyAcme {
 
     /// Ensure that the generated certificate matches our expectations (i.e. that the acme server is configured the right way)
     /// We verify that the fields in the certificate match the ones in the ACME order
-    fn verify_leaf_certificate(cert: Certificate, identifier: &CanonicalIdentifier) -> RustyAcmeResult<()> {
+    fn verify_leaf_certificate(
+        cert: Certificate,
+        identifier: &CanonicalIdentifier,
+        env: Option<&PkiEnvironment>,
+    ) -> RustyAcmeResult<()> {
         // TODO: verify that cert is signed by enrollment.sign_kp
-        let cert_identity = cert.extract_identity()?;
+        let cert_identity = cert.extract_identity(env)?;
 
         let invalid_client_id =
             ClientId::try_from_qualified(&cert_identity.client_id)? != ClientId::try_from_uri(&identifier.client_id)?;
