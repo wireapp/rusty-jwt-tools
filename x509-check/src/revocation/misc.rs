@@ -51,6 +51,5 @@ pub(crate) fn get_dps_from_cert(cert: &PDVCertificate) -> Option<Vec<Vec<u8>>> {
                 .collect::<Vec<_>>(),
         ),
         _ => None,
-    };
-    None
+    }
 }
