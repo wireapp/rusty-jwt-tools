@@ -85,6 +85,10 @@ impl TryFrom<&CertificateList> for CrlInfo {
                                         idp_name = Some(name_to_string(dn));
                                         break;
                                     }
+                                    if let GeneralName::UniformResourceIdentifier(uri) = gn {
+                                        idp_name = Some(uri.to_string());
+                                        break;
+                                    }
                                 }
                                 if idp_name.is_none() {
                                     // not supporting non-DN DPs
