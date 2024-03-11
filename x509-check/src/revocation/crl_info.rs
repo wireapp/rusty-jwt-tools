@@ -82,11 +82,12 @@ impl TryFrom<&CertificateList> for CrlInfo {
                             Some(DistributionPointName::FullName(gns)) => {
                                 for gn in gns {
                                     if let GeneralName::DirectoryName(dn) = gn {
-                                        idp_name = Some(name_to_string(dn));
+                                        idp_name.replace(name_to_string(dn));
                                         break;
                                     }
                                     if let GeneralName::UniformResourceIdentifier(uri) = gn {
-                                        idp_name = Some(uri.to_string());
+                                        let uri_str = uri.as_str();
+                                        idp_name.replace(uri_str.to_string());
                                         break;
                                     }
                                 }
