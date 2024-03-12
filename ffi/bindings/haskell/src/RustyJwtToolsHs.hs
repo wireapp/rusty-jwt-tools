@@ -25,6 +25,7 @@ foreign import ccall unsafe "generate_dpop_access_token"
     CString ->
     CString ->
     CString ->
+    CString ->
     Word32 ->
     Word64 ->
     Word64 ->
@@ -47,13 +48,14 @@ createToken ::
   CString ->
   CString ->
   CString ->
+  CString ->
   Word32 ->
   Word64 ->
   Word64 ->
   CString ->
   IO (Maybe (Ptr JwtResponse))
-createToken dpopProof user client handle teamId domain nonce uri method maxSkewSecs expiration now backendKeys = do
-  ptr <- generate_dpop_access_token dpopProof user client handle teamId domain nonce uri method maxSkewSecs expiration now backendKeys
+createToken dpopProof user client handle displayName teamId domain nonce uri method maxSkewSecs expiration now backendKeys = do
+  ptr <- generate_dpop_access_token dpopProof user client handle displayName teamId domain nonce uri method maxSkewSecs expiration now backendKeys
   if ptr /= nullPtr
     then pure $ Just ptr
     else pure Nothing
@@ -78,6 +80,7 @@ generateDpopAccessToken ::
   UUID ->
   Word64 ->
   Text ->
+  ByteString ->
   UUID ->
   Text ->
   ByteString ->
@@ -88,11 +91,12 @@ generateDpopAccessToken ::
   Word64 ->
   ByteString ->
   m (Either String ByteString)
-generateDpopAccessToken dpopProof user client handle teamId domain nonce uri method maxSkewSecs expiration now backendKeys = do
+generateDpopAccessToken dpopProof user client handle displayName teamId domain nonce uri method maxSkewSecs expiration now backendKeys = do
   let before = do
         dpopProofCStr <- newCString (cs dpopProof)
         userCStr <- newCString (cs (toText user))
         handleCStr <- newCString (cs handle)
+        displayNameCStr <- newCString (cs displayName)
         teamIdCStr <- newCString (cs (toText teamId))
         domainCStr <- newCString (cs domain)
         nonceCStr <- newCString (cs nonce)
@@ -104,6 +108,7 @@ generateDpopAccessToken dpopProof user client handle teamId domain nonce uri met
           userCStr
           client
           handleCStr
+          displayNameCStr
           teamIdCStr
           domainCStr
           nonceCStr
