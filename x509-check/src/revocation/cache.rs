@@ -7,10 +7,10 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct StatusAndTime {
     status: PathValidationStatus, // Valid or Revoked
-    time: u64,
+    valid_until: u64,
 }
 
 type CacheMap = BTreeMap<(String, String), StatusAndTime>;
@@ -20,17 +20,20 @@ pub struct RevocationCache {
     cache_map: Arc<Mutex<CacheMap>>,
 }
 
+fn get_name_serial_pair(cert: &PDVCertificate) -> (String, String) {
+    let name = name_to_string(&cert.decoded_cert.tbs_certificate.issuer);
+    let serial = buffer_to_hex(cert.decoded_cert.tbs_certificate.serial_number.as_bytes());
+    (name, serial)
+}
+
 impl RevocationStatusCache for RevocationCache {
     fn get_status(&self, cert: &PDVCertificate, time_of_interest: u64) -> PathValidationStatus {
-        let name = name_to_string(&cert.decoded_cert.tbs_certificate.issuer);
-        let serial = buffer_to_hex(cert.decoded_cert.tbs_certificate.serial_number.as_bytes());
-
         let Ok(cache_map) = self.cache_map.lock() else {
             return PathValidationStatus::RevocationStatusNotDetermined;
         };
 
-        if let Some(status_and_time) = cache_map.get(&(name, serial)) {
-            if status_and_time.time > time_of_interest {
+        if let Some(status_and_time) = cache_map.get(&get_name_serial_pair(cert)) {
+            if status_and_time.valid_until > time_of_interest {
                 return status_and_time.status;
             }
         }
@@ -38,13 +41,23 @@ impl RevocationStatusCache for RevocationCache {
         PathValidationStatus::RevocationStatusNotDetermined
     }
 
-    fn add_status(&self, cert: &PDVCertificate, next_update: u64, status: PathValidationStatus) {
-        if status != PathValidationStatus::Valid && status != PathValidationStatus::CertificateRevoked {
+    fn add_status(&self, cert: &PDVCertificate, next_update: u64, mut status: PathValidationStatus) {
+        let is_status_relevant = matches!(
+            status,
+            PathValidationStatus::Valid
+                | PathValidationStatus::CertificateRevoked
+                | PathValidationStatus::CertificateRevokedEndEntity
+                | PathValidationStatus::CertificateRevokedIntermediateCa
+                | PathValidationStatus::NoPathsFound
+        );
+
+        if !is_status_relevant {
             return;
         }
 
-        let name = name_to_string(&cert.decoded_cert.tbs_certificate.issuer);
-        let serial = buffer_to_hex(cert.decoded_cert.tbs_certificate.serial_number.as_bytes());
+        if status != PathValidationStatus::Valid {
+            status = PathValidationStatus::CertificateRevoked;
+        }
 
         let Ok(mut cache_map) = self.cache_map.lock() else {
             return;
@@ -52,13 +65,13 @@ impl RevocationStatusCache for RevocationCache {
 
         let status_and_time = StatusAndTime {
             status,
-            time: next_update,
+            valid_until: next_update,
         };
 
         cache_map
-            .entry((name, serial))
+            .entry(get_name_serial_pair(cert))
             .and_modify(|old_status_and_time| {
-                if old_status_and_time.time < next_update {
+                if old_status_and_time.valid_until < next_update {
                     *old_status_and_time = status_and_time;
                 }
             })
