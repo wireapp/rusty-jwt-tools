@@ -12,6 +12,9 @@ pub enum RustyX509CheckError {
     /// DER de/serialization error
     #[error(transparent)]
     DerError(#[from] x509_cert::der::Error),
+    /// PEM de/serialization error
+    #[error("PEM en/decoding error: {0}")]
+    PemError(x509_cert::der::pem::Error),
     /// Poisoned lock error
     #[error("A lock has been poisoned and cannot be recovered from.")]
     LockPoisonError,
@@ -30,6 +33,12 @@ pub enum RustyX509CheckError {
     /// Implementation error
     #[error("Implementation error")]
     ImplementationError,
+}
+
+impl From<x509_cert::der::pem::Error> for RustyX509CheckError {
+    fn from(value: x509_cert::der::pem::Error) -> Self {
+        RustyX509CheckError::PemError(value)
+    }
 }
 
 impl From<certval::Error> for RustyX509CheckError {

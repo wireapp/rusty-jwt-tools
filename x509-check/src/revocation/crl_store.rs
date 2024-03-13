@@ -111,6 +111,14 @@ impl CrlStore {
 }
 
 impl CrlSource for CrlStore {
+    fn get_all_crls(&self) -> certval::Result<Vec<Vec<u8>>> {
+        let crls = self.crls.lock().map_err(|_| certval::Error::Unrecognized)?;
+        crls.iter().try_fold(Vec::with_capacity(crls.len()), |mut acc, crl| {
+            acc.push(crl.to_der()?);
+            Ok(acc)
+        })
+    }
+
     fn get_crls(&self, cert: &PDVCertificate) -> certval::Result<Vec<Vec<u8>>> {
         let crls = self.crls.lock().map_err(|_| certval::Error::Unrecognized)?;
         // DistributionPoint matching
