@@ -25,6 +25,8 @@ pub mod prelude {
     pub use order::AcmeOrder;
     pub use rusty_x509_check as x509;
 
+    pub use identity::thumbprint::compute_raw_key_thumbprint;
+
     pub use directory::AcmeDirectory;
 
     #[cfg(all(feature = "docker", not(target_family = "wasm")))]

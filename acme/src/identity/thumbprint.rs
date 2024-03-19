@@ -5,9 +5,24 @@ use crate::{
 use jwt_simple::prelude::*;
 use rusty_jwt_tools::{
     jwk::TryIntoJwk,
-    prelude::{HashAlgorithm, JwkThumbprint},
+    prelude::{HashAlgorithm, JwkThumbprint, JwsAlgorithm},
 };
 use x509_cert::spki::SubjectPublicKeyInfoOwned;
+
+/// Used to compute the MLS thumbprint of a Basic Credential
+pub fn compute_raw_key_thumbprint(
+    sign_alg: JwsAlgorithm,
+    hash_alg: HashAlgorithm,
+    signature_public_key: &[u8],
+) -> RustyAcmeResult<String> {
+    let jwk = match sign_alg {
+        JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
+        JwsAlgorithm::P256 => ES256PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
+        JwsAlgorithm::P384 => ES384PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
+    };
+    let thumbprint = JwkThumbprint::generate(&jwk, hash_alg)?;
+    Ok(thumbprint.kid)
+}
 
 /// See: https://datatracker.ietf.org/doc/html/rfc8037#appendix-A.3
 pub(crate) fn try_compute_jwk_canonicalized_thumbprint(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<String> {
