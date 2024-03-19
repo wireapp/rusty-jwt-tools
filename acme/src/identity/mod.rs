@@ -7,7 +7,7 @@ use rusty_x509_check::IdentityStatus;
 use crate::error::CertificateError;
 use crate::prelude::*;
 
-mod thumbprint;
+pub mod thumbprint;
 
 #[derive(Debug, Clone)]
 pub struct WireIdentity {
