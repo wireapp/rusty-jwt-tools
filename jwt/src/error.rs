@@ -104,8 +104,8 @@ pub enum RustyJwtError {
     /// DPoP token 'htm' claim mismatches with the expected method
     #[error("DPoP token 'htm' claim mismatches with the expected method")]
     DpopHtmMismatch,
-    /// DPoP proof has an unsupported algorithm
-    #[error("DPoP proof has an unsupported algorithm")]
+    /// Unsupported algorithm
+    #[error("Unsupported algorithm")]
     UnsupportedAlgorithm,
     /// Supplied backend keys have an invalid format
     #[error("Supplied backend keys have an invalid format because {0}")]

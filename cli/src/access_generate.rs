@@ -1,4 +1,5 @@
 use crate::{pem::*, utils::*};
+use anyhow::anyhow;
 use clap::Parser;
 use jwt_simple::prelude::*;
 use rusty_jwt_tools::prelude::*;
@@ -63,6 +64,7 @@ impl AccessGenerate {
         let client_kp = match alg {
             JwsAlgorithm::P256 => ES256KeyPair::generate().to_pem().unwrap().into(),
             JwsAlgorithm::P384 => ES384KeyPair::generate().to_pem().unwrap().into(),
+            JwsAlgorithm::P521 => return Err(anyhow!("P521 not supported")),
             JwsAlgorithm::Ed25519 => Ed25519KeyPair::generate().to_pem().into(),
         };
 

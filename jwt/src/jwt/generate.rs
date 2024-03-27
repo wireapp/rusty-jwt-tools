@@ -42,6 +42,7 @@ impl RustyJwtTools {
                 kp.attach_metadata(with_jwk(jwk))?;
                 Ok(kp.sign_with_header(claims, header)?)
             }
+            JwsAlgorithm::P521 => Err(RustyJwtError::UnsupportedAlgorithm),
         }
     }
 }

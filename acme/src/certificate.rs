@@ -28,6 +28,7 @@ impl RustyAcme {
     pub fn certificate_response(
         response: String,
         order: AcmeOrder,
+        hash_alg: HashAlgorithm,
         env: Option<&PkiEnvironment>,
     ) -> RustyAcmeResult<Vec<Vec<u8>>> {
         order.verify()?;
@@ -48,7 +49,7 @@ impl RustyAcme {
 
                 // only verify that leaf has the right identity fields
                 if i == 0 {
-                    Self::verify_leaf_certificate(cert, &order.try_get_coalesce_identifier()?, env)?;
+                    Self::verify_leaf_certificate(cert, &order.try_get_coalesce_identifier()?, hash_alg, env)?;
                 }
                 acc.push(cert_pem.contents().to_vec());
                 Ok(acc)
@@ -60,10 +61,11 @@ impl RustyAcme {
     fn verify_leaf_certificate(
         cert: Certificate,
         identifier: &CanonicalIdentifier,
+        hash_alg: HashAlgorithm,
         env: Option<&PkiEnvironment>,
     ) -> RustyAcmeResult<()> {
         // TODO: verify that cert is signed by enrollment.sign_kp
-        let cert_identity = cert.extract_identity(env)?;
+        let cert_identity = cert.extract_identity(env, hash_alg)?;
 
         let invalid_client_id =
             ClientId::try_from_qualified(&cert_identity.client_id)? != ClientId::try_from_uri(&identifier.client_id)?;

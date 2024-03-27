@@ -1,4 +1,5 @@
 use crate::{pem::parse_key_pair_pem, utils::*};
+use anyhow::anyhow;
 use clap::Parser;
 use console::style;
 use jwt_simple::prelude::*;
@@ -28,6 +29,7 @@ impl ParseJwk {
                 let kp = ES384KeyPair::from_pem(pem.as_str()).expect("Invalid PEM");
                 kp.public_key().try_into_jwk().unwrap()
             }
+            JwsAlgorithm::P521 => return Err(anyhow!("P521 not supported")),
             JwsAlgorithm::Ed25519 => {
                 let kp = Ed25519KeyPair::from_pem(pem.as_str()).expect("Invalid PEM");
                 kp.public_key().try_into_jwk().unwrap()

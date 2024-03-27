@@ -25,7 +25,7 @@ pub struct WireIdentity {
 pub trait WireIdentityReader {
     /// Verifies a proof of identity, may it be a x509 certificate (or a Verifiable Presentation (later)).
     /// We do not verify anything else e.g. expiry, it is left to MLS implementation
-    fn extract_identity(&self, env: Option<&PkiEnvironment>) -> RustyAcmeResult<WireIdentity>;
+    fn extract_identity(&self, env: Option<&PkiEnvironment>, hash_alg: HashAlgorithm) -> RustyAcmeResult<WireIdentity>;
 
     /// returns the 'Not Before' claim which usually matches the creation timestamp
     fn extract_created_at(&self) -> RustyAcmeResult<u64>;
@@ -35,14 +35,14 @@ pub trait WireIdentityReader {
 }
 
 impl WireIdentityReader for x509_cert::Certificate {
-    fn extract_identity(&self, env: Option<&PkiEnvironment>) -> RustyAcmeResult<WireIdentity> {
+    fn extract_identity(&self, env: Option<&PkiEnvironment>, hash_alg: HashAlgorithm) -> RustyAcmeResult<WireIdentity> {
         let serial_number = hex::encode(self.tbs_certificate.serial_number.as_bytes());
         let not_before = self.tbs_certificate.validity.not_before.to_unix_duration().as_secs();
         let not_after = self.tbs_certificate.validity.not_after.to_unix_duration().as_secs();
         let (client_id, handle) = try_extract_san(&self.tbs_certificate)?;
         let (display_name, domain) = try_extract_subject(&self.tbs_certificate)?;
         let status = IdentityStatus::from_cert(self, env);
-        let thumbprint = thumbprint::try_compute_jwk_canonicalized_thumbprint(&self.tbs_certificate)?;
+        let thumbprint = thumbprint::try_compute_jwk_canonicalized_thumbprint(&self.tbs_certificate, hash_alg)?;
 
         Ok(WireIdentity {
             client_id,
@@ -72,8 +72,8 @@ impl WireIdentityReader for x509_cert::Certificate {
 }
 
 impl WireIdentityReader for &[u8] {
-    fn extract_identity(&self, env: Option<&PkiEnvironment>) -> RustyAcmeResult<WireIdentity> {
-        x509_cert::Certificate::from_der(self)?.extract_identity(env)
+    fn extract_identity(&self, env: Option<&PkiEnvironment>, hash_alg: HashAlgorithm) -> RustyAcmeResult<WireIdentity> {
+        x509_cert::Certificate::from_der(self)?.extract_identity(env, hash_alg)
     }
 
     fn extract_created_at(&self) -> RustyAcmeResult<u64> {
@@ -86,8 +86,8 @@ impl WireIdentityReader for &[u8] {
 }
 
 impl WireIdentityReader for Vec<u8> {
-    fn extract_identity(&self, env: Option<&PkiEnvironment>) -> RustyAcmeResult<WireIdentity> {
-        self.as_slice().extract_identity(env)
+    fn extract_identity(&self, env: Option<&PkiEnvironment>, hash_alg: HashAlgorithm) -> RustyAcmeResult<WireIdentity> {
+        self.as_slice().extract_identity(env, hash_alg)
     }
 
     fn extract_created_at(&self) -> RustyAcmeResult<u64> {
@@ -198,7 +198,10 @@ OfqfZA1YMtN5NLz/AA==
     #[wasm_bindgen_test]
     fn should_find_claims_in_x509() {
         let cert_der = pem::parse(CERT).unwrap();
-        let identity = cert_der.contents().extract_identity(None).unwrap();
+        let identity = cert_der
+            .contents()
+            .extract_identity(None, HashAlgorithm::SHA256)
+            .unwrap();
 
         assert_eq!(&identity.client_id, "obakjPOHQ2CkNb0rOrNM3A:ba54e8ace8b4c90d@wire.com");
         assert_eq!(identity.handle.as_str(), "wireapp://%40alice_wire@wire.com");
@@ -232,13 +235,19 @@ OfqfZA1YMtN5NLz/AA==
     #[wasm_bindgen_test]
     fn should_have_valid_status() {
         let cert_der = pem::parse(CERT).unwrap();
-        let identity = cert_der.contents().extract_identity(None).unwrap();
+        let identity = cert_der
+            .contents()
+            .extract_identity(None, HashAlgorithm::SHA256)
+            .unwrap();
         assert_eq!(&identity.status, &IdentityStatus::Valid);
 
         let cert_der = pem::parse(CERT_EXPIRED).unwrap();
         let mut env = PkiEnvironment::init(PkiEnvironmentParams::default()).unwrap();
         env.refresh_time_of_interest().unwrap();
-        let identity = cert_der.contents().extract_identity(Some(&env)).unwrap();
+        let identity = cert_der
+            .contents()
+            .extract_identity(Some(&env), HashAlgorithm::SHA256)
+            .unwrap();
         assert_eq!(&identity.status, &IdentityStatus::Expired);
     }
 
@@ -246,7 +255,10 @@ OfqfZA1YMtN5NLz/AA==
     #[wasm_bindgen_test]
     fn should_have_thumbprint() {
         let cert_der = pem::parse(CERT).unwrap();
-        let identity = cert_der.contents().extract_identity(None).unwrap();
+        let identity = cert_der
+            .contents()
+            .extract_identity(None, HashAlgorithm::SHA256)
+            .unwrap();
         assert!(!identity.thumbprint.is_empty());
     }
 }
