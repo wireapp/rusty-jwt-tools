@@ -62,6 +62,7 @@ impl RustyAcme {
             JwsAlgorithm::Ed25519 => oid_registry::OID_SIG_ED25519,
             JwsAlgorithm::P256 => oid_registry::OID_SIG_ECDSA_WITH_SHA256,
             JwsAlgorithm::P384 => oid_registry::OID_SIG_ECDSA_WITH_SHA384,
+            JwsAlgorithm::P521 => oid_registry::OID_SIG_ECDSA_WITH_SHA512,
         };
         Self::into_asn1_alg(oid, None)
     }
@@ -121,6 +122,7 @@ impl RustyAcme {
                 )?;
                 (pk, alg)
             }
+            JwsAlgorithm::P521 => return Err(RustyAcmeError::NotSupported),
         };
         let subject_public_key = x509_cert::der::asn1::BitString::new(0, pk)?;
         Ok(x509_cert::spki::SubjectPublicKeyInfoOwned {
@@ -180,6 +182,7 @@ impl RustyAcme {
                 let signature: p384::ecdsa::DerSignature = sk.try_sign(&cert_data)?;
                 x509_cert::der::asn1::BitString::new(0, signature.to_der()?)?
             }
+            JwsAlgorithm::P521 => return Err(RustyAcmeError::NotSupported),
         };
         Ok(signature)
     }

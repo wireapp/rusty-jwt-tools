@@ -20,6 +20,12 @@ pub enum JwsAlgorithm {
     ///
     /// [1]: https://tools.ietf.org/html/rfc7518#section-3.4
     P384,
+    /// ECDSA using P-521 and SHA-512
+    ///
+    /// Specified in [RFC 7518 Section 3.4: Digital Signature with ECDSA][1]
+    ///
+    /// [1]: https://tools.ietf.org/html/rfc7518#section-3.4
+    P521,
     /// EdDSA using Ed25519
     ///
     /// Specified in [RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)][1] and
@@ -35,6 +41,7 @@ impl ToString for JwsAlgorithm {
         match self {
             JwsAlgorithm::P256 => "ES256",
             JwsAlgorithm::P384 => "ES384",
+            JwsAlgorithm::P521 => "ES512",
             JwsAlgorithm::Ed25519 => "EdDSA",
         }
         .to_string()
@@ -48,6 +55,7 @@ impl TryFrom<&str> for JwsAlgorithm {
         Ok(match alg {
             "ES256" => JwsAlgorithm::P256,
             "ES384" => JwsAlgorithm::P384,
+            "ES512" => JwsAlgorithm::P521,
             "EdDSA" => JwsAlgorithm::Ed25519,
             _ => return Err(RustyJwtError::UnsupportedAlgorithm),
         })
@@ -57,8 +65,8 @@ impl TryFrom<&str> for JwsAlgorithm {
 #[cfg(test)]
 impl JwsAlgorithm {
     /// Utility for listing all the JWA signature schemes not supported by this crate
-    pub const UNSUPPORTED: [&'static str; 10] = [
-        "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES512",
+    pub const UNSUPPORTED: [&'static str; 9] = [
+        "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512",
     ];
 }
 
@@ -69,6 +77,8 @@ pub enum JwsEcAlgorithm {
     P256,
     /// P-384
     P384,
+    /// P-521
+    P521,
 }
 
 impl JwsEcAlgorithm {
@@ -77,6 +87,7 @@ impl JwsEcAlgorithm {
         match self {
             JwsEcAlgorithm::P256 => EllipticCurve::P256,
             JwsEcAlgorithm::P384 => EllipticCurve::P384,
+            JwsEcAlgorithm::P521 => EllipticCurve::P521,
         }
     }
 
@@ -93,6 +104,7 @@ impl TryFrom<JwsAlgorithm> for JwsEcAlgorithm {
         match alg {
             JwsAlgorithm::P256 => Ok(Self::P256),
             JwsAlgorithm::P384 => Ok(Self::P384),
+            JwsAlgorithm::P521 => Ok(Self::P521),
             JwsAlgorithm::Ed25519 => Err(RustyJwtError::ImplementationError),
         }
     }
@@ -103,6 +115,7 @@ impl From<JwsEcAlgorithm> for JwsAlgorithm {
         match alg {
             JwsEcAlgorithm::P256 => Self::P256,
             JwsEcAlgorithm::P384 => Self::P384,
+            JwsEcAlgorithm::P521 => Self::P521,
         }
     }
 }
@@ -134,7 +147,7 @@ impl TryFrom<JwsAlgorithm> for JwsEdAlgorithm {
     fn try_from(alg: JwsAlgorithm) -> RustyJwtResult<Self> {
         match alg {
             JwsAlgorithm::Ed25519 => Ok(Self::Ed25519),
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 => Err(RustyJwtError::ImplementationError),
+            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => Err(RustyJwtError::ImplementationError),
         }
     }
 }
@@ -154,12 +167,14 @@ pub enum HashAlgorithm {
     SHA256,
     /// SHA-384
     SHA384,
+    /// SHA-512
+    SHA512,
 }
 
 #[cfg(test)]
 impl HashAlgorithm {
-    pub fn values() -> [Self; 2] {
-        [Self::SHA256, Self::SHA384]
+    pub fn values() -> [Self; 3] {
+        [Self::SHA256, Self::SHA384, Self::SHA512]
     }
 }
 
@@ -168,6 +183,7 @@ impl std::fmt::Display for HashAlgorithm {
         let name = match self {
             HashAlgorithm::SHA256 => "SHA-256",
             HashAlgorithm::SHA384 => "SHA-384",
+            HashAlgorithm::SHA512 => "SHA-512",
         };
         write!(f, "{name}")
     }
@@ -180,6 +196,7 @@ impl FromStr for HashAlgorithm {
         Ok(match s {
             "SHA-256" => Self::SHA256,
             "SHA-384" => Self::SHA384,
+            "SHA-512" => Self::SHA512,
             _ => return Err(RustyJwtError::ImplementationError),
         })
     }
@@ -191,6 +208,7 @@ impl From<JwsAlgorithm> for HashAlgorithm {
         match alg {
             JwsAlgorithm::Ed25519 | JwsAlgorithm::P256 => Self::SHA256,
             JwsAlgorithm::P384 => Self::SHA384,
+            JwsAlgorithm::P521 => Self::SHA512,
         }
     }
 }

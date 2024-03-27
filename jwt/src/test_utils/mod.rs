@@ -44,7 +44,9 @@ pub struct JwtKey {
 impl JwtKey {
     pub fn new_key(alg: JwsAlgorithm) -> Self {
         match alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 => JwtEcKey::new_key(alg.try_into().unwrap()).into(),
+            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+                JwtEcKey::new_key(alg.try_into().unwrap()).into()
+            }
             JwsAlgorithm::Ed25519 => JwtEdKey::new_key(alg.try_into().unwrap()).into(),
         }
     }
@@ -54,7 +56,7 @@ impl JwtKey {
         T: Serialize + DeserializeOwned,
     {
         match self.alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 => JwtEcKey::from(self).claims::<T>(token),
+            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => JwtEcKey::from(self).claims::<T>(token),
             JwsAlgorithm::Ed25519 => JwtEdKey::from(self).claims::<T>(token),
         }
     }
@@ -69,6 +71,7 @@ impl JwtKey {
         match self.alg {
             JwsAlgorithm::P256 => [JwsAlgorithm::P384, JwsAlgorithm::Ed25519],
             JwsAlgorithm::P384 => [JwsAlgorithm::P256, JwsAlgorithm::Ed25519],
+            JwsAlgorithm::P521 => unimplemented!(),
             JwsAlgorithm::Ed25519 => [JwsAlgorithm::P256, JwsAlgorithm::P384],
         }
     }
@@ -83,6 +86,7 @@ impl JwtKey {
                 .unwrap()
                 .try_into_jwk()
                 .unwrap(),
+            JwsAlgorithm::P521 => unimplemented!(),
             JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(self.pk.as_str())
                 .unwrap()
                 .try_into_jwk()
@@ -94,7 +98,9 @@ impl JwtKey {
 impl From<(JwsAlgorithm, Pem)> for JwtKey {
     fn from((alg, kp): (JwsAlgorithm, Pem)) -> Self {
         match alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 => JwtEcKey::from((alg.try_into().unwrap(), kp)).into(),
+            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+                JwtEcKey::from((alg.try_into().unwrap(), kp)).into()
+            }
             JwsAlgorithm::Ed25519 => JwtEdKey::from((alg.try_into().unwrap(), kp)).into(),
         }
     }
@@ -149,6 +155,7 @@ impl JwtEcKey {
         match alg {
             JwsEcAlgorithm::P256 => (alg, ES256KeyPair::generate().to_pem().unwrap().into()).into(),
             JwsEcAlgorithm::P384 => (alg, ES384KeyPair::generate().to_pem().unwrap().into()).into(),
+            JwsEcAlgorithm::P521 => unimplemented!(),
         }
     }
 
@@ -165,6 +172,7 @@ impl JwtEcKey {
                 .unwrap()
                 .verify_token::<T>(token, None)
                 .unwrap(),
+            JwsEcAlgorithm::P521 => unimplemented!(),
         }
     }
 }
@@ -195,6 +203,9 @@ impl From<(JwsEcAlgorithm, Pem)> for JwtEcKey {
                     pk,
                     alg,
                 }
+            }
+            JwsEcAlgorithm::P521 => {
+                unimplemented!()
             }
         }
     }
@@ -318,7 +329,12 @@ impl Default for Ciphersuite {
 
 #[template]
 #[export]
-#[rstest(hash, case::SHA256(HashAlgorithm::SHA256), case::SHA384(HashAlgorithm::SHA384))]
+#[rstest(
+    hash,
+    case::SHA256(HashAlgorithm::SHA256),
+    case::SHA384(HashAlgorithm::SHA384),
+    case::SHA512(HashAlgorithm::SHA512)
+)]
 #[allow(non_snake_case)]
 pub fn all_hash(hash: HashAlgorithm) {}
 

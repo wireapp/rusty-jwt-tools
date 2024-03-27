@@ -73,6 +73,12 @@ impl TryIntoJwk for AnyEcPublicKey {
                 let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
                 (x, y)
             }
+            JwsEcAlgorithm::P521 => {
+                let point = p521::EncodedPoint::from_bytes(bytes)?;
+                let x = RustyJwk::base64_url_encode(point.x().ok_or(RustyJwtError::ImplementationError)?);
+                let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
+                (x, y)
+            }
         };
         Ok(Jwk {
             common: CommonParameters::default(),
@@ -117,6 +123,7 @@ pub mod tests {
                 };
                 assert!(matches!(jwk.algorithm, AlgorithmParameters::EllipticCurve(p) if is_valid(&p)));
             }
+            JwsEcAlgorithm::P521 => unimplemented!(),
         }
     }
 
@@ -136,6 +143,7 @@ pub mod tests {
                 let new_key = ES384PublicKey::try_from_jwk(&jwk).unwrap();
                 assert_eq!(original.to_bytes(), new_key.to_bytes());
             }
+            JwsEcAlgorithm::P521 => unimplemented!(),
         }
     }
 
@@ -156,6 +164,9 @@ pub mod tests {
                 // trying from the wrong key size
                 let result = ES256PublicKey::try_from_jwk(&jwk);
                 assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
+            }
+            JwsEcAlgorithm::P521 => {
+                unimplemented!()
             }
         }
     }

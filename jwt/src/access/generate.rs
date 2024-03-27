@@ -124,7 +124,7 @@ impl RustyJwtTools {
             }
             .into_jwt_claims(client_id, nonce, proof_claims.custom.htu, audience, expiry)
         };
-        Ok(match alg {
+        let access_token = match alg {
             JwsAlgorithm::P256 => {
                 let mut kp = ES256KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES256 key pair"))?;
@@ -146,7 +146,9 @@ impl RustyJwtTools {
                 kp.attach_metadata(with_jwk(jwk))?;
                 kp.sign_with_header(Some(claims), header)?
             }
-        })
+            JwsAlgorithm::P521 => return Err(RustyJwtError::UnsupportedAlgorithm),
+        };
+        Ok(access_token)
     }
 
     fn new_access_header(alg: JwsAlgorithm) -> JWTHeader {
@@ -248,6 +250,7 @@ pub mod tests {
                                 .unwrap();
                             (kty, curve, pk_pem, signing_key_pem)
                         }
+                        JwsEcAlgorithm::P521 => unimplemented!(),
                     };
                     p.key_type == kty && p.curve == curve && jwk_pk == signing_pk
                 };
@@ -537,6 +540,7 @@ pub mod tests {
                     .unwrap()
                     .public_key()
                     .verify_token::<NoCustomClaims>(&access_token, None),
+                JwsAlgorithm::P521 => unimplemented!(),
                 JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(backend_keys.as_str())
                     .unwrap()
                     .public_key()
@@ -556,6 +560,7 @@ pub mod tests {
             let reason = match ciphersuite.key.alg {
                 JwsAlgorithm::P256 => "Invalid ES256 key pair",
                 JwsAlgorithm::P384 => "Invalid ES384 key pair",
+                JwsAlgorithm::P521 => "Invalid ES512 key pair",
                 JwsAlgorithm::Ed25519 => "Invalid ED25519 key pair",
             };
             assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidBackendKeys(r) if r == reason));

@@ -146,6 +146,7 @@ pub mod tests {
                         let pk_pem = ES384PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
                         (kty, curve, pk_pem)
                     }
+                    JwsEcAlgorithm::P521 => unimplemented!(),
                 };
                 p.key_type == kty && p.curve == curve && key.pk == jwk_pk.into()
             };
@@ -207,6 +208,7 @@ pub mod tests {
                 JwsEcAlgorithm::P384 => ES384PublicKey::from_pem(&key.pk)
                     .unwrap()
                     .verify_token::<Dpop>(&token, None),
+                JwsEcAlgorithm::P521 => unimplemented!(),
             };
             assert!(verify.is_ok());
 
@@ -214,6 +216,7 @@ pub mod tests {
             let verify_with_other_key = match key.alg {
                 JwsEcAlgorithm::P256 => ES256KeyPair::generate().public_key().verify_token::<Dpop>(&token, None),
                 JwsEcAlgorithm::P384 => ES384KeyPair::generate().public_key().verify_token::<Dpop>(&token, None),
+                JwsEcAlgorithm::P521 => unimplemented!(),
             };
             assert!(verify_with_other_key.is_err());
 
@@ -228,6 +231,7 @@ pub mod tests {
                     JwsEcAlgorithm::P384 => ES384PublicKey::try_from_jwk(j)
                         .unwrap()
                         .verify_token::<Dpop>(&token, None),
+                    JwsEcAlgorithm::P521 => unimplemented!(),
                 }
                 .is_ok()
             };

@@ -211,10 +211,7 @@ pub mod tests {
         #[apply(all_ciphersuites)]
         #[test]
         fn alg(ciphersuite: Ciphersuite) {
-            let unsupported = &[
-                "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES512",
-            ]
-            .map(|a| a.to_string());
+            let unsupported = JwsAlgorithm::UNSUPPORTED.map(|a| a.to_string());
             // should fail when 'alg' is not supported
             for alg in unsupported {
                 let access = AccessBuilder {

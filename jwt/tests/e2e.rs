@@ -78,6 +78,7 @@ fn e2e_jwt() {
                 .public_key()
                 .to_pem()
                 .unwrap(),
+            JwsAlgorithm::P521 => unimplemented!(),
             JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(backend_keys.as_str())
                 .unwrap()
                 .public_key()

@@ -37,6 +37,12 @@ impl JwkThumbprint {
                 let hash = &hasher.finalize()[..];
                 base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(hash)
             }
+            HashAlgorithm::SHA512 => {
+                let mut hasher = sha2::Sha512::new();
+                hasher.update(json);
+                let hash = &hasher.finalize()[..];
+                base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(hash)
+            }
         };
         Ok(Self { kid })
     }
@@ -126,6 +132,10 @@ pub mod tests {
                     &thumbprint.kid,
                     "EcgQUf2ct-84eLYyH0o-leu6RJ46Lq_5jlCCEa5RlAPVcLXgHoh4Q0RnwFqRuk3y"
                 ),
+                HashAlgorithm::SHA512 => assert_eq!(
+                    &thumbprint.kid,
+                    "1Lc52f5GlYxMNFaQ5fXlBfU-Ho-mUVgMhTwVAagvWRrSHZTQiy4jdA2zV4K79AKXCs1yx8TqDKwULNc_7_Z0Ng"
+                ),
             }
         }
 
@@ -150,6 +160,10 @@ pub mod tests {
                 HashAlgorithm::SHA384 => assert_eq!(
                     &thumbprint.kid,
                     "tdNAT4Jr8cRlkxmgtYcum6EAGLWl6AXsflQs5izMSCY9gsFTD-cd5j1_vmev5_2X"
+                ),
+                HashAlgorithm::SHA512 => assert_eq!(
+                    &thumbprint.kid,
+                    "jDQEEK3aJ9Zq0KvJl-6mHfYuE_HiodVmY9Y--_h-QwXgkVk8Uwkhv9WavunCz8qhpQ8XKXHdDeqa-alWPaeqjQ"
                 ),
             }
         }
@@ -176,6 +190,10 @@ pub mod tests {
                     &thumbprint.kid,
                     "SDannkEbVekJlQtvocnp8oF38WVF23gEXj3tDqQnVlzJdinp2vgT-W-wbBN_wksO"
                 ),
+                HashAlgorithm::SHA512 => assert_eq!(
+                    &thumbprint.kid,
+                    "gIaQpxTXPJVE6XVzZRDG3AURbItjoEnxEVIJdICqXqtAzIAJJHvQNYxxKPZ6fvu4aEx-p7CvMimYkOtX0u4rLg"
+                ),
             }
         }
 
@@ -198,6 +216,10 @@ pub mod tests {
                 HashAlgorithm::SHA384 => assert_eq!(
                     &thumbprint.kid,
                     "Ow8bJ-FJVEMr6XcEDsio9IYfeq8OpvIgJnsE-7vQs2rdk_sWnp4gGjxMxAqcEjMy"
+                ),
+                HashAlgorithm::SHA512 => assert_eq!(
+                    &thumbprint.kid,
+                    "SiJgzsfOnllS44TLJ_qVl-oTGeh1eqtNDvnIiMxNhhD-CgRE1UwQVRlk_PIT9Y4xGqAWWm-o3goS79ery6vHmQ"
                 ),
             }
         }

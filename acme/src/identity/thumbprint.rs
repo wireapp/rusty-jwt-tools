@@ -19,16 +19,19 @@ pub fn compute_raw_key_thumbprint(
         JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
         JwsAlgorithm::P256 => ES256PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
         JwsAlgorithm::P384 => ES384PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
+        JwsAlgorithm::P521 => return Err(RustyAcmeError::NotSupported),
     };
     let thumbprint = JwkThumbprint::generate(&jwk, hash_alg)?;
     Ok(thumbprint.kid)
 }
 
 /// See: https://datatracker.ietf.org/doc/html/rfc8037#appendix-A.3
-pub(crate) fn try_compute_jwk_canonicalized_thumbprint(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<String> {
+pub(crate) fn try_compute_jwk_canonicalized_thumbprint(
+    cert: &x509_cert::TbsCertificate,
+    hash_alg: HashAlgorithm,
+) -> RustyAcmeResult<String> {
     let jwk = try_into_jwk(&cert.subject_public_key_info)?;
-    // Hash is always SHA-256
-    let thumbprint = JwkThumbprint::generate(&jwk, HashAlgorithm::SHA256)?;
+    let thumbprint = JwkThumbprint::generate(&jwk, hash_alg)?;
     Ok(thumbprint.kid)
 }
 
