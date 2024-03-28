@@ -64,7 +64,7 @@ native-tls = { version = "0.2", features = ["vendored"] }
 asserhttp = { version = "0.6", features = ["reqwest"] }
 testcontainers = "0.15"
 oauth2 = "4.3"
-http = "0.2"
+http = "1.1"
 keycloak = "21"
 
 [target.'cfg(target_family = "wasm")'.dev-dependencies]
