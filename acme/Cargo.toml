@@ -21,7 +21,7 @@ base64 = "0.21"
 url = { version = "2.5", features = ["serde"] }
 time = { version = "0.3", features = ["serde", "serde-well-known", "wasm-bindgen"] }
 x509-cert = "0.2"
-oid-registry = "0.6"
+oid-registry = "0.7"
 asn1-rs = "0.5"
 signature = "2"
 ed25519-compact = "2.0"
