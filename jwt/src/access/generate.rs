@@ -146,7 +146,13 @@ impl RustyJwtTools {
                 kp.attach_metadata(with_jwk(jwk))?;
                 kp.sign_with_header(Some(claims), header)?
             }
-            JwsAlgorithm::P521 => return Err(RustyJwtError::UnsupportedAlgorithm),
+            JwsAlgorithm::P521 => {
+                let mut kp = ES512KeyPair::from_pem(backend_keys.as_str())
+                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES512 key pair"))?;
+                let jwk = kp.public_key().try_into_jwk()?;
+                kp.attach_metadata(with_jwk(jwk))?;
+                kp.sign_with_header(Some(claims), header)?
+            }
         };
         Ok(access_token)
     }
@@ -203,7 +209,7 @@ pub mod tests {
                 assert!(jwk.get("kty").unwrap().as_str().is_some());
                 assert!(jwk.get("crv").unwrap().as_str().is_some());
                 assert!(jwk.get("x").unwrap().as_str().is_some());
-                if let JwsAlgorithm::P256 | JwsAlgorithm::P384 = ciphersuite.key.alg {
+                if let JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 = ciphersuite.key.alg {
                     assert!(jwk.get("y").unwrap().as_str().is_some());
                 } else {
                     assert!(jwk.get("y").is_none());
@@ -250,7 +256,17 @@ pub mod tests {
                                 .unwrap();
                             (kty, curve, pk_pem, signing_key_pem)
                         }
-                        JwsEcAlgorithm::P521 => unimplemented!(),
+                        JwsEcAlgorithm::P521 => {
+                            let kty = EllipticCurveKeyType::EC;
+                            let curve = EllipticCurve::P521;
+                            let pk_pem = ES512PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
+                            let signing_key_pem = ES512KeyPair::from_pem(backend_kp.as_str())
+                                .unwrap()
+                                .public_key()
+                                .to_pem()
+                                .unwrap();
+                            (kty, curve, pk_pem, signing_key_pem)
+                        }
                     };
                     p.key_type == kty && p.curve == curve && jwk_pk == signing_pk
                 };
@@ -540,7 +556,10 @@ pub mod tests {
                     .unwrap()
                     .public_key()
                     .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::P521 => unimplemented!(),
+                JwsAlgorithm::P521 => ES512KeyPair::from_pem(backend_keys.as_str())
+                    .unwrap()
+                    .public_key()
+                    .verify_token::<NoCustomClaims>(&access_token, None),
                 JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(backend_keys.as_str())
                     .unwrap()
                     .public_key()

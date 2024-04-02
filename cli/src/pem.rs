@@ -8,6 +8,8 @@ pub fn parse_key_pair_pem(pem: String) -> (JwsAlgorithm, Pem) {
         JwsAlgorithm::P256
     } else if ES384KeyPair::from_pem(&pem).is_ok() {
         JwsAlgorithm::P384
+    } else if ES512KeyPair::from_pem(&pem).is_ok() {
+        JwsAlgorithm::P521
     } else {
         panic!("PEM key did not match any known format")
     };
@@ -21,6 +23,8 @@ pub fn parse_public_key_pem(pem: String) -> (JwsAlgorithm, Pem) {
         JwsAlgorithm::P256
     } else if ES384PublicKey::from_pem(&pem).is_ok() {
         JwsAlgorithm::P384
+    } else if ES512PublicKey::from_pem(&pem).is_ok() {
+        JwsAlgorithm::P521
     } else {
         panic!("PEM key did not match any known format")
     };

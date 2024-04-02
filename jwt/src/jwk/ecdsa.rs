@@ -54,6 +54,32 @@ impl TryFromJwk for ES384PublicKey {
     }
 }
 
+impl TryIntoJwk for ES512PublicKey {
+    fn try_into_jwk(self) -> RustyJwtResult<Jwk> {
+        AnyEcPublicKey(JwsEcAlgorithm::P521, self.public_key().to_bytes_uncompressed()).try_into_jwk()
+    }
+}
+
+impl TryFromJwk for ES512PublicKey {
+    fn try_from_jwk(jwk: &Jwk) -> RustyJwtResult<Self> {
+        Ok(match &jwk.algorithm {
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                key_type: EllipticCurveKeyType::EC,
+                curve: EllipticCurve::P521,
+                x,
+                y,
+            }) => {
+                let x = RustyJwk::base64_url_decode(x.as_bytes())?;
+                let y = RustyJwk::base64_url_decode(y.as_bytes())?;
+                let point =
+                    p521::EncodedPoint::from_affine_coordinates(x.as_slice().into(), y.as_slice().into(), false);
+                ES512PublicKey::from_bytes(point.as_bytes())?
+            }
+            _ => return Err(RustyJwtError::InvalidDpopJwk),
+        })
+    }
+}
+
 /// For factorizing common elliptic curve operations
 struct AnyEcPublicKey(JwsEcAlgorithm, Vec<u8>);
 
@@ -123,7 +149,14 @@ pub mod tests {
                 };
                 assert!(matches!(jwk.algorithm, AlgorithmParameters::EllipticCurve(p) if is_valid(&p)));
             }
-            JwsEcAlgorithm::P521 => unimplemented!(),
+            JwsEcAlgorithm::P521 => {
+                let pk = ES512PublicKey::from_pem(key.pk.as_str()).unwrap();
+                let jwk = ES512PublicKey::try_into_jwk(pk).unwrap();
+                let is_valid = |p: &EllipticCurveKeyParameters| {
+                    p.key_type == EllipticCurveKeyType::EC && p.curve == EllipticCurve::P521
+                };
+                assert!(matches!(jwk.algorithm, AlgorithmParameters::EllipticCurve(p) if is_valid(&p)));
+            }
         }
     }
 
@@ -143,7 +176,12 @@ pub mod tests {
                 let new_key = ES384PublicKey::try_from_jwk(&jwk).unwrap();
                 assert_eq!(original.to_bytes(), new_key.to_bytes());
             }
-            JwsEcAlgorithm::P521 => unimplemented!(),
+            JwsEcAlgorithm::P521 => {
+                let original = ES512PublicKey::from_pem(key.pk.as_str()).unwrap();
+                let jwk = original.clone().try_into_jwk().unwrap();
+                let new_key = ES512PublicKey::try_from_jwk(&jwk).unwrap();
+                assert_eq!(original.to_bytes(), new_key.to_bytes());
+            }
         }
     }
 
@@ -166,7 +204,11 @@ pub mod tests {
                 assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
             }
             JwsEcAlgorithm::P521 => {
-                unimplemented!()
+                let original = ES512PublicKey::from_pem(key.pk.as_str()).unwrap();
+                let jwk = original.try_into_jwk().unwrap();
+                // trying from the wrong key size
+                let result = ES384PublicKey::try_from_jwk(&jwk);
+                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
             }
         }
     }

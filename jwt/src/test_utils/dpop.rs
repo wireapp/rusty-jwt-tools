@@ -83,7 +83,10 @@ impl DpopBuilder {
                 .unwrap()
                 .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
-            JwsAlgorithm::P521 => unimplemented!(),
+            JwsAlgorithm::P521 => ES512KeyPair::from_pem(kp)
+                .unwrap()
+                .sign_with_header(Some(self.claims()), self.header())
+                .unwrap(),
             JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(kp)
                 .unwrap()
                 .sign_with_header(Some(self.claims()), self.header())
