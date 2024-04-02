@@ -14,7 +14,7 @@ impl AnyPublicKey<'_> {
             let pem = match self.0 {
                 JwsAlgorithm::P256 => ES256PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
                 JwsAlgorithm::P384 => ES384PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
-                JwsAlgorithm::P521 => return Err(RustyJwtError::UnsupportedAlgorithm),
+                JwsAlgorithm::P521 => ES512PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
                 JwsAlgorithm::Ed25519 => Ed25519PublicKey::try_from_jwk(jwk)?.to_pem().into(),
             };
             return Ok(pem);
@@ -59,14 +59,14 @@ impl AnyPublicKey<'_> {
             match alg {
                 JwsAlgorithm::P256 => ES256PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
                 JwsAlgorithm::P384 => ES384PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
-                JwsAlgorithm::P521 => Err(jwt_simple::Error::msg("P521 not supported")),
+                JwsAlgorithm::P521 => ES512PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
                 JwsAlgorithm::Ed25519 => Ed25519PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
             }
         } else if let Some(pk) = pk {
             match alg {
                 JwsAlgorithm::P256 => ES256PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
                 JwsAlgorithm::P384 => ES384PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
-                JwsAlgorithm::P521 => Err(jwt_simple::Error::msg("P521 not supported")),
+                JwsAlgorithm::P521 => ES512PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
                 JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
             }
         } else {

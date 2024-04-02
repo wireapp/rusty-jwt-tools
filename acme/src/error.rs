@@ -22,12 +22,6 @@ pub enum RustyAcmeError {
     /// Failed mapping a DER certificate
     #[error(transparent)]
     DerError(#[from] x509_cert::der::Error),
-    /// Failed with DER conversion
-    #[error(transparent)]
-    Asn1DerError(#[from] asn1_rs::Err<asn1_rs::Error>),
-    /// Failed mapping a DER object
-    #[error(transparent)]
-    Asn1SerializeError(#[from] asn1_rs::SerializeError),
     /// Error while parsing a PEM document
     #[error(transparent)]
     PemError(#[from] pem::PemError),

@@ -7,7 +7,7 @@ git = "https://github.com/beltram/biscuit"
 tag = "v0.6.2-pre.core-crypto-0.7.0"
 
 [workspace.dependencies.jwt-simple]
-version = "0.12"
+version = "0.13"
 git = "https://github.com/wireapp/rust-jwt-simple"
-tag = "v0.12.1-pre.core-crypto-1.0.0"
+tag = "v0.13.0-pre.core-crypto-1.0.0"
 default-features = false

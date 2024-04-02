@@ -2,13 +2,13 @@ use crate::{
     error::CertificateError,
     prelude::{RustyAcmeError, RustyAcmeResult},
 };
-use asn1_rs::FromDer;
+
 use jwt_simple::prelude::*;
 use rusty_jwt_tools::{
     jwk::TryIntoJwk,
     prelude::{HashAlgorithm, JwkThumbprint, JwsAlgorithm},
 };
-use x509_cert::der::Encode;
+
 use x509_cert::spki::SubjectPublicKeyInfoOwned;
 
 /// Used to compute the MLS thumbprint of a Basic Credential
@@ -21,7 +21,7 @@ pub fn compute_raw_key_thumbprint(
         JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
         JwsAlgorithm::P256 => ES256PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
         JwsAlgorithm::P384 => ES384PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
-        JwsAlgorithm::P521 => return Err(RustyAcmeError::NotSupported),
+        JwsAlgorithm::P521 => ES512PublicKey::from_bytes(signature_public_key)?.try_into_jwk()?,
     };
     let thumbprint = JwkThumbprint::generate(&jwk, hash_alg)?;
     Ok(thumbprint.kid)
@@ -38,32 +38,32 @@ pub(crate) fn try_compute_jwk_canonicalized_thumbprint(
 }
 
 fn try_into_jwk(spki: &SubjectPublicKeyInfoOwned) -> RustyAcmeResult<Jwk> {
-    let oid = oid_registry::Oid::new(std::borrow::Cow::Borrowed(spki.algorithm.oid.as_bytes()));
+    use const_oid::db::{
+        rfc5912::{ID_EC_PUBLIC_KEY, SECP_256_R_1, SECP_384_R_1, SECP_521_R_1},
+        rfc8410::{ID_ED_25519, ID_ED_448},
+    };
+    let params = spki
+        .algorithm
+        .parameters
+        .as_ref()
+        .and_then(|param| x509_cert::spki::ObjectIdentifier::from_bytes(param.value()).ok());
 
-    // cannot pattern match oid_registry::Oid because it contains a Cow<'_>
-    if oid == oid_registry::OID_SIG_ED25519 {
-        Ok(Ed25519PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
-    } else if oid == oid_registry::OID_KEY_TYPE_EC_PUBLIC_KEY {
-        let parameter = spki
-            .algorithm
-            .parameters
-            .as_ref()
-            .ok_or(RustyAcmeError::InvalidCertificate(CertificateError::InvalidPublicKey))?;
-        let der_parameter = parameter.to_der()?;
-        let (_, curve) = oid_registry::Oid::from_der(&der_parameter[..])?;
-
-        if oid_registry::OID_EC_P256 == curve {
-            Ok(ES256PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
-        } else if oid_registry::OID_NIST_EC_P384 == curve {
-            Ok(ES384PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
-        } else {
-            Err(RustyAcmeError::InvalidCertificate(
-                CertificateError::UnsupportedPublicKey,
-            ))
-        }
-    } else {
-        Err(RustyAcmeError::InvalidCertificate(
+    match (spki.algorithm.oid, params) {
+        (ID_ED_25519, None) => Ok(Ed25519PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?),
+        (ID_ED_448, None) => Err(RustyAcmeError::InvalidCertificate(
             CertificateError::UnsupportedPublicKey,
-        ))
+        )),
+        (ID_EC_PUBLIC_KEY, Some(SECP_256_R_1)) => {
+            Ok(ES256PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
+        }
+        (ID_EC_PUBLIC_KEY, Some(SECP_384_R_1)) => {
+            Ok(ES384PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
+        }
+        (ID_EC_PUBLIC_KEY, Some(SECP_521_R_1)) => {
+            Ok(ES512PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
+        }
+        _ => Err(RustyAcmeError::InvalidCertificate(
+            CertificateError::UnsupportedPublicKey,
+        )),
     }
 }

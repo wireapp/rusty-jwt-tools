@@ -105,12 +105,16 @@ fn try_extract_subject(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(Str
 
     let mut subjects = cert.subject.0.iter().flat_map(|n| n.0.iter());
     subjects.try_for_each(|s| -> RustyAcmeResult<()> {
-        let oid = s.oid.as_bytes();
-        if oid == oid_registry::OID_X509_ORGANIZATION_NAME.as_bytes() {
-            domain = Some(std::str::from_utf8(s.value.value())?);
-        } else if oid == oid_registry::OID_X509_COMMON_NAME.as_bytes() {
-            display_name = Some(std::str::from_utf8(s.value.value())?);
+        match s.oid {
+            const_oid::db::rfc4519::ORGANIZATION_NAME => {
+                domain = Some(std::str::from_utf8(s.value.value())?);
+            }
+            const_oid::db::rfc4519::COMMON_NAME => {
+                display_name = Some(std::str::from_utf8(s.value.value())?);
+            }
+            _ => {}
         }
+
         Ok(())
     })?;
     let display_name = display_name.ok_or(CertificateError::MissingDisplayName)?.to_string();
@@ -125,7 +129,7 @@ fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String,
     let san = extensions
         .iter()
         .find_map(|e| {
-            (e.extn_id.as_bytes() == oid_registry::OID_X509_EXT_SUBJECT_ALT_NAME.as_bytes())
+            (e.extn_id == const_oid::db::rfc5280::ID_CE_SUBJECT_ALT_NAME)
                 .then(|| x509_cert::ext::pkix::SubjectAltName::from_der(e.extn_value.as_bytes()))
         })
         .transpose()?

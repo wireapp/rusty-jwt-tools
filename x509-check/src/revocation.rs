@@ -60,8 +60,6 @@ impl std::fmt::Debug for PkiEnvironment {
     }
 }
 
-// TODO: extract CRL URI from cert
-
 fn check_cpr(cpr: CertificationPathResults) -> RustyX509CheckResult<()> {
     if let Some(validation_status) = get_validation_status(&cpr) {
         match validation_status {

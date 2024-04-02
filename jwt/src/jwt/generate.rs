@@ -42,7 +42,12 @@ impl RustyJwtTools {
                 kp.attach_metadata(with_jwk(jwk))?;
                 Ok(kp.sign_with_header(claims, header)?)
             }
-            JwsAlgorithm::P521 => Err(RustyJwtError::UnsupportedAlgorithm),
+            JwsAlgorithm::P521 => {
+                let mut kp = ES512KeyPair::from_pem(kp.as_str())?;
+                let jwk = kp.public_key().try_into_jwk()?;
+                kp.attach_metadata(with_jwk(jwk))?;
+                Ok(kp.sign_with_header(claims, header)?)
+            }
         }
     }
 }

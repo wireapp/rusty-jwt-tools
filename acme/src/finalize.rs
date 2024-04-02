@@ -1,4 +1,3 @@
-use asn1_rs::ToDer;
 use base64::Engine;
 use jwt_simple::prelude::*;
 use x509_cert::der::Encode;
@@ -59,16 +58,16 @@ impl RustyAcme {
 
     fn csr_alg(alg: JwsAlgorithm) -> RustyAcmeResult<x509_cert::spki::AlgorithmIdentifierOwned> {
         let oid = match alg {
-            JwsAlgorithm::Ed25519 => oid_registry::OID_SIG_ED25519,
-            JwsAlgorithm::P256 => oid_registry::OID_SIG_ECDSA_WITH_SHA256,
-            JwsAlgorithm::P384 => oid_registry::OID_SIG_ECDSA_WITH_SHA384,
-            JwsAlgorithm::P521 => oid_registry::OID_SIG_ECDSA_WITH_SHA512,
+            JwsAlgorithm::Ed25519 => const_oid::db::rfc8410::ID_ED_25519,
+            JwsAlgorithm::P256 => const_oid::db::rfc5912::ECDSA_WITH_SHA_256,
+            JwsAlgorithm::P384 => const_oid::db::rfc5912::ECDSA_WITH_SHA_384,
+            JwsAlgorithm::P521 => const_oid::db::rfc5912::ECDSA_WITH_SHA_512,
         };
         Self::into_asn1_alg(oid, None)
     }
 
     fn csr_subject(identifier: &CanonicalIdentifier) -> RustyAcmeResult<x509_cert::name::DistinguishedName> {
-        let dn_domain_oid = oid_registry::OID_X509_ORGANIZATION_NAME.as_bytes().try_into()?;
+        let dn_domain_oid = const_oid::db::rfc4519::ORGANIZATION_NAME;
         let dn_domain_value =
             x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Utf8String, identifier.domain.as_bytes())?;
         let dn_domain = x509_cert::attr::AttributeTypeAndValue {
@@ -78,7 +77,8 @@ impl RustyAcme {
 
         // TODO: temporarily using a custom OIDC for carrying the display name without having it listed as a DNS SAN.
         // reusing LDAP's OID for display_name see http://oid-info.com/get/2.16.840.1.113730.3.1.241
-        let dn_display_name_oid = asn1_rs::oid!(2.16.840 .1 .113730 .3 .1 .241).as_bytes().try_into()?;
+        let dn_display_name_oid = const_oid::ObjectIdentifier::new("2.16.840.1.113730.3.1.241")?;
+        // let dn_display_name_oid = asn1_rs::oid!(2.16.840 .1 .113730 .3 .1 .241).as_bytes().try_into()?;
         let dn_display_name_value =
             x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Utf8String, identifier.display_name.as_bytes())?;
         let dn_display_name = x509_cert::attr::AttributeTypeAndValue {
@@ -97,7 +97,7 @@ impl RustyAcme {
             JwsAlgorithm::Ed25519 => {
                 let pk = Ed25519KeyPair::from_pem(kp.as_str())?.public_key().to_bytes();
                 // see https://www.rfc-editor.org/rfc/rfc8410#section-3
-                let alg = Self::into_asn1_alg(oid_registry::OID_SIG_ED25519, None)?;
+                let alg = Self::into_asn1_alg(const_oid::db::rfc8410::ID_ED_25519, None)?;
                 (pk, alg)
             }
             JwsAlgorithm::P256 => {
@@ -106,8 +106,8 @@ impl RustyAcme {
 
                 // see https://www.rfc-editor.org/rfc/rfc3279#section-2.3.5
                 let alg = Self::into_asn1_alg(
-                    oid_registry::OID_KEY_TYPE_EC_PUBLIC_KEY,
-                    Some(oid_registry::OID_EC_P256),
+                    const_oid::db::rfc5912::ID_EC_PUBLIC_KEY,
+                    Some(const_oid::db::rfc5912::SECP_256_R_1),
                 )?;
                 (pk, alg)
             }
@@ -117,12 +117,22 @@ impl RustyAcme {
 
                 // see https://www.rfc-editor.org/rfc/rfc3279#section-2.3.5
                 let alg = Self::into_asn1_alg(
-                    oid_registry::OID_KEY_TYPE_EC_PUBLIC_KEY,
-                    Some(oid_registry::OID_NIST_EC_P384),
+                    const_oid::db::rfc5912::ID_EC_PUBLIC_KEY,
+                    Some(const_oid::db::rfc5912::SECP_384_R_1),
                 )?;
                 (pk, alg)
             }
-            JwsAlgorithm::P521 => return Err(RustyAcmeError::NotSupported),
+            JwsAlgorithm::P521 => {
+                let kp = ES512KeyPair::from_pem(kp.as_str())?;
+                let pk = kp.public_key().public_key().to_bytes_uncompressed();
+
+                // see https://www.rfc-editor.org/rfc/rfc3279#section-2.3.5
+                let alg = Self::into_asn1_alg(
+                    const_oid::db::rfc5912::ID_EC_PUBLIC_KEY,
+                    Some(const_oid::db::rfc5912::SECP_521_R_1),
+                )?;
+                (pk, alg)
+            }
         };
         let subject_public_key = x509_cert::der::asn1::BitString::new(0, pk)?;
         Ok(x509_cert::spki::SubjectPublicKeyInfoOwned {
@@ -143,13 +153,13 @@ impl RustyAcme {
             x509_cert::ext::pkix::SubjectAltName(vec![gn(identifier.client_id)?, gn(identifier.handle.as_str())?]);
         let san = x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::OctetString, san.to_der()?)?;
 
-        let san_oid = oid_registry::OID_X509_EXT_SUBJECT_ALT_NAME.to_der_vec()?;
+        let san_oid = const_oid::db::rfc5280::ID_CE_SUBJECT_ALT_NAME.to_der()?;
         let san = [san_oid, san.to_der()?].concat();
         let san = x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Sequence, san)?;
         let san = x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::Sequence, san.to_der()?)?;
 
         let attributes = vec![x509_cert::attr::Attribute {
-            oid: oid_registry::OID_PKCS9_EXTENSION_REQUEST.as_bytes().try_into()?,
+            oid: const_oid::db::rfc5912::ID_EXTENSION_REQ,
             values: vec![san].try_into()?,
         }];
         Ok(attributes.try_into()?)
@@ -166,9 +176,8 @@ impl RustyAcme {
         let signature = match alg {
             JwsAlgorithm::Ed25519 => {
                 let kp = Ed25519KeyPair::from_pem(kp.as_str())?;
-                let noise = ed25519_compact::Noise::generate();
-                let signature = kp.key_pair().as_ref().sk.sign(&cert_data, Some(noise));
-                x509_cert::der::asn1::BitString::new(0, signature.as_ref())?
+                let signature = kp.key_pair().as_ref().sign(&cert_data);
+                x509_cert::der::asn1::BitString::new(0, signature.to_vec())?
             }
             JwsAlgorithm::P256 => {
                 let kp = ES256KeyPair::from_pem(kp.as_str())?;
@@ -182,20 +191,26 @@ impl RustyAcme {
                 let signature: p384::ecdsa::DerSignature = sk.try_sign(&cert_data)?;
                 x509_cert::der::asn1::BitString::new(0, signature.to_der()?)?
             }
-            JwsAlgorithm::P521 => return Err(RustyAcmeError::NotSupported),
+            JwsAlgorithm::P521 => {
+                let kp = ES512KeyPair::from_pem(kp.as_str())?;
+                let sk: ecdsa::SigningKey<p521::NistP521> = kp.key_pair().as_ref().clone();
+                let sk = p521::ecdsa::SigningKey::from(sk);
+
+                let signature: p521::ecdsa::DerSignature = sk.try_sign(&cert_data)?.to_der();
+                x509_cert::der::asn1::BitString::new(0, signature.to_der()?)?
+            }
         };
         Ok(signature)
     }
 
     fn into_asn1_alg(
-        oid: oid_registry::Oid,
-        oid_parameter: Option<oid_registry::Oid>,
+        oid: const_oid::ObjectIdentifier,
+        oid_parameter: Option<const_oid::ObjectIdentifier>,
     ) -> RustyAcmeResult<x509_cert::spki::AlgorithmIdentifierOwned> {
-        let oid = oid.as_bytes().try_into()?;
-        let parameters = oid_parameter
-            .map(|p| x509_cert::attr::AttributeValue::new(x509_cert::der::Tag::ObjectIdentifier, p.as_bytes()))
-            .transpose()?;
-        let alg = x509_cert::spki::AlgorithmIdentifierOwned { oid, parameters };
+        let alg = x509_cert::spki::AlgorithmIdentifierOwned {
+            oid,
+            parameters: oid_parameter.map(Into::into),
+        };
         Ok(alg)
     }
 
