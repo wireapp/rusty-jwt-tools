@@ -2,11 +2,13 @@ use crate::{
     error::CertificateError,
     prelude::{RustyAcmeError, RustyAcmeResult},
 };
+use asn1_rs::FromDer;
 use jwt_simple::prelude::*;
 use rusty_jwt_tools::{
     jwk::TryIntoJwk,
     prelude::{HashAlgorithm, JwkThumbprint, JwsAlgorithm},
 };
+use x509_cert::der::Encode;
 use x509_cert::spki::SubjectPublicKeyInfoOwned;
 
 /// Used to compute the MLS thumbprint of a Basic Credential
@@ -41,11 +43,27 @@ fn try_into_jwk(spki: &SubjectPublicKeyInfoOwned) -> RustyAcmeResult<Jwk> {
     // cannot pattern match oid_registry::Oid because it contains a Cow<'_>
     if oid == oid_registry::OID_SIG_ED25519 {
         Ok(Ed25519PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
-    } else if oid == oid_registry::OID_SIG_ECDSA_WITH_SHA256 {
-        Ok(ES256PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
-    } else if oid == oid_registry::OID_SIG_ECDSA_WITH_SHA384 {
-        Ok(ES384PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
+    } else if oid == oid_registry::OID_KEY_TYPE_EC_PUBLIC_KEY {
+        let parameter = spki
+            .algorithm
+            .parameters
+            .as_ref()
+            .ok_or(RustyAcmeError::InvalidCertificate(CertificateError::InvalidPublicKey))?;
+        let der_parameter = parameter.to_der()?;
+        let (_, curve) = oid_registry::Oid::from_der(&der_parameter[..])?;
+
+        if oid_registry::OID_EC_P256 == curve {
+            Ok(ES256PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
+        } else if oid_registry::OID_NIST_EC_P384 == curve {
+            Ok(ES384PublicKey::from_bytes(spki.subject_public_key.raw_bytes())?.try_into_jwk()?)
+        } else {
+            Err(RustyAcmeError::InvalidCertificate(
+                CertificateError::UnsupportedPublicKey,
+            ))
+        }
     } else {
-        Err(RustyAcmeError::InvalidCertificate(CertificateError::InvalidPublicKey))
+        Err(RustyAcmeError::InvalidCertificate(
+            CertificateError::UnsupportedPublicKey,
+        ))
     }
 }
