@@ -10,3 +10,4 @@ tag = "v0.6.2-pre.core-crypto-0.7.0"
 version = "0.12"
 git = "https://github.com/wireapp/rust-jwt-simple"
 tag = "v0.12.1-pre.core-crypto-1.0.0"
+default-features = false

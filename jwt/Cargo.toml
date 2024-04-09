@@ -52,4 +52,5 @@ josekit = "0.8"
 
 [features]
 jwe = ["biscuit"]
-test-utils = ["jwt-simple/rsa"]
+test-utils = []
+rsa = ["jwt-simple/rsa"]

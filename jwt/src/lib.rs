@@ -28,6 +28,8 @@ mod oidc;
 pub mod prelude {
     pub use dpop::{Dpop, Htm, Htu};
     pub use error::{RustyJwtError, RustyJwtResult};
+    pub use jwk::json::parse_json_jwk;
+
     pub use jwk_thumbprint::JwkThumbprint;
     pub use model::{
         alg::{HashAlgorithm, JwsAlgorithm, JwsEcAlgorithm, JwsEdAlgorithm},
@@ -52,6 +54,9 @@ pub mod prelude {
 
     #[cfg(feature = "jwe")]
     pub use jwe::alg::JweAlgorithm;
+
+    #[cfg(feature = "test-utils")]
+    pub use jwk::generate_jwk;
 
     pub use super::RustyJwtTools;
     use super::*;
