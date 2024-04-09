@@ -7,7 +7,8 @@ use crate::prelude::*;
 
 mod ecdsa;
 mod eddsa;
-#[cfg(feature = "test-utils")]
+pub(crate) mod json;
+#[cfg(feature = "rsa")]
 mod rsa;
 
 /// From json to JWK
@@ -38,4 +39,16 @@ impl RustyJwk {
     fn base64_url_decode(i: impl AsRef<[u8]>) -> RustyJwtResult<Vec<u8>> {
         Ok(base64::prelude::BASE64_URL_SAFE_NO_PAD.decode(i)?)
     }
+}
+
+#[cfg(feature = "test-utils")]
+/// Generates a json serialized JWK for testing purposes
+pub fn generate_jwk(alg: JwsAlgorithm) -> Vec<u8> {
+    let jwk = match alg {
+        JwsAlgorithm::P256 => ES256KeyPair::generate().public_key().try_into_jwk().unwrap(),
+        JwsAlgorithm::P384 => ES384KeyPair::generate().public_key().try_into_jwk().unwrap(),
+        JwsAlgorithm::Ed25519 => Ed25519KeyPair::generate().public_key().try_into_jwk().unwrap(),
+        _ => unreachable!(),
+    };
+    serde_json::to_vec(&jwk).unwrap()
 }
