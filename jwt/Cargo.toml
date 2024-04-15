@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 thiserror = "1"
 serde = "1"
-base64 = "0.21"
+base64 = "0.22"
 uuid = { version = "1.6", features = ["v4"] }
 p256 = "0.13"
 p384 = "0.13"
