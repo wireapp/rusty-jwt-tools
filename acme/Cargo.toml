@@ -11,12 +11,12 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+rusty-jwt-tools = { version = "0.9.0", path = "../jwt" }
+rusty-x509-check = { version = "0.9.0", path = "../x509-check" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-rusty-jwt-tools = { version = "0.9.0", path = "../jwt" }
 jwt-simple = { workspace = true }
-rusty-x509-check = { version = "0.9.0", path = "../x509-check" }
 base64 = { workspace = true }
 url = { workspace = true, features = ["serde"] }
 time = { workspace = true, features = ["serde", "serde-well-known", "wasm-bindgen"] }
@@ -34,6 +34,6 @@ fluvio-wasm-timer = { workspace = true }
 hex = { workspace = true }
 
 [dev-dependencies]
+rusty-jwt-tools = { version = "0.9.0", path = "../jwt", features = ["test-utils"] }
 wasm-bindgen-test = { workspace = true }
 hex = { workspace = true }
-rusty-jwt-tools = { version = "0.9.0", path = "../jwt", features = ["test-utils"] }

@@ -11,8 +11,9 @@ pub enum RustyJwtError {
     #[error(transparent)]
     #[cfg(feature = "jwe")]
     JweError(#[from] biscuit::errors::Error),
-    /// Error generating random numbers
+    /// Randomness Error
     #[error(transparent)]
+    #[cfg(feature = "jwe")]
     RandError(#[from] rand::Error),
     /// Elliptic curve error
     #[error(transparent)]

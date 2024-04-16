@@ -15,3 +15,4 @@ const-oid = { workspace = true }
 thiserror = { workspace = true }
 hex = { workspace = true }
 certval = { workspace = true }
+der = { workspace = true }

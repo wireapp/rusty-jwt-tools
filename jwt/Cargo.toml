@@ -26,8 +26,6 @@ sha2 = { workspace = true }
 either = { workspace = true, features = ["serde"] }
 time = { workspace = true, features = ["serde", "serde-well-known", "wasm-bindgen"] }
 json-patch = { workspace = true }
-rand = { workspace = true }
-rand_chacha = { workspace = true }
 jwt-simple = { workspace = true }
 zeroize = { workspace = true, features = ["zeroize_derive"] }
 biscuit = { workspace = true, optional = true }
@@ -36,6 +34,8 @@ derive_more = { workspace = true, features = ["from", "into", "deref"] }
 const_format = { workspace = true }
 lazy_static = { workspace = true }
 percent-encoding = { workspace = true }
+rand = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
 
 [dev-dependencies]
 wasm-bindgen-test = { workspace = true }
@@ -46,11 +46,12 @@ ed25519-dalek = { workspace = true }
 fluvio-wasm-timer = { workspace = true }
 time = { workspace = true, features = ["macros"] }
 reqwest = { workspace = true, features = ["json"] }
+rand = { workspace = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
-josekit = "0.8"
+josekit = { workspace = true }
 
 [features]
-jwe = ["biscuit"]
+jwe = ["biscuit", "rand", "rand_chacha"]
 test-utils = []
 rsa = ["jwt-simple/rsa"]

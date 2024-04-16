@@ -3,62 +3,63 @@ members = ["e2e-identity", "jwt", "ffi", "cli", "acme", "x509-check"]
 resolver = "2"
 
 [workspace.dependencies]
-anyhow = "1.0"
-base64 = "0.22"
-biscuit = "0.6.0-beta1"
+anyhow = { version = "1.0", default-features = false }
+base64 = { version = "0.22", default-features = false, features = ["std"] }
 certval = { git = "https://github.com/wireapp/rust-pki.git", branch = "build/rsaless", package = "certval", default-features = false, features = ["revocation"] }
-clap = "4.5"
-console = "0.15"
-const-oid = "0.9"
-const_format = "0.2"
-derive_more = "0.99.17"
-ecdsa = "0.16"
-ed25519-dalek = "2.1"
-either = "1.8"
-flagset = "0.4"
-fluvio-wasm-timer = "0.2.5"
-getrandom = "0.2.8"
-hex = "0.4.3"
-html_parser = "0.6"
-itertools = "0.12"
-json-patch = "0.3"
-lazy_static = "1.4"
-openidconnect = "3.0.0-alpha.1"
-p256 = "0.13"
-p384 = "0.13"
-p521 = "0.13"
-pem = "3.0"
-percent-encoding = "2.3"
-portpicker = "0.1"
-rand = "0.8"
-rand_chacha = "0.3"
-rcgen = { git = "https://github.com/wireapp/rcgen", tag = "v1.2.2-pre.core-crypto-0.7.0", version = "=0.9.2" }
+const-oid = { version = "0.9", default-features = false, features = ["std"] }
+const_format = { version = "0.2", default-features = false }
+derive_more = { version = "0.99.17", default-features = false }
+ecdsa = { version = "0.16", default-features = false }
+ed25519-dalek = { version = "2.1", default-features = false }
+either = { version = "1.8", default-features = false }
+flagset = { version = "0.4", default-features = false }
+fluvio-wasm-timer = { version = "0.2.5", default-features = false }
+getrandom = { version = "0.2.8", default-features = false }
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+itertools = { version = "0.12", default-features = false, features = ["use_alloc"] }
+lazy_static = { version = "1.4", default-features = false }
+p256 = { version = "0.13", default-features = false }
+p384 = { version = "0.13", default-features = false }
+p521 = { version = "0.13", default-features = false }
+pem = { version = "3.0", default-features = false, features = ["std"] }
+percent-encoding = { version = "2.3", default-features = false }
+rand = { version = "0.8", default-features = false }
+rcgen = { git = "https://github.com/wireapp/rcgen", tag = "v1.2.2-pre.core-crypto-0.7.0", version = "=0.9.2", default-features = false }
+sec1 = { version = "0.7", default-features = false }
+serde = { version = "1.0", default-features = false }
+serde_json = { version = "1.0", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+signature = { version = "2", default-features = false }
+thiserror = { version = "1.0", default-features = false }
+time = { version = "0.3", default-features = false }
+url = { version = "2.5", default-features = false }
+uuid = { version = "1.6", default-features = false, features = ["std"] }
+x509-cert = { version = "0.2", default-features = false }
+zeroize = { version = "1.7", default-features = false }
+der = { version = "0.7", default-features = false, features = ["std"] }
+jwt-simple = { version = "0.13", git = "https://github.com/wireapp/rust-jwt-simple", tag = "v0.13.0-pre.core-crypto-1.0.0", default-features = false }
 
-reqwest = { version = "0.11", default-features = false }
-rstest = "0.18"
-rstest_reuse = "0.6"
-scraper = "0.14"
-sec1 = "0.7"
-serde = "1.0"
-serde_json = "1.0"
-sha2 = "0.10"
-signature = "2"
-thiserror = "1.0"
-time = "0.3"
+# Test or unused dependencies
+portpicker = { version = "0.1", default-features = false }
+biscuit = { version = "0.6.0-beta1", git = "https://github.com/beltram/biscuit", tag = "v0.6.2-pre.core-crypto-0.7.0", default-features = false }
+clap = { version = "4.5", default-features = false, features = ["std"] }
+console = { version = "0.15", default-features = false }
+json-patch = { version = "0.3", default-features = false }
 tokio = { version = "1.5", default-features = false }
-url = "2.5"
-uuid = "1.6"
-wasm-bindgen-test = "0.3"
-webbrowser = "0.8"
-x509-cert = "0.2"
-zeroize = "1.7"
-
-[patch.crates-io.biscuit]
-git = "https://github.com/beltram/biscuit"
-tag = "v0.6.2-pre.core-crypto-0.7.0"
-
-[workspace.dependencies.jwt-simple]
-version = "0.13"
-git = "https://github.com/wireapp/rust-jwt-simple"
-tag = "v0.13.0-pre.core-crypto-1.0.0"
-default-features = false
+hyper = { version = "0.14", default-features = false }
+wasm-bindgen-test = { version = "0.3", default-features = false }
+webbrowser = { version = "0.8", default-features = false }
+reqwest = { version = "0.11", default-features = false }
+rstest = { version = "0.19", default-features = false }
+rstest_reuse = { version = "0.6", default-features = false }
+scraper = { version = "0.14", default-features = false }
+html_parser = { version = "0.6", default-features = false }
+openidconnect = { version = "3.0.0-alpha.1", default-features = false }
+josekit = { version = "0.8", default-features = false }
+native-tls = { version = "0.2", default-features = false }
+asserhttp = { version = "0.6", default-features = false }
+testcontainers = { version = "0.15", default-features = false }
+oauth2 = { version = "4.3", default-features = false }
+http = { version = "0.2", default-features = false }
+keycloak = { version = "21", default-features = false }
+rand_chacha = { version = "0.3", default-features = false }

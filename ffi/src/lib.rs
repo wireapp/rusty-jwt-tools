@@ -279,7 +279,6 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::TokenExpired => Self::Expired,
             RustyJwtError::ImplementationError => Self::ImplementationError,
             RustyJwtError::JwtSimpleError(_) => Self::JwtSimpleError,
-            RustyJwtError::RandError(_) => Self::RandError,
             RustyJwtError::Sec1Error(_) => Self::Sec1Error,
             RustyJwtError::UrlParseError(_) => Self::UrlParseError,
             RustyJwtError::UuidError(_) => Self::UuidError,
