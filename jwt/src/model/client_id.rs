@@ -1,6 +1,5 @@
 use crate::model::DEFAULT_URL;
 use base64::Engine;
-use const_format::concatcp;
 use percent_encoding::percent_decode_str;
 use url::Url;
 use uuid::Uuid;
@@ -27,7 +26,7 @@ impl ClientId {
     pub const URI_RAW_SCHEME: &'static str = "wireapp";
 
     /// URI scheme for all subject URIs
-    pub const URI_SCHEME: &'static str = concatcp!(ClientId::URI_RAW_SCHEME, "://");
+    pub const URI_SCHEME: &'static str = const_format::concatcp!(ClientId::URI_RAW_SCHEME, "://");
 
     /// user-id & device-id separator
     pub const DELIMITER: &'static str = ":";

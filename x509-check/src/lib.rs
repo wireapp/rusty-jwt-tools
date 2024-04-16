@@ -9,7 +9,7 @@ pub mod revocation;
 
 #[derive(Debug, thiserror::Error)]
 pub enum RustyX509CheckError {
-    /// DER de/serialization error
+    /// Failed mapping a DER certificate
     #[error(transparent)]
     DerError(#[from] x509_cert::der::Error),
     /// PEM de/serialization error
