@@ -12,40 +12,40 @@ name = "rusty_jwt_tools"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-thiserror = "1"
-serde = "1"
-base64 = "0.22"
-uuid = { version = "1.6", features = ["v4"] }
-p256 = "0.13"
-p384 = "0.13"
-p521 = "0.13"
-sec1 = "0.7"
-url = { version = "2.5", features = ["serde"] }
-serde_json = "1.0"
-sha2 = "0.10"
-either = { version = "1.8", features = ["serde"] }
-time = { version = "0.3", features = ["serde", "serde-well-known", "wasm-bindgen"] }
-json-patch = "0.3"
-rand = "0.8"
-rand_chacha = "0.3"
+thiserror = { workspace = true }
+serde = { workspace = true }
+base64 = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+p256 = { workspace = true }
+p384 = { workspace = true }
+p521 = { workspace = true }
+sec1 = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+either = { workspace = true, features = ["serde"] }
+time = { workspace = true, features = ["serde", "serde-well-known", "wasm-bindgen"] }
+json-patch = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
 jwt-simple = { workspace = true }
-zeroize = { version = "1.7", features = ["zeroize_derive"] }
-biscuit = { version = "0.6.0-beta1", optional = true }
-getrandom = { version = "0.2.8", features = ["js"] }
-derive_more = { version = "0.99.17", features = ["from", "into", "deref"] }
-const_format = "0.2"
-lazy_static = "1.4"
-percent-encoding = "2.3"
+zeroize = { workspace = true, features = ["zeroize_derive"] }
+biscuit = { workspace = true, optional = true }
+getrandom = { workspace = true, features = ["js"] }
+derive_more = { workspace = true, features = ["from", "into", "deref"] }
+const_format = { workspace = true }
+lazy_static = { workspace = true }
+percent-encoding = { workspace = true }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3"
-rstest = "0.18"
-rstest_reuse = "0.6"
-serde_json = "1.0"
-ed25519-dalek = "2.1"
-fluvio-wasm-timer = "0.2.5"
-time = { version = "0.3", features = ["macros"] }
-reqwest = { version = "0.11", features = ["json"], default_features = false }
+wasm-bindgen-test = { workspace = true }
+rstest = { workspace = true }
+rstest_reuse = { workspace = true }
+serde_json = { workspace = true }
+ed25519-dalek = { workspace = true }
+fluvio-wasm-timer = { workspace = true }
+time = { workspace = true, features = ["macros"] }
+reqwest = { workspace = true, features = ["json"] }
 
 [target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
 josekit = "0.8"

@@ -8,16 +8,10 @@ license = "MPL-2.0"
 publish = false
 
 [dependencies]
-fluvio-wasm-timer = "0.2"
-flagset = "0.4"
-x509-cert = "0.2"
-const-oid = "0.9"
-thiserror = "1.0"
-hex = "0.4"
-
-[dependencies.certval]
-git = "https://github.com/wireapp/rust-pki.git"
-branch = "wire/stable"
-package = "certval"
-default-features = false
-features = ["revocation"]
+fluvio-wasm-timer = { workspace = true }
+flagset = { workspace = true }
+x509-cert = { workspace = true }
+const-oid = { workspace = true }
+thiserror = { workspace = true }
+hex = { workspace = true }
+certval = { workspace = true }
