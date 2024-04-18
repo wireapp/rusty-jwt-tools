@@ -5,7 +5,7 @@ resolver = "2"
 [workspace.dependencies]
 anyhow = { version = "1.0", default-features = false }
 base64 = { version = "0.22", default-features = false, features = ["std"] }
-certval = { git = "https://github.com/wireapp/rust-pki.git", branch = "build/rsaless", package = "certval", default-features = false, features = ["revocation"] }
+certval = { git = "https://github.com/wireapp/rust-pki.git", branch = "wire/stable", package = "certval", default-features = false, features = ["revocation"] }
 const-oid = { version = "0.9", default-features = false, features = ["std"] }
 const_format = { version = "0.2", default-features = false }
 derive_more = { version = "0.99.17", default-features = false }
