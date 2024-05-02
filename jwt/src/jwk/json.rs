@@ -3,7 +3,7 @@ use crate::{
     prelude::{RustyJwtError, RustyJwtResult},
 };
 use jwt_simple::prelude::{
-    AlgorithmParameters, ES256PublicKey, ES384PublicKey, Ed25519PublicKey, EdwardCurve, EllipticCurve,
+    AlgorithmParameters, ES256PublicKey, ES384PublicKey, ES512PublicKey, Ed25519PublicKey, EdwardCurve, EllipticCurve,
     EllipticCurveKeyParameters, EllipticCurveKeyType, Jwk, OctetKeyPairParameters, OctetKeyPairType,
 };
 
@@ -20,6 +20,11 @@ pub fn parse_json_jwk(jwk: &[u8]) -> RustyJwtResult<Vec<u8>> {
             key_type, ref curve, ..
         }) if key_type == EllipticCurveKeyType::EC && curve == &EllipticCurve::P384 => {
             ES384PublicKey::try_from_jwk(&jwk)?.to_bytes()
+        }
+        AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+            key_type, ref curve, ..
+        }) if key_type == EllipticCurveKeyType::EC && curve == &EllipticCurve::P521 => {
+            ES512PublicKey::try_from_jwk(&jwk)?.to_bytes()
         }
         AlgorithmParameters::OctetKeyPair(OctetKeyPairParameters {
             key_type, ref curve, ..
