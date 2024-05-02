@@ -47,8 +47,8 @@ pub fn generate_jwk(alg: JwsAlgorithm) -> Vec<u8> {
     let jwk = match alg {
         JwsAlgorithm::P256 => ES256KeyPair::generate().public_key().try_into_jwk().unwrap(),
         JwsAlgorithm::P384 => ES384KeyPair::generate().public_key().try_into_jwk().unwrap(),
+        JwsAlgorithm::P521 => ES512KeyPair::generate().public_key().try_into_jwk().unwrap(),
         JwsAlgorithm::Ed25519 => Ed25519KeyPair::generate().public_key().try_into_jwk().unwrap(),
-        _ => unreachable!(),
     };
     serde_json::to_vec(&jwk).unwrap()
 }
