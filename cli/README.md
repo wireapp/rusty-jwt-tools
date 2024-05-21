@@ -2,6 +2,9 @@
 
 A cli to prototype JWTs and tryout this project.
 
+Deprecated: this used to serve inorder to have a Go FFI in the acme server. Since Smallstep rewrote all of this in Go
+this crate is no longer needed.
+
 ## Installation
 
 ```bash
@@ -9,6 +12,7 @@ cargo install --git https://github.com/wireapp/rusty-jwt-tools.git
 ```
 
 To update do:
+
 ```bash
 cargo install --force --git https://github.com/wireapp/rusty-jwt-tools.git
 ```
