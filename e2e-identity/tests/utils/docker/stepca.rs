@@ -1,7 +1,7 @@
 use base64::prelude::*;
 use std::net::SocketAddr;
-use std::{collections::HashMap, path::PathBuf};
 use std::time::Duration;
+use std::{collections::HashMap, path::PathBuf};
 
 use serde_json::json;
 use testcontainers::{clients::Cli, core::WaitFor, Container, Image, RunnableImage};
@@ -214,8 +214,9 @@ impl Image for StepCaImage {
     }
 
     fn ready_conditions(&self) -> Vec<WaitFor> {
-        //vec![WaitFor::message_on_stderr("Serving HTTPS on :")]
-        vec![WaitFor::Duration { length: Duration::new(15, 0) }]
+        vec![WaitFor::Duration {
+            length: Duration::new(15, 0),
+        }]
     }
 
     fn env_vars(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
