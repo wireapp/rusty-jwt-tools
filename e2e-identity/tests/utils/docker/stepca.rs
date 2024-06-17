@@ -1,6 +1,7 @@
 use base64::prelude::*;
 use std::net::SocketAddr;
 use std::{collections::HashMap, path::PathBuf};
+use std::time::Duration;
 
 use serde_json::json;
 use testcontainers::{clients::Cli, core::WaitFor, Container, Image, RunnableImage};
@@ -108,10 +109,10 @@ pub struct StepCaImage {
 }
 
 impl StepCaImage {
-    // const NAME: &'static str = "smallstep/step-ca";
-    const NAME: &'static str = "wire-smallstep-stepca";
-    // const TAG: &'static str = "0.25.3-rc3";
-    const TAG: &'static str = "latest";
+    const NAME: &'static str = "smallstep/step-ca";
+    //const NAME: &'static str = "smallstep-acme";
+    const TAG: &'static str = "0.25.3-rc7";
+    //const TAG: &'static str = "latest";
     const CA_NAME: &'static str = "wire";
     pub const ACME_PROVISIONER: &'static str = "wire";
     pub const PORT: u16 = 9000;
@@ -213,7 +214,8 @@ impl Image for StepCaImage {
     }
 
     fn ready_conditions(&self) -> Vec<WaitFor> {
-        vec![WaitFor::message_on_stderr("Serving HTTPS on :")]
+        //vec![WaitFor::message_on_stderr("Serving HTTPS on :")]
+        vec![WaitFor::Duration { length: Duration::new(15, 0) }]
     }
 
     fn env_vars(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
