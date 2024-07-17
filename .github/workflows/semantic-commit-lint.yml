@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [ opened, edited, synchronize ]
 
+permissions:
+  pull-requests: write # Needed to add/remove the label
+  statuses: write  # Needed to change the status of the PR from WIP to ready
+
 jobs:
   semantic-commit-pr-title-lint:
     runs-on: ubuntu-latest
@@ -37,6 +41,9 @@ jobs:
             revert
             style
             test
+          # Dependabot uses (deps) scope
+          scopes: |
+            deps
           # For work-in-progress PRs you can typically use draft pull requests 
           # from Github. However, private repositories on the free plan don't have 
           # this option and therefore this action allows you to opt-in to using the 
