@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 use crate::prelude::*;
 
@@ -49,9 +50,9 @@ impl From<url::Url> for Htu {
     }
 }
 
-impl ToString for Htu {
-    fn to_string(&self) -> String {
-        self.0.to_string()
+impl fmt::Display for Htu {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

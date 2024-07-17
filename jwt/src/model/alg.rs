@@ -36,15 +36,15 @@ pub enum JwsAlgorithm {
     Ed25519,
 }
 
-impl ToString for JwsAlgorithm {
-    fn to_string(&self) -> String {
-        match self {
+impl std::fmt::Display for JwsAlgorithm {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
             JwsAlgorithm::P256 => "ES256",
             JwsAlgorithm::P384 => "ES384",
             JwsAlgorithm::P521 => "ES512",
             JwsAlgorithm::Ed25519 => "EdDSA",
-        }
-        .to_string()
+        };
+        write!(f, "{name}")
     }
 }
 

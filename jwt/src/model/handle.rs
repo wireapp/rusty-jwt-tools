@@ -83,9 +83,9 @@ impl FromStr for QualifiedHandle {
 }
 
 /// Should only be used in tests
-impl ToString for QualifiedHandle {
-    fn to_string(&self) -> String {
-        self.0.clone()
+impl std::fmt::Display for QualifiedHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
