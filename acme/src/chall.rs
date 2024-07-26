@@ -45,7 +45,7 @@ impl RustyAcme {
     }
 
     /// 18. parse the response from `POST /acme/challenge/{token}`
-    /// [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
+    ///     [RFC 8555 Section 7.5.1](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
     pub fn new_chall_response(response: serde_json::Value) -> RustyAcmeResult<AcmeChallenge> {
         let chall = serde_json::from_value::<AcmeChallenge>(response)?;
         match chall.status {
