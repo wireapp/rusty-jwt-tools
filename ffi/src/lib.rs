@@ -5,11 +5,11 @@
 //! We only declare here intermediate FFI representation with raw types. But we do not generate
 //! all the bindings and wrappers here.
 //! * Haskell: we expose a C-FFI and [wire-server](https://github.com/wireapp/wire-server) will
-//! maintain the Haskell wrapper
+//!     maintain the Haskell wrapper
 //! * WASM: we handle bindings here but we let [core-crypto](https://github.com/wireapp/core-crypto)
-//! maintain the Typescript wrapper
+//!     maintain the Typescript wrapper
 //! * Android/iOS: we just expose raw types and let [core-crypto](https://github.com/wireapp/core-crypto)
-//! generate the bindings and wrappers
+//!     generate the bindings and wrappers
 
 use std::{
     ffi::{CStr, CString},
