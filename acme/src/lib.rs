@@ -28,9 +28,6 @@ pub mod prelude {
     pub use identity::thumbprint::compute_raw_key_thumbprint;
 
     pub use directory::AcmeDirectory;
-
-    #[cfg(all(feature = "docker", not(target_family = "wasm")))]
-    pub use docker::*;
 }
 
 pub struct RustyAcme;
