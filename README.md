@@ -16,6 +16,27 @@ No license is granted to the Wire trademark and its associated logos, all of whi
 by Wire Swiss GmbH. Any use of the Wire trademark and/or its associated logos is expressly prohibited without the
 express prior written consent of Wire Swiss GmbH.
 
+## General testing
+
+Install cargo-nextest if you haven't done so, it yields some substantial speedup.
+Also, it allows us to group tests easily and have custom settings for those groups (
+see [`.config/nextest.toml`](.config/nextest.toml)).
+
+```bash
+cargo install cargo-nextest
+```
+
+Start docker.
+The integration tests are very flaky, mainly because the behavior of the Keycloak docker container is very flaky.
+This is why we need the `no-fail-fast` flag in the test command.
+In the average case, about 75 % of the tests pass.
+A possible approach to deal with the flakiness is to run the command below and then run the tests that failed in the
+first run individually.
+
+```bash
+cargo nextest run --no-fail-fast
+```
+
 ## how to cut a release
 
 Currently, the process is manual and involves the following steps:
