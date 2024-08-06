@@ -58,7 +58,7 @@ openidconnect = { version = "3.0.0-alpha.1", default-features = false }
 josekit = { version = "0.8", default-features = false }
 native-tls = { version = "0.2", default-features = false }
 asserhttp = { version = "0.6", default-features = false }
-testcontainers = { version = "0.15", default-features = false }
+testcontainers = { version = "0.18.0", default-features = false }
 oauth2 = { version = "4.3", default-features = false }
 http = { version = "0.2", default-features = false }
 keycloak = { version = "21", default-features = false }
