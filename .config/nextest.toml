@@ -1,0 +1,6 @@
+[test-groups]
+serial-integration = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = 'package(wire-e2e-identity)'
+test-group = 'serial-integration'
