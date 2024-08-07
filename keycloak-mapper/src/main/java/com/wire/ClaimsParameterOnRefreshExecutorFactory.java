@@ -52,7 +52,7 @@ public class ClaimsParameterOnRefreshExecutorFactory implements ClientPolicyExec
     }
 
     @Override
-    public boolean isSupported() {
+    public boolean isSupported(Config.Scope config) {
         return true;
     }
 }
