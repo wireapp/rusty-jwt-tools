@@ -6,12 +6,13 @@
 
     <groupId>com.wire</groupId>
     <artifactId>e2ei-keycloak-oidc-mapper</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <keycloak.version>22.0.5</keycloak.version>
+        <!-- Keep keycloak versions in sync (search for this comment to find all places to update) -->
+        <keycloak.version>25.0.2</keycloak.version>
         <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
     </properties>
 
