@@ -1,17 +1,13 @@
+[graph]
 targets = [
     { triple = "x86_64-unknown-linux-gnu" },
     { triple = "wasm32-unknown-unknown" },
 ]
 
 [advisories]
-# TODO: use more conservative values when we come close to production
-vulnerability = "warn"
-ignore = ["RUSTSEC-2023-0071"]
+ignore = [{ id = "RUSTSEC-2023-0071", reason = "No fix released yet. Working issue: https://github.com/RustCrypto/RSA/pull/394" }]
 
 [licenses]
-unlicensed = "deny"
-allow-osi-fsf-free = "both"
-copyleft = "allow"
 confidence-threshold = 0.93
 allow = [
     "MPL-2.0",
