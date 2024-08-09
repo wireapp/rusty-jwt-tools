@@ -9,6 +9,7 @@ use keycloak::{
     types::{ClientRepresentation, CredentialRepresentation, UserRepresentation},
     KeycloakAdmin, KeycloakAdminToken,
 };
+use reqwest_011 as reqwest;
 use serde_json::json;
 use testcontainers::core::{ContainerPort, IntoContainerPort, Mount};
 use testcontainers::runners::AsyncRunner;
