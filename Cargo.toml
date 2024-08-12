@@ -54,7 +54,7 @@ rstest = { version = "0.19", default-features = false }
 rstest_reuse = { version = "0.6", default-features = false }
 scraper = { version = "0.14", default-features = false }
 html_parser = { version = "0.6", default-features = false }
-openidconnect = { version = "3.0.0-alpha.1", default-features = false }
+openidconnect = { version = "3.5.0", default-features = false }
 josekit = { version = "0.8", default-features = false }
 native-tls = { version = "0.2", default-features = false }
 asserhttp = { version = "0.6", default-features = false }
