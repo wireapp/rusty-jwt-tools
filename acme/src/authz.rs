@@ -93,39 +93,37 @@ impl AcmeAuthz {
     pub fn verify(&self) -> RustyAcmeResult<()> {
         let [challenge] = &self.challenges;
 
-        if let (AcmeIdentifier::WireappUser(_), AcmeChallengeType::WireDpop01)
-        | (AcmeIdentifier::WireappDevice(_), AcmeChallengeType::WireOidc01) = (&self.identifier, challenge.typ)
-        {
-            return Err(AcmeAuthzError::InvalidChallengeType)?;
-        };
+        if matches!(
+            (&self.identifier, challenge.typ),
+            (AcmeIdentifier::WireappDevice(_), AcmeChallengeType::WireDpop01)
+                | (AcmeIdentifier::WireappUser(_), AcmeChallengeType::WireOidc01)
+        ) {
+            let now = time::OffsetDateTime::now_utc().unix_timestamp();
 
-        let now = time::OffsetDateTime::now_utc().unix_timestamp();
+            let is_expired = self
+                .expires
+                .map(time::OffsetDateTime::unix_timestamp)
+                .is_some_and(|expires| expires < now);
+            if is_expired {
+                return Err(AcmeAuthzError::Expired)?;
+            }
 
-        let is_expired = self
-            .expires
-            .map(time::OffsetDateTime::unix_timestamp)
-            .map(|expires| expires < now)
-            .unwrap_or_default();
-        if is_expired {
-            return Err(AcmeAuthzError::Expired)?;
+            // RFC 8555 security considerations
+            // see https://datatracker.ietf.org/doc/html/rfc8555#section-8.1
+            let token = base64::prelude::BASE64_URL_SAFE_NO_PAD
+                .decode(&challenge.token)
+                .map_err(|_| AcmeAuthzError::InvalidBase64Token)?;
+
+            // token have enough entropy (at least 16 bytes)
+            // see https://datatracker.ietf.org/doc/html/rfc8555#section-11.3
+            const RECOMMENDED_TOKEN_ENTROPY: usize = 128 / 8;
+            if token.len() < RECOMMENDED_TOKEN_ENTROPY {
+                return Err(AcmeAuthzError::InvalidTokenEntropy.into());
+            }
+
+            return Ok(());
         }
-
-        // RFC 8555 security considerations
-        let [ref challenge] = self.challenges;
-
-        // see https://datatracker.ietf.org/doc/html/rfc8555#section-8.1
-        let token = base64::prelude::BASE64_URL_SAFE_NO_PAD
-            .decode(&challenge.token)
-            .map_err(|_| AcmeAuthzError::InvalidBase64Token)?;
-
-        // token have enough entropy (at least 16 bytes)
-        // see https://datatracker.ietf.org/doc/html/rfc8555#section-11.3
-        const RECOMMENDED_TOKEN_ENTROPY: usize = 128 / 8;
-        if token.len() < RECOMMENDED_TOKEN_ENTROPY {
-            return Err(AcmeAuthzError::InvalidTokenEntropy.into());
-        }
-
-        Ok(())
+        Err(AcmeAuthzError::InvalidChallengeType)?
     }
 }
 
