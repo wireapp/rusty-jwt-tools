@@ -1,4 +1,0 @@
-[all]
-timeout = "10m"
-ignore-tests = true
-run-types = ["Tests"]
