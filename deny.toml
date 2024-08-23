@@ -1,7 +1,22 @@
 [graph]
 targets = [
+    # Desktop
     { triple = "x86_64-unknown-linux-gnu" },
+    { triple = "aarch64-unknown-linux-gnu" },
+    { triple = "x86_64-unknown-linux-musl" },
+    { triple = "aarch64-apple-darwin" },
+    { triple = "x86_64-apple-darwin" },
+    { triple = "x86_64-pc-windows-msvc" },
+    # WASM
     { triple = "wasm32-unknown-unknown" },
+    # iOS
+    { triple = "aarch64-apple-ios-sim" },
+    { triple = "x86_64-apple-ios" },
+    { triple = "aarch64-apple-ios" },
+    # Android
+    { triple = "aarch64-linux-android" },
+    { triple = "armv7-linux-androideabi" },
+    { triple = "x86_64-linux-android" },
 ]
 
 [advisories]
@@ -36,23 +51,12 @@ license-files = [
     { path = "../certval/LICENSE-MIT", hash = 0x001c7e6c }
 ]
 
-[[licenses.clarify]]
-name = "webpki"
-expression = "ISC"
-license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
-
-[[licenses.clarify]]
-name = "rustls-webpki"
-expression = "ISC"
-license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
-
 [sources]
-private = [
-    "https://github.com/wireapp",
-]
+allow-org = { github = ["wireapp"] }
+
+# We need to allow briansmith/ring since beltram/biscuit depends on it.
 allow-git = [
-    "https://github.com/carl-wallace/rust-pki",
-    "https://github.com/RustCrypto/formats",
+    "https://github.com/beltram/biscuit",
     "https://github.com/briansmith/ring"
 ]
 
