@@ -1,12 +1,12 @@
 use lazy_static::lazy_static;
 
-pub mod alg;
-pub mod client_id;
-pub mod handle;
-pub mod nonce;
-pub mod pem;
-pub mod pk;
-pub mod team;
+pub(crate) mod alg;
+pub(crate) mod client_id;
+pub(crate) mod handle;
+pub(crate) mod nonce;
+pub(crate) mod pem;
+pub(crate) mod pk;
+pub(crate) mod team;
 
 // Only way to have something resembling a url builder
 lazy_static! {

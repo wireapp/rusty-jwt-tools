@@ -7,19 +7,19 @@ use serde_json::Value;
     credential::{Credential as VerifiableCredential, CredentialBuilder as VerifiableCredentialBuilder},
     presentation::{Presentation as VerifiablePresentation, PresentationBuilder as VerifiablePresentationBuilder},
 };*/
-pub mod context;
-pub mod credential;
-pub mod datetime;
-pub mod id;
-pub mod issuer;
-pub mod presentation;
-pub mod proof;
-pub mod util;
+pub(crate) mod context;
+pub(crate) mod credential;
+pub(crate) mod datetime;
+pub(crate) mod id;
+pub(crate) mod issuer;
+pub(crate) mod presentation;
+pub(crate) mod proof;
+pub(crate) mod util;
 
 /// exports
-pub mod prelude {
+mod prelude {
     #[allow(unused_imports)]
-    pub use super::{
+    pub(crate) use super::{
         context::Context,
         credential::RustyCredential,
         datetime::{iso8601, Datetime},

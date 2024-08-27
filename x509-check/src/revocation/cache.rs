@@ -16,7 +16,7 @@ struct StatusAndTime {
 type CacheMap = BTreeMap<(String, String), StatusAndTime>;
 
 #[derive(Default)]
-pub struct RevocationCache {
+pub(crate) struct RevocationCache {
     cache_map: Arc<Mutex<CacheMap>>,
 }
 

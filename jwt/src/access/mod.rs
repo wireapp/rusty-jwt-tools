@@ -4,7 +4,7 @@ use crate::jwk_thumbprint::JwkThumbprint;
 use crate::jwt::new_jti;
 use crate::prelude::*;
 
-pub mod generate;
+mod generate;
 mod verify;
 
 /// Claims in an access token
@@ -14,7 +14,7 @@ mod verify;
 /// [1]: https://www.ietf.org/archive/id/draft-ietf-oauth-dpop-11.html
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[cfg_attr(test, derive(Default))]
-pub struct Access {
+pub(crate) struct Access {
     /// ACME server nonce
     #[serde(rename = "chal")]
     pub challenge: AcmeNonce,
@@ -48,19 +48,19 @@ impl Access {
     pub const DEFAULT_EXPIRY: u64 = 360; // 10 minutes
 
     /// Access token header 'typ'
-    pub const TYP: &'static str = "at+jwt";
+    const TYP: &'static str = "at+jwt";
 
     /// Current wire-server API version
     #[cfg(test)]
     pub const DEFAULT_WIRE_SERVER_API_VERSION: u32 = 5;
 
     /// Current wire-server API version
-    pub const DEFAULT_SCOPE: &'static str = "wire_client_id";
+    pub(crate) const DEFAULT_SCOPE: &'static str = "wire_client_id";
 
     /// we want "nbf" & "iat" slightly in the past to prevent clock drifts or problems non-monotonic hosts
     pub(crate) const NOW_LEEWAY_SECONDS: u64 = 3600;
 
-    pub fn into_jwt_claims(
+    fn into_jwt_claims(
         self,
         client_id: &ClientId,
         nonce: BackendNonce,

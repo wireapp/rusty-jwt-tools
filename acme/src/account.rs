@@ -52,7 +52,7 @@ pub enum AcmeAccountError {
 #[derive(Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(test, derive(Clone))]
 #[serde(rename_all = "camelCase")]
-pub struct AcmeAccountRequest {
+struct AcmeAccountRequest {
     /// Including this field in a newAccount request, with a value of true, indicates the client's
     /// agreement with the terms of service. This field cannot be updated by the client
     #[serde(skip_serializing_if = "Option::is_none")]
