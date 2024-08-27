@@ -1,13 +1,12 @@
 name: Security audit
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
 
 on:
   push:
     branches:
-      - develop
       - main
     paths:
       - '**/Cargo.toml'
@@ -23,8 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          rustflags: ''
       - uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
