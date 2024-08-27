@@ -3,13 +3,13 @@ use serde::{Deserialize, Serialize};
 
 pub use htm::Htm;
 pub use htu::Htu;
-pub use verify::VerifyDpop;
-pub use verify::VerifyDpopTokenHeader;
+pub(crate) use verify::VerifyDpop;
+pub(crate) use verify::VerifyDpopTokenHeader;
 
 use crate::jwt::new_jti;
 use crate::prelude::*;
 
-pub mod generate;
+mod generate;
 mod htm;
 mod htu;
 mod verify;

@@ -4,7 +4,7 @@ use crate::jwt::{Verify, VerifyJwt, VerifyJwtHeader};
 use crate::prelude::*;
 
 /// Verifies DPoP token specific header
-pub trait VerifyDpopTokenHeader {
+pub(crate) trait VerifyDpopTokenHeader {
     /// Verifies the header
     fn verify_dpop_header(&self) -> RustyJwtResult<(JwsAlgorithm, &Jwk)>;
 }
@@ -22,7 +22,7 @@ impl VerifyDpopTokenHeader for TokenMetadata {
 }
 
 /// Verifies DPoP token specific claims
-pub trait VerifyDpop {
+pub(crate) trait VerifyDpop {
     /// Verifies the claims
     ///
     /// # Arguments

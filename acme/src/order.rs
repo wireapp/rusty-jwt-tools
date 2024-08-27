@@ -140,7 +140,7 @@ pub enum AcmeOrderError {
 #[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(test, derive(Clone))]
 #[serde(rename_all = "camelCase")]
-pub struct AcmeOrderRequest {
+struct AcmeOrderRequest {
     /// An array of identifier objects that the client wishes to submit an order for
     pub identifiers: Vec<AcmeIdentifier>,
     /// The requested value of the notBefore field in the certificate, in the date format defined
