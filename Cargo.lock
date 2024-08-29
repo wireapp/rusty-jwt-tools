@@ -4082,6 +4082,7 @@ dependencies = [
  "portpicker",
  "rand",
  "reqwest",
+ "rstest",
  "rusty-acme",
  "rusty-jwt-tools",
  "scraper",
