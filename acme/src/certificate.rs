@@ -1,9 +1,9 @@
-use x509_cert::Certificate;
-
 use rusty_jwt_tools::prelude::*;
-use rusty_x509_check::revocation::PkiEnvironment;
-
+use x509_cert::anchor::TrustAnchorChoice;
+use x509_cert::Certificate;
+// use rusty_x509_check::reexports::certval::{CertVector};
 use crate::{error::CertificateError, identifier::CanonicalIdentifier, prelude::*};
+use rusty_x509_check::revocation::{PkiEnvironment, PkiEnvironmentParams};
 
 impl RustyAcme {
     /// For fetching the generated certificate
@@ -33,6 +33,19 @@ impl RustyAcme {
     ) -> RustyAcmeResult<Vec<Vec<u8>>> {
         order.verify()?;
         let pems: Vec<pem::Pem> = pem::parse_many(response)?;
+        let intermediates = Self::extract_intermediates(pems.clone())?;
+        let env = env.and_then(|env| {
+            let trust_anchors = env.get_trust_anchors().unwrap_or_default();
+            let trust_roots: Vec<TrustAnchorChoice> = trust_anchors.iter().map(|f| f.decoded_ta.clone()).collect();
+            PkiEnvironment::init(PkiEnvironmentParams {
+                trust_roots: trust_roots.as_slice(),
+                intermediates: intermediates.as_slice(),
+                crls: &[],
+                time_of_interest: None,
+            })
+            .ok()
+        });
+
         pems.into_iter()
             .enumerate()
             .try_fold(vec![], move |mut acc, (i, cert_pem)| -> RustyAcmeResult<Vec<Vec<u8>>> {
@@ -49,9 +62,20 @@ impl RustyAcme {
 
                 // only verify that leaf has the right identity fields
                 if i == 0 {
-                    Self::verify_leaf_certificate(cert, &order.try_get_coalesce_identifier()?, hash_alg, env)?;
+                    Self::verify_leaf_certificate(cert, &order.try_get_coalesce_identifier()?, hash_alg, env.as_ref())?;
                 }
                 acc.push(cert_pem.contents().to_vec());
+                Ok(acc)
+            })
+    }
+
+    fn extract_intermediates(mut pems: Vec<pem::Pem>) -> RustyAcmeResult<Vec<Certificate>> {
+        use x509_cert::der::Decode as _;
+        pems.remove(0);
+        pems.iter()
+            .try_fold(vec![], |mut acc, pem| -> RustyAcmeResult<Vec<Certificate>> {
+                let cert = x509_cert::Certificate::from_der(pem.contents())?;
+                acc.push(cert);
                 Ok(acc)
             })
     }
@@ -64,6 +88,10 @@ impl RustyAcme {
         hash_alg: HashAlgorithm,
         env: Option<&PkiEnvironment>,
     ) -> RustyAcmeResult<()> {
+        if let Some(env) = env {
+            env.validate_cert(&cert)?;
+        }
+
         // TODO: verify that cert is signed by enrollment.sign_kp
         let cert_identity = cert.extract_identity(env, hash_alg)?;
 
