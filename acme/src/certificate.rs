@@ -1,7 +1,6 @@
 use rusty_jwt_tools::prelude::*;
 use x509_cert::anchor::TrustAnchorChoice;
 use x509_cert::Certificate;
-// use rusty_x509_check::reexports::certval::{CertVector};
 use crate::{error::CertificateError, identifier::CanonicalIdentifier, prelude::*};
 use rusty_x509_check::revocation::{PkiEnvironment, PkiEnvironmentParams};
 
