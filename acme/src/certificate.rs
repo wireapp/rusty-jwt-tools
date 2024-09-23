@@ -33,7 +33,7 @@ impl RustyAcme {
     ) -> RustyAcmeResult<Vec<Vec<u8>>> {
         order.verify()?;
         let pems: Vec<pem::Pem> = pem::parse_many(response)?;
-        let intermediates = Self::extract_intermediates(pems.clone())?;
+        let intermediates = Self::extract_intermediates(&pems)?;
         let env = env.and_then(|env| {
             let trust_anchors = env.get_trust_anchors().unwrap_or_default();
             let trust_roots: Vec<TrustAnchorChoice> = trust_anchors.iter().map(|f| f.decoded_ta.clone()).collect();
@@ -69,10 +69,10 @@ impl RustyAcme {
             })
     }
 
-    fn extract_intermediates(mut pems: Vec<pem::Pem>) -> RustyAcmeResult<Vec<Certificate>> {
+    fn extract_intermediates(pems: &Vec<pem::Pem>) -> RustyAcmeResult<Vec<Certificate>> {
         use x509_cert::der::Decode as _;
-        pems.remove(0);
         pems.iter()
+            .skip(1)
             .try_fold(vec![], |mut acc, pem| -> RustyAcmeResult<Vec<Certificate>> {
                 let cert = x509_cert::Certificate::from_der(pem.contents())?;
                 acc.push(cert);
