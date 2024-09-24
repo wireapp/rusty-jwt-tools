@@ -68,7 +68,7 @@ impl RustyAcme {
             })
     }
 
-    fn extract_intermediates(pems: &Vec<pem::Pem>) -> RustyAcmeResult<Vec<Certificate>> {
+    fn extract_intermediates(pems: &[pem::Pem]) -> RustyAcmeResult<Vec<Certificate>> {
         use x509_cert::der::Decode as _;
         pems.iter()
             .skip(1)
