@@ -22,7 +22,6 @@ pub mod jwk;
 pub mod jwk_thumbprint;
 pub mod jwt;
 mod model;
-mod oidc;
 
 /// Prelude
 pub mod prelude {
@@ -39,17 +38,6 @@ pub mod prelude {
         pem::Pem,
         pk::AnyPublicKey,
         team::Team,
-    };
-    pub use oidc::{
-        context::Context,
-        credential::RustyCredential,
-        datetime::{iso8601, Datetime},
-        id::Id,
-        issuer::{Issuer, IssuerData},
-        presentation::RustyPresentation,
-        proof::{Proof, ProofPurpose, ProofValue},
-        util::ObjectOrArray,
-        CredentialSubject, JsonObject,
     };
 
     #[cfg(feature = "jwe")]
