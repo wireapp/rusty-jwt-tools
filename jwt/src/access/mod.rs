@@ -39,13 +39,14 @@ pub(crate) struct Access {
 }
 
 impl Access {
-    /// JWT claim 'exp' (expiration) in seconds (10 minutes by default)
+    /// JWT claim 'exp' (expiration) in seconds
     ///
     /// Specified in [RFC 7519 Section 4.1.4: JSON Web Token (JWT)][1]
+    /// By default, we're going to use 6 minutes.
     ///
     /// [1]: https://tools.ietf.org/html/rfc7519#section-4.1.4
     #[cfg(test)]
-    pub const DEFAULT_EXPIRY: u64 = 360; // 10 minutes
+    pub const DEFAULT_EXPIRY: u64 = 360; // 6 minutes
 
     /// Access token header 'typ'
     const TYP: &'static str = "at+jwt";
