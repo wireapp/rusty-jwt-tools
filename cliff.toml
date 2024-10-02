@@ -1,0 +1,29 @@
+[changelog]
+header = "# Changelog\n\n"
+body = """
+## {{ version }} - {{ timestamp | date }}
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        - {% if commit.breaking %}[**breaking**] {% endif %}\
+         {{ commit.message | upper_first }} \
+         ({{ commit.id | truncate(length=7, end="") }})\
+    {% endfor %}
+{% endfor %}\n\n
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+filter_commits = true
+tag_pattern = "v[0-9]*"
+date_order = true
+sort_commits = "newest"
+commit_parsers = [
+    { message = "^feat", group = "<!-- 0 -->Features"},
+    { message = "^fix", group = "<!-- 1 -->Bug Fixes"},
+    { message = "^doc", group = "<!-- 2 -->Documentation"},
+    { message = "^perf", group = "<!-- 3 -->Performance"},
+    { message = "^test", group = "<!-- 4 -->Testing"},
+]
