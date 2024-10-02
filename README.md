@@ -2,7 +2,7 @@
 
 A collection of JWT utilities.
 
-[![Wire logo](https://github.com/wireapp/wire/blob/master/assets/header-small.png?raw=true)](https://wire.com/jobs/)
+[![Wire logo](https://github.com/wireapp/wire/blob/master/assets/header-small.png?raw=true)](https://wire.bamboohr.com/careers)
 
 This repository is part of the source code of Wire. You can find more information at [wire.com](https://wire.com) or by
 contacting opensource@wire.com.
@@ -16,45 +16,104 @@ No license is granted to the Wire trademark and its associated logos, all of whi
 by Wire Swiss GmbH. Any use of the Wire trademark and/or its associated logos is expressly prohibited without the
 express prior written consent of Wire Swiss GmbH.
 
-## General testing
+## Parts
+
+* acme: types that deal with ACME certificate enrollment
+* e2e-identity: implementation of the Wire end-to-end identity workflow, built on top of acme and jwt
+* ffi: Haskell bindings for rusty-jwt-tools, only used by wire-server
+* jwt: a collection of JWT utilities
+* x509-check: helpers for X509 certificate validation, only used by acme
+
+## Building
+
+For the build requirements, look at [the information in core-crypto repo](
+https://github.com/wireapp/core-crypto?tab=readme-ov-file#general-requirements).
+
+> [!note]
+> Building rusty-jwt-tools independently of core-crypto for Android targets is currently not supported due to
+> missing configuration bits. However, the necessary bits are in core-crypto so one can build rusty-jwt-tools
+> for Android targets as part of a core-crypto build.
+
+Building is as simple as
+```bash
+cargo build
+```
+
+## Testing
 
 Install cargo-nextest if you haven't done so, it yields some substantial speedup.
-Also, it allows us to group tests easily and have custom settings for those groups (
-see [`.config/nextest.toml`](.config/nextest.toml)).
+Also, it allows us to group tests easily and have custom settings for those groups (see [`.config/nextest.toml`](.config/nextest.toml)).
 
 ```bash
 cargo install cargo-nextest
 ```
 
-Start docker.
-The integration tests are very flaky, mainly because the behavior of the Keycloak docker container is very flaky.
-This is why we need the `no-fail-fast` flag in the test command.
-In the average case, about 75 % of the tests pass.
-A possible approach to deal with the flakiness is to run the command below and then run the tests that failed in the
-first run individually.
+Make sure the docker daemon is running (this is needed because the test suite runs an OIDC provider
+inside a container).
 
+Run tests:
 ```bash
-cargo nextest run --no-fail-fast
+cargo nextest run
 ```
 
-## how to cut a release
+### Testing the Haskell FFI
 
-Currently, the process is manual and involves the following steps:
+Make sure you have [Nix](https://nixos.org) installed.
 
-- Increment the version number for all the crates "e2e-identity", "jwt", "ffi", "cli", "acme", "x509-check" (and their
-  use site)
-- (optional) if there are changes it's always good to run the e2e test to update the [README](e2e-identity/README.md).
-  To do so run `cargo test --package wire-e2e-identity --test e2e demo_should_succeed` (with Docker running)
-- Open a PR, merge on the `main` branch and push a git tag e.g. `v0.10.2`
+Enter the nix shell that should have all the Haskell tooling necessary for the test:
+```bash
+cd ffi
+nix-shell
+```
 
-To cut release to be used by the backend you should:
+Then within the shell run:
+```bash
+cargo make hs-test
+```
 
-- Do it after the aforementioned step so that the version is already incremented etc..
-- Get rid of all [ring](https://crates.io/crates/ring) dependencies. This happens because ring does not build under Nix.
-  Our goal is to remove ring from `Cargo.lock`. To do so
-    - Comment out all the dependencies pulling ring in all the `Cargo.toml`. To find them you can
-      run `cargo tree --invert ring --all-features --edges normal`
-    - Make sure the ffi crate compiles `cargo check --package rusty-jwt-tools-ffi`
-- Run `cargo update` to refresh `Cargo.lock`
-- Just push a branch so that a backender can integrate it. No need to create a PR or merge it.
-- Delete the branch once integrated by the backend
+## Git workflow
+
+See [core-crypto git workflow](https://github.com/wireapp/core-crypto?tab=readme-ov-file#git-workflow).
+
+## Publishing
+
+No crates are published on crates.io or any other Rust crate registry.
+The only release artifacts are source archives on github.
+
+### Versioning
+
+The versioning scheme used is [SemVer AKA Semantic Versioning](https://semver.org).
+
+### Making a new release
+
+1. Make a branch based on `main` to prepare for release (`git checkout -b prepare-release/X.Y.Z`)
+1. Update the version of all workspace members to `X.Y.Z`, including places that refer to them.
+1. Generate a fresh `e2e-identity/README.md.test`:
+   ```
+    cargo test --package wire-e2e-identity --test e2e demo_should_succeed
+   ```
+   If there are non-trivial differences between `e2e-identity/README.md` and the generated file,
+   update `e2e-identity/README.md` and commit the changes.
+1. Generate the relevant changelog section:
+   ```
+   git cliff --bump --unreleased
+   ```
+   and add it to the top of `CHANGELOG.md`.
+   Make sure the version number generated by `git cliff` matches the release version.
+1. If there are any release highlights, add them as the first subsection below release title:
+   ```markdown
+   ## v0.10.0 - 2024-05-02
+
+   ### Highlights
+
+   - foo
+   - bar
+   - baz
+   ```
+1. Push your `prepare-release/X.Y.Z` branch and create a PR for it
+1. Get it reviewed, then merge it into `main` and remove the `prepare-release/X.Y.Z` branch from the remote
+1. Now, pull your local `main`: `git checkout main && git pull`
+1. Create the release tag: `git tag -s vX.Y.Z`
+1. Push the branch and the new tag: `git push origin main && git push --tags`
+1. Create a new release on github, copying the relevant section from `CHANGELOG.md`
+1. Voilà!
