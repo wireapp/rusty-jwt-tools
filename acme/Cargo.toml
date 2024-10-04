@@ -1,7 +1,7 @@
 [package]
 name = "rusty-acme"
 description = "ACME types"
-version = "0.9.0"
+version = "0.11.0"
 edition = "2021"
 repository = "https://github.com/wireapp/rusty-jwt-tools"
 license = "MPL-2.0"
@@ -11,8 +11,8 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-rusty-jwt-tools = { version = "0.9.0", path = "../jwt" }
-rusty-x509-check = { version = "0.9.0", path = "../x509-check" }
+rusty-jwt-tools = { version = "0.11.0", path = "../jwt" }
+rusty-x509-check = { version = "0.11.0", path = "../x509-check" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -34,6 +34,6 @@ fluvio-wasm-timer = { workspace = true }
 hex = { workspace = true }
 
 [dev-dependencies]
-rusty-jwt-tools = { version = "0.9.0", path = "../jwt", features = ["test-utils"] }
+rusty-jwt-tools = { version = "0.11.0", path = "../jwt", features = ["test-utils"] }
 wasm-bindgen-test = { workspace = true }
 hex = { workspace = true }
