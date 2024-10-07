@@ -753,7 +753,8 @@ impl E2eTest {
         self.display_token("OAuth Access token", access_token, None, &dex_pk);
 
         if let Some(refresh_token) = oauth_token_response.refresh_token() {
-            self.display_token("OAuth Refresh token", refresh_token.secret(), None, &dex_pk);
+            // We don't call display_token here with the refresh token because Keycloak
+            // generates a HS512 refresh token, which we can't verify.
             self.refresh_token = Some(refresh_token.clone());
         }
 
