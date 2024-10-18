@@ -2833,7 +2833,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-acme"
-version = "0.9.0"
+version = "0.11.0"
 dependencies = [
  "base64 0.22.1",
  "const-oid",
@@ -2861,7 +2861,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools"
-version = "0.9.0"
+version = "0.11.0"
 dependencies = [
  "base64 0.22.1",
  "biscuit",
@@ -2898,7 +2898,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools-ffi"
-version = "0.9.0"
+version = "0.11.0"
 dependencies = [
  "rusty-jwt-tools",
  "uuid",
@@ -2906,7 +2906,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-x509-check"
-version = "0.9.0"
+version = "0.11.0"
 dependencies = [
  "certval",
  "const-oid",
@@ -3064,9 +3064,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.129"
+version = "1.0.131"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6dbcf9b78a125ee667ae19388837dd12294b858d101fdd393cb9d5501ef09eb2"
+checksum = "67d42a0bd4ac281beff598909bb56a86acaf979b84483e1c79c10dcaf98f8cf3"
 dependencies = [
  "indexmap 2.6.0",
  "itoa 1.0.11",
@@ -4163,7 +4163,7 @@ dependencies = [
 
 [[package]]
 name = "wire-e2e-identity"
-version = "0.9.0"
+version = "0.11.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
