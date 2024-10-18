@@ -6,7 +6,7 @@ body = """
     ### {{ group | striptags | trim | upper_first }}
     {% for commit in commits %}
         - {% if commit.breaking %}[**breaking**] {% endif %}\
-         {{ commit.message | upper_first }} \
+         {{ commit.message }} \
          ({{ commit.id | truncate(length=7, end="") }})\
     {% endfor %}
 {% endfor %}\n\n
