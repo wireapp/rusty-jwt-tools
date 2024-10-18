@@ -114,6 +114,6 @@ The versioning scheme used is [SemVer AKA Semantic Versioning](https://semver.or
 1. Get it reviewed, then merge it into `main` and remove the `prepare-release/X.Y.Z` branch from the remote
 1. Now, pull your local `main`: `git checkout main && git pull`
 1. Create the release tag: `git tag -s vX.Y.Z`
-1. Push the branch and the new tag: `git push origin main && git push --tags`
+1. Push the new tag: `git push origin tag vX.Y.Z`
 1. Create a new release on github, copying the relevant section from `CHANGELOG.md`
 1. Voilà!
