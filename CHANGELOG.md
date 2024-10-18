@@ -1,5 +1,55 @@
 # Changelog
 
+## v0.11.0 - 2024-10-18
+
+### Highlights
+
+- Fixed intermediate CA's certificate generation in the E2EI workflow test to have
+  X.509 name constraints, so that it reflects real-world usage.
+- Fixed signature verification in the E2EI workflow test.
+- Added documentation on how to build, test, develop and release rusty-jwt-tools.
+
+### Bug Fixes
+
+- jwt: fix wrong comment (a388a50)
+- improve validation of certificate response [WPB-10104] (#237) (8a78a96)
+- failing haskell ffi test due to expired dpop proof (#240) (031efbe)
+- ffi: fix Haskell bindings and test (5d594b9)
+- acme: invert check for valid (identifier, challenge type) pairs [WPB-10103] (c78df0e)
+
+### Documentation
+
+- update README (b98f60d)
+- add CHANGELOG.md (922c96d)
+- add documentation about flaky tests (bef7ca8)
+- add comments to explain wiremock stubs (c8c114e)
+- document project structure (49f05af)
+- how to release (1189957)
+
+### Testing
+
+- e2e-identity: fix ACME server PKI configuration (63d608a)
+- e2e-identity: only pick the signing key (47f0c01)
+- e2e-identity: explain why the refresh token from Keycloak shows up as invalid (81dc3a7)
+- e2e-identity: fix token verification in tests (957e99a)
+- e2e-identity: don't clobber existing README.md (0183a41)
+- e2e-identity: copy code for access token verification from cli (a658d37)
+- update testcontainers image to keycloak 25.0.2 (d502b67)
+- update test code to new reqwest version (e29682b)
+- update test code to new helper api (9c0d3ca)
+- move asserhttp features to helper code (9f120d8)
+- update test code to new http and hyper APIs (0506659)
+- build: update http crate, add http-body-util and hyper-util crates (cf3f9b1)
+- correct image for smallstep, stable ready conditions (37023ff)
+- execute e2e identity tests sequentially (0cd0fae)
+- refactor: more struct fields instead of env vars (acf86b6)
+- use keycloak in ed25519 test (d90e618)
+- improve error message when fetching of oidc config fails (2ba8ed4)
+- upgrade testcontainers images to new api (9b0a080)
+- upgrade tests to new testcontainers api (f411bb8)
+- update testcontainers crate (f9c156b)
+
+
 ## v0.10.0 - 2024-05-02
 
 ### Features
