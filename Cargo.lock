@@ -1604,7 +1604,7 @@ checksum = "c304d1798561b0778d71d4d55e24a15688d24f17e0b36ecb269f30da846dcf84"
 dependencies = [
  "async-trait",
  "percent-encoding",
- "reqwest 0.12.8",
+ "reqwest 0.12.9",
  "serde",
  "serde_json",
  "serde_with",
@@ -2616,9 +2616,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.12.8"
+version = "0.12.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f713147fbe92361e52392c73b8c9e48c04c6625bce969ef54dc901e58e042a7b"
+checksum = "a77c62af46e79de0a562e1a9849205ffcb7fc1238876e9bd743357570e04046f"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -2883,7 +2883,7 @@ dependencies = [
  "percent-encoding",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
- "reqwest 0.12.8",
+ "reqwest 0.12.9",
  "rstest",
  "rstest_reuse",
  "sec1",
@@ -3891,7 +3891,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -4188,7 +4188,7 @@ dependencies = [
  "pem",
  "portpicker",
  "rand 0.8.5",
- "reqwest 0.12.8",
+ "reqwest 0.12.9",
  "rusty-acme",
  "rusty-jwt-tools",
  "scraper",
