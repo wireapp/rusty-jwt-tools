@@ -1,7 +1,7 @@
 //! # Rusty JWT Tools
 //!
 //! A collection of JWT utilities.
-#![deny(missing_docs)]
+#![cfg_attr(not(test), deny(missing_docs))]
 #![allow(clippy::single_component_path_imports)]
 extern crate core;
 
