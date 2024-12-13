@@ -58,16 +58,11 @@ cargo nextest run
 
 ### Testing the Haskell FFI
 
-Make sure you have [Nix](https://nixos.org) installed.
+Make sure you have [Cabal](https://www.haskell.org/cabal/) installed.
 
-Enter the nix shell that should have all the Haskell tooling necessary for the test:
+Then run:
 ```bash
 cd ffi
-nix-shell
-```
-
-Then within the shell run:
-```bash
 cargo make hs-test
 ```
 
