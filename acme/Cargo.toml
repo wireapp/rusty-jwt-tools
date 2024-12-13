@@ -30,7 +30,7 @@ p384 = { workspace = true }
 p521 = { workspace = true }
 pem = { workspace = true }
 getrandom = { workspace = true, features = ["js"] }
-fluvio-wasm-timer = { workspace = true }
+web-time = { workspace = true }
 hex = { workspace = true }
 
 [dev-dependencies]

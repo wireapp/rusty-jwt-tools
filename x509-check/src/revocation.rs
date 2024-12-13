@@ -122,8 +122,8 @@ impl PkiEnvironment {
         let toi = if let Some(toi) = params.time_of_interest {
             toi
         } else {
-            fluvio_wasm_timer::SystemTime::now()
-                .duration_since(fluvio_wasm_timer::SystemTime::UNIX_EPOCH)
+            web_time::SystemTime::now()
+                .duration_since(web_time::SystemTime::UNIX_EPOCH)
                 .map_err(|_| RustyX509CheckError::CannotDetermineCurrentTime)?
                 .as_secs()
         };
@@ -180,8 +180,8 @@ impl PkiEnvironment {
     /// Updates the TIME_OF_INTEREST for certificate checks to be `now`
     pub fn refresh_time_of_interest(&mut self) -> RustyX509CheckResult<()> {
         self.set_time_of_interest(
-            fluvio_wasm_timer::SystemTime::now()
-                .duration_since(fluvio_wasm_timer::SystemTime::UNIX_EPOCH)
+            web_time::SystemTime::now()
+                .duration_since(web_time::SystemTime::UNIX_EPOCH)
                 .map_err(|_| RustyX509CheckError::CannotDetermineCurrentTime)?
                 .as_secs(),
         );

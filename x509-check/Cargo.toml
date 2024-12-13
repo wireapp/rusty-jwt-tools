@@ -8,7 +8,7 @@ license = "MPL-2.0"
 publish = false
 
 [dependencies]
-fluvio-wasm-timer = { workspace = true }
+web-time = { workspace = true }
 flagset = { workspace = true }
 x509-cert = { workspace = true }
 const-oid = { workspace = true }
