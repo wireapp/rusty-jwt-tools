@@ -40,8 +40,8 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
-    use fluvio_wasm_timer::{SystemTime, UNIX_EPOCH};
     use wasm_bindgen_test::*;
+    use web_time::{SystemTime, UNIX_EPOCH};
 
     use crate::{dpop::*, jwk::RustyJwk, jwk::TryFromJwk, test_utils::*};
     use base64::Engine;

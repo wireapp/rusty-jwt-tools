@@ -2,7 +2,7 @@ use base64::Engine;
 use jwt_simple::prelude::*;
 
 pub fn now() -> UnixTimeStamp {
-    use fluvio_wasm_timer::{SystemTime, UNIX_EPOCH};
+    use web_time::{SystemTime, UNIX_EPOCH};
     let now = UnixTimeStamp::from_secs(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
     now - Duration::from_secs(5)
 }
