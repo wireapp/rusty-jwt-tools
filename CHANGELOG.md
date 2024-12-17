@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.12.0 - 2024-12-17
+
+### Documentation
+
+- update documentation for how to run the Haskell FFI tests (92184e1)
+- README.md: just push the relevant tag (286a0f7)
+
+### Testing
+
+- e2e-identity: increase the validity period of the intermediate CA cert (69a414c)
+
 ## v0.11.0 - 2024-10-18
 
 ### Highlights
