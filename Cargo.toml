@@ -60,5 +60,5 @@ testcontainers = { version = "0.23", default-features = false }
 oauth2 = { version = "4.3", default-features = false }
 http = { version = "1", default-features = false }
 # Keep keycloak versions in sync (search for this comment to find all places to update)
-keycloak = "26.0.1"
+keycloak = "26.0.700"
 rand_chacha = { version = "0.3", default-features = false }
