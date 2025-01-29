@@ -35,6 +35,7 @@ jobs:
       - name: ensure tags are signed
         run: |
           if [[ ${{ github.ref_type }} == tag ]]; then
+            git fetch -f origin ${{ github.ref }}:${{ github.ref }}
             git cat-file tag ${{ github.ref_name }} | grep -q -- '-----BEGIN PGP SIGNATURE-----'
           fi
       - uses: actions-rust-lang/setup-rust-toolchain@v1
