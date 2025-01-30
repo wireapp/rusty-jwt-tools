@@ -2,7 +2,7 @@
 
 A collection of JWT utilities.
 
-[![Wire logo](https://github.com/wireapp/wire/blob/master/assets/header-small.png?raw=true)](https://wire.bamboohr.com/careers)
+[![Wire logo](https://github.com/wireapp/wire/blob/master/assets/header-small.png?raw=true)](https://wire.com/jobs/)
 
 This repository is part of the source code of Wire. You can find more information at [wire.com](https://wire.com) or by
 contacting opensource@wire.com.
