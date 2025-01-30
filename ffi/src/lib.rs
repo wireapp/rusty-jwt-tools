@@ -23,6 +23,20 @@ pub struct RustyJwtToolsFfi;
 
 impl RustyJwtToolsFfi {
     /// see [RustyJwtTools::generate_dpop_access_token]
+    ///
+    /// ## Safety
+    ///
+    /// This function accepts several C-style string pointers as parameters.
+    /// Each of them must abide by the following restrictions for safe usage:
+    ///
+    /// Safety
+    ///
+    /// - The memory pointed to by `ptr` must contain a valid nul terminator at the end of the string.
+    /// - `ptr` must be valid for reads of bytes up to and including the nul terminator. This means in particular:
+    ///     - The entire memory range of this `CStr` must be contained within a single allocated object!
+    ///     - `ptr` must be non-null even for a zero-length cstr.
+    ///     - The memory referenced by the returned CStr must not be mutated for the duration of lifetime 'a.
+    /// - The nul terminator must be within `isize::MAX` from `ptr`
     #[no_mangle]
     pub extern "C" fn generate_dpop_access_token(
         dpop_proof: *const c_char,
@@ -46,8 +60,10 @@ impl RustyJwtToolsFfi {
         let api_version = 5;
         let expiry_secs = 360;
 
+        // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
+        // SAFETY: safe if the rules in the function signature are all followed for `user`
         let user = unsafe { CStr::from_ptr(user) };
         let Some(user) = std::str::from_utf8(user.to_bytes())
             .ok()
@@ -55,15 +71,23 @@ impl RustyJwtToolsFfi {
         else {
             return Box::into_raw(Box::new(Err(HsError::InvalidUserId)));
         };
+        // SAFETY: safe if the rules in the function signature are all followed for `domain`
         let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
+        // SAFETY: safe if the rules in the function signature are all followed for `team`
         let team = unsafe { CStr::from_ptr(team).to_bytes() }.try_into();
         let client_id = ClientId::try_from_raw_parts(user.as_ref(), client_id, domain);
+        // SAFETY: safe if the rules in the function signature are all followed for `handle`
         let handle: Result<Handle, _> = unsafe { CStr::from_ptr(handle).to_bytes() }.try_into();
+        // SAFETY: safe if the rules in the function signature are all followed for `display_name`
         let display_name = unsafe { CStr::from_ptr(display_name).to_bytes() };
         let display_name = core::str::from_utf8(display_name);
+        // SAFETY: safe if the rules in the function signature are all followed for `backend_nonce`
         let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() });
+        // SAFETY: safe if the rules in the function signature are all followed for `uri`
         let uri = unsafe { CStr::from_ptr(uri).to_bytes() }.try_into();
+        // SAFETY: safe if the rules in the function signature are all followed for `method`
         let method = unsafe { CStr::from_ptr(method).to_bytes() }.try_into();
+        // SAFETY: safe if the rules in the function signature are all followed for `backend_keys`
         let backend_kp = unsafe { CStr::from_ptr(backend_keys).to_bytes() }.try_into();
         // TODO: change in API
         let hash_algorithm = HashAlgorithm::SHA256;
@@ -118,6 +142,7 @@ impl RustyJwtToolsFfi {
 
     #[no_mangle]
     pub extern "C" fn get_error(ptr: *const HsResult<String>) -> u8 {
+        // SAFETY: safe because if the pointer is null we panic before dereferencing it
         let result = unsafe {
             assert!(!ptr.is_null());
             &*ptr
@@ -131,6 +156,7 @@ impl RustyJwtToolsFfi {
 
     #[no_mangle]
     pub extern "C" fn get_token(ptr: *const HsResult<String>) -> *const c_char {
+        // SAFETY: safe because if the pointer is null we panic before dereferencing it
         let result = unsafe {
             assert!(!ptr.is_null());
             &*ptr
@@ -156,6 +182,7 @@ impl RustyJwtToolsFfi {
         if ptr.is_null() {
             return;
         }
+        // SAFETY: safe because if the pointer is null we don't arrive at this point
         unsafe {
             let _ = Box::from_raw(ptr);
         }
