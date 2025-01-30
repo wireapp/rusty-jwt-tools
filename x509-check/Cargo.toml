@@ -7,6 +7,9 @@ repository = "https://github.com/wireapp/rusty-jwt-tools"
 license = "MPL-2.0"
 publish = false
 
+[lints]
+workspace = true
+
 [dependencies]
 web-time = { workspace = true }
 flagset = { workspace = true }

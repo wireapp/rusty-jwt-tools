@@ -11,6 +11,9 @@ publish = false
 name = "rusty_jwt_tools_ffi"
 crate-type = ["cdylib", "staticlib"]
 
+[lints]
+workspace = true
+
 [dependencies]
 rusty-jwt-tools = { version = "0.12.0", path = "../jwt" }
 uuid = { workspace = true }

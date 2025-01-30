@@ -2,6 +2,10 @@
 members = ["e2e-identity", "jwt", "ffi", "acme", "x509-check"]
 resolver = "2"
 
+[workspace.lints.clippy]
+missing_safety_doc = "deny"
+undocumented_unsafe_blocks = "deny"
+
 [workspace.dependencies]
 anyhow = { version = "1.0", default-features = false }
 base64 = { version = "0.22", default-features = false, features = ["std"] }

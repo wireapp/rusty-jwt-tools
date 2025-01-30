@@ -11,6 +11,9 @@ publish = false
 name = "rusty_jwt_tools"
 crate-type = ["cdylib", "rlib"]
 
+[lints]
+workspace = true
+
 [dependencies]
 thiserror = { workspace = true }
 serde = { workspace = true }
