@@ -170,7 +170,7 @@ impl RustyJwtTools {
 pub mod tests {
     use base64::Engine;
     use jwt_simple::prelude::*;
-    use serde_json::{json, Value};
+    use serde_json::{Value, json};
 
     use crate::{dpop::Dpop, jwk::TryFromJwk, test_utils::*};
 
@@ -209,10 +209,13 @@ pub mod tests {
                 assert!(jwk.get("kty").unwrap().as_str().is_some());
                 assert!(jwk.get("crv").unwrap().as_str().is_some());
                 assert!(jwk.get("x").unwrap().as_str().is_some());
-                if let JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 = ciphersuite.key.alg {
-                    assert!(jwk.get("y").unwrap().as_str().is_some());
-                } else {
-                    assert!(jwk.get("y").is_none());
+                match ciphersuite.key.alg {
+                    JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+                        assert!(jwk.get("y").unwrap().as_str().is_some());
+                    }
+                    _ => {
+                        assert!(jwk.get("y").is_none());
+                    }
                 }
             }
         }

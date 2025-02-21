@@ -1,8 +1,8 @@
 use biscuit::{
+    Empty,
     jwa::{Algorithm, EncryptionOptions},
     jwe::{Compact, RegisteredHeader},
-    jwk::{AlgorithmParameters, CommonParameters, OctetKeyParameters, OctetKeyType, JWK},
-    Empty,
+    jwk::{AlgorithmParameters, CommonParameters, JWK, OctetKeyParameters, OctetKeyType},
 };
 
 use alg::JweAlgorithm;

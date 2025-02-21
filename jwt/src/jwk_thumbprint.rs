@@ -2,7 +2,7 @@
 
 use base64::Engine;
 use jwt_simple::prelude::*;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::Digest;
 
 use crate::prelude::*;

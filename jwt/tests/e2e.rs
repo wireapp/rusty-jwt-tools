@@ -63,7 +63,9 @@ fn e2e_jwt() {
         )
         .unwrap();
 
-        println!("2. generate access token:\nwire-server signature key:\n{backend_keys}\naccess token:\nhttps://jwt.io/#id_token={access_token}\n");
+        println!(
+            "2. generate access token:\nwire-server signature key:\n{backend_keys}\naccess token:\nhttps://jwt.io/#id_token={access_token}\n"
+        );
 
         // now acme server will verify the access token
         let backend_pk: Pem = match alg {
