@@ -37,7 +37,7 @@ impl RustyJwtToolsFfi {
     ///     - `ptr` must be non-null even for a zero-length cstr.
     ///     - The memory referenced by the returned CStr must not be mutated for the duration of lifetime 'a.
     /// - The nul terminator must be within `isize::MAX` from `ptr`
-    #[no_mangle]
+    #[unsafe(no_mangle)]
     pub extern "C" fn generate_dpop_access_token(
         dpop_proof: *const c_char,
         user: *const c_char,
@@ -140,7 +140,7 @@ impl RustyJwtToolsFfi {
         Box::into_raw(Box::new(Err(HsError::ImplementationError)))
     }
 
-    #[no_mangle]
+    #[unsafe(no_mangle)]
     pub extern "C" fn get_error(ptr: *const HsResult<String>) -> u8 {
         // SAFETY: safe because if the pointer is null we panic before dereferencing it
         let result = unsafe {
@@ -154,7 +154,7 @@ impl RustyJwtToolsFfi {
         }
     }
 
-    #[no_mangle]
+    #[unsafe(no_mangle)]
     pub extern "C" fn get_token(ptr: *const HsResult<String>) -> *const c_char {
         // SAFETY: safe because if the pointer is null we panic before dereferencing it
         let result = unsafe {
@@ -165,10 +165,9 @@ impl RustyJwtToolsFfi {
         match result {
             Ok(value) => {
                 // we have to convert this into a ('\0' terminated!) C string
-                if let Ok(value) = CString::new(value.as_str()) {
-                    value.into_raw()
-                } else {
-                    std::ptr::null_mut()
+                match CString::new(value.as_str()) {
+                    Ok(value) => value.into_raw(),
+                    _ => std::ptr::null_mut(),
                 }
             }
             Err(_) => std::ptr::null_mut(),
@@ -177,7 +176,7 @@ impl RustyJwtToolsFfi {
 
     /// Frees the allocated [HsResult] used for returning the result.
     /// This has to be called from haskell
-    #[no_mangle]
+    #[unsafe(no_mangle)]
     pub extern "C" fn free_dpop_access_token(ptr: *mut HsResult<String>) {
         if ptr.is_null() {
             return;
