@@ -1,11 +1,11 @@
-use certval::{name_to_string, CrlAuthority, CrlCoverage, CrlReasons, CrlScope, CrlType};
+use certval::{CrlAuthority, CrlCoverage, CrlReasons, CrlScope, CrlType, name_to_string};
 
 use x509_cert::{
     crl::CertificateList,
     der::{Decode, Encode},
     ext::pkix::{
-        name::{DistributionPointName, GeneralName},
         AuthorityKeyIdentifier, IssuingDistributionPoint,
+        name::{DistributionPointName, GeneralName},
     },
 };
 

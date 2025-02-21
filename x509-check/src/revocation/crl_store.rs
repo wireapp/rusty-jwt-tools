@@ -1,11 +1,11 @@
 use crate::{
+    RustyX509CheckError, RustyX509CheckResult,
     revocation::{
         crl_info::CrlInfo,
         misc::{check_crl_valid_at_toi, get_dp_from_crl, get_dps_from_cert},
     },
-    RustyX509CheckError, RustyX509CheckResult,
 };
-use certval::{name_to_string, CrlScope, CrlSource, ExtensionProcessing, PDVCertificate, PDVExtension};
+use certval::{CrlScope, CrlSource, ExtensionProcessing, PDVCertificate, PDVExtension, name_to_string};
 use const_oid::db::rfc5912::ID_CE_AUTHORITY_KEY_IDENTIFIER;
 use std::{
     collections::BTreeMap,

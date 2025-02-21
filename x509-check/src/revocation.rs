@@ -1,18 +1,19 @@
 #![allow(dead_code)]
 
 use certval::{
-    check_revocation, get_validation_status, populate_5280_pki_environment, set_check_crls, set_forbid_self_signed_ee,
-    set_require_ta_store, set_time_of_interest, validate_path_rfc5280,
-    validator::{path_validator::check_validity, PDVCertificate},
-    verify_signatures, CertSource, CertVector, CertificationPath, CertificationPathResults, CertificationPathSettings,
-    DeferDecodeSigned, ExtensionProcessing, PDVTrustAnchorChoice, TaSource, EXTS_OF_INTEREST,
+    CertSource, CertVector, CertificationPath, CertificationPathResults, CertificationPathSettings, DeferDecodeSigned,
+    EXTS_OF_INTEREST, ExtensionProcessing, PDVTrustAnchorChoice, TaSource, check_revocation, get_validation_status,
+    populate_5280_pki_environment, set_check_crls, set_forbid_self_signed_ee, set_require_ta_store,
+    set_time_of_interest, validate_path_rfc5280,
+    validator::{PDVCertificate, path_validator::check_validity},
+    verify_signatures,
 };
 
 use const_oid::AssociatedOid;
 use x509_cert::der::{Decode, DecodePem, Encode};
 use x509_cert::ext::pkix::AuthorityKeyIdentifier;
 
-use crate::{revocation::cache::RevocationCache, RustyX509CheckError, RustyX509CheckResult};
+use crate::{RustyX509CheckError, RustyX509CheckResult, revocation::cache::RevocationCache};
 use crl_store::CrlStore;
 
 mod cache;
@@ -334,11 +335,7 @@ impl PkiEnvironment {
             true
         });
 
-        if any_path_validates {
-            Ok(())
-        } else {
-            result
-        }
+        if any_path_validates { Ok(()) } else { result }
     }
 
     #[inline]

@@ -1,8 +1,8 @@
-use certval::buffer_to_hex;
-use certval::name_to_string;
 use certval::PDVCertificate;
 use certval::PathValidationStatus;
 use certval::RevocationStatusCache;
+use certval::buffer_to_hex;
+use certval::name_to_string;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::Mutex;
