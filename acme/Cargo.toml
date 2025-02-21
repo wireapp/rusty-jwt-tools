@@ -2,7 +2,7 @@
 name = "rusty-acme"
 description = "ACME types"
 version = "0.12.0"
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/wireapp/rusty-jwt-tools"
 license = "MPL-2.0"
 publish = false

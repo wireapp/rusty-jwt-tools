@@ -40,7 +40,7 @@ pub(crate) fn try_compute_jwk_canonicalized_thumbprint(
 fn try_into_jwk(spki: &SubjectPublicKeyInfoOwned) -> RustyAcmeResult<Jwk> {
     use const_oid::db::{
         rfc5912::{ID_EC_PUBLIC_KEY, SECP_256_R_1, SECP_384_R_1, SECP_521_R_1},
-        rfc8410::{ID_ED_25519, ID_ED_448},
+        rfc8410::{ID_ED_448, ID_ED_25519},
     };
     let params = spki
         .algorithm

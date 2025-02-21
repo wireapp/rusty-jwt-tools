@@ -1,8 +1,8 @@
 use x509_cert::der::Decode as _;
 
 use rusty_jwt_tools::prelude::*;
-use rusty_x509_check::revocation::PkiEnvironment;
 use rusty_x509_check::IdentityStatus;
+use rusty_x509_check::revocation::PkiEnvironment;
 
 use crate::error::CertificateError;
 use crate::prelude::*;

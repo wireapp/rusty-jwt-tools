@@ -250,7 +250,7 @@ impl AcmeFinalize {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "finalize is not supposed to be 'pending | processing | ready' at this point. \
                     It means you have forgotten previous steps",
-                ))
+                ));
             }
             AcmeOrderStatus::Invalid => return Err(AcmeFinalizeError(AcmeOrderError::Invalid))?,
         }

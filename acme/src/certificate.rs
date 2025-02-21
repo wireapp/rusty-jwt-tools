@@ -1,8 +1,8 @@
 use crate::{error::CertificateError, identifier::CanonicalIdentifier, prelude::*};
 use rusty_jwt_tools::prelude::*;
 use rusty_x509_check::revocation::{PkiEnvironment, PkiEnvironmentParams};
-use x509_cert::anchor::TrustAnchorChoice;
 use x509_cert::Certificate;
+use x509_cert::anchor::TrustAnchorChoice;
 
 impl RustyAcme {
     /// For fetching the generated certificate

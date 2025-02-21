@@ -41,7 +41,7 @@ impl RustyAcme {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "an authorization is not supposed to be valid at this point. \
                     You should only use this method to parse the response of an authorization creation.",
-                ))
+                ));
             }
         }
         Ok(authz)

@@ -57,7 +57,7 @@ impl RustyAcme {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "an order is not supposed to be 'processing | valid | ready' at this point. \
                     You should only be using this method after account creation, not after finalize",
-                ))
+                ));
             }
             AcmeOrderStatus::Invalid => return Err(AcmeOrderError::Invalid)?,
         }
@@ -96,21 +96,21 @@ impl RustyAcme {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "an order is not supposed to be 'pending' at this point. \
                     It means you have forgotten to create authorizations",
-                ))
+                ));
             }
             AcmeOrderStatus::Processing => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "an order is not supposed to be 'processing' at this point. \
                     You should not have called finalize yet ; in fact, you should only call finalize \
                     once this order turns 'ready'",
-                ))
+                ));
             }
             AcmeOrderStatus::Valid => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "an order is not supposed to be 'valid' at this point. \
                     It means a certificate has already been delivered which defeats the purpose \
                     of using this method",
-                ))
+                ));
             }
             AcmeOrderStatus::Invalid => return Err(AcmeOrderError::Invalid)?,
         }

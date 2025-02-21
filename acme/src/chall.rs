@@ -56,12 +56,12 @@ impl RustyAcme {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "a challenge is not supposed to be pending at this point. \
                     It must either be 'valid' or 'processing'.",
-                ))
+                ));
             }
             None => {
                 return Err(RustyAcmeError::ClientImplementationError(
                     "at this point a challenge is supposed to have a status",
-                ))
+                ));
             }
         }
         Ok(chall)
