@@ -492,7 +492,7 @@ mod dpop_challenge {
                         test.alg,
                         &test.acme_kp,
                     )
-                        .unwrap();
+                    .unwrap();
 
                     let backend_kp: Pem = test.backend_kp.clone();
                     let access_token = RustyJwtTools::generate_access_token(
@@ -511,7 +511,7 @@ mod dpop_challenge {
                         5,
                         core::time::Duration::from_secs(360),
                     )
-                        .unwrap();
+                    .unwrap();
                     Ok((test, access_token))
                 })
             }),
@@ -576,7 +576,7 @@ mod dpop_challenge {
                         test.alg,
                         &test.acme_kp,
                     )
-                        .unwrap();
+                    .unwrap();
 
                     let backend_kp: Pem = test.backend_kp.clone();
                     let access_token = RustyJwtTools::generate_access_token(
@@ -595,7 +595,7 @@ mod dpop_challenge {
                         5,
                         core::time::Duration::from_secs(360),
                     )
-                        .unwrap();
+                    .unwrap();
                     Ok((test, access_token))
                 })
             }),
@@ -690,7 +690,7 @@ mod dpop_challenge {
                         test.alg,
                         &keypair,
                     )
-                        .unwrap();
+                    .unwrap();
 
                     let backend_kp: Pem = test.backend_kp.clone();
                     let access_token = RustyJwtTools::generate_access_token(
@@ -709,7 +709,7 @@ mod dpop_challenge {
                         5,
                         core::time::Duration::from_secs(360),
                     )
-                        .unwrap();
+                    .unwrap();
                     Ok((test, access_token))
                 })
             }),
