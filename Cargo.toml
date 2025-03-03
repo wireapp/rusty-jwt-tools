@@ -12,7 +12,7 @@ base64 = { version = "0.22", default-features = false, features = ["std"] }
 certval = { git = "https://github.com/wireapp/rust-pki.git", branch = "wire/stable", package = "certval", default-features = false, features = ["revocation"] }
 const-oid = { version = "0.9", default-features = false, features = ["std"] }
 const_format = { version = "0.2", default-features = false }
-derive_more = { version = "0.99.19", default-features = false }
+derive_more = { version = "2.0.1", default-features = false }
 ecdsa = { version = "0.16", default-features = false }
 ed25519-dalek = { version = "2.1", default-features = false }
 either = { version = "1.8", default-features = false }
