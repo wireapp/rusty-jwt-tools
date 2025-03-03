@@ -17,3 +17,7 @@ workspace = true
 [dependencies]
 rusty-jwt-tools = { version = "0.12.0", path = "../jwt" }
 uuid = { workspace = true }
+
+[target.'cfg(target_family = "wasm")'.dependencies.uuid]
+workspace = true
+features = ["std", "js"]

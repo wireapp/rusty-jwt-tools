@@ -27,7 +27,11 @@ url = { workspace = true, features = ["serde"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
 either = { workspace = true, features = ["serde"] }
-time = { workspace = true, features = ["serde", "serde-well-known", "wasm-bindgen"] }
+time = { workspace = true, features = [
+    "serde",
+    "serde-well-known",
+    "wasm-bindgen",
+] }
 json-patch = { workspace = true }
 jwt-simple = { workspace = true }
 zeroize = { workspace = true, features = ["zeroize_derive"] }
@@ -53,6 +57,10 @@ rand = { workspace = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
 josekit = { workspace = true }
+
+[target.'cfg(target_family = "wasm")'.dependencies.uuid]
+workspace = true
+features = ["std", "js"]
 
 [features]
 jwe = ["biscuit", "rand", "rand_chacha"]
