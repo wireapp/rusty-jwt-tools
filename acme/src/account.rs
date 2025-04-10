@@ -3,7 +3,7 @@ use rusty_jwt_tools::prelude::*;
 
 impl RustyAcme {
     /// 5. Create a new acme account
-    ///     see [RFC 8555 Section 7.3](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3)
+    ///    see [RFC 8555 Section 7.3](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3)
     pub fn new_account_request(
         directory: &AcmeDirectory,
         alg: JwsAlgorithm,
@@ -25,7 +25,7 @@ impl RustyAcme {
     }
 
     /// 6. parse the response from `POST /acme/new-account`
-    ///     see [RFC 8555 Section 7.3](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3)
+    ///    see [RFC 8555 Section 7.3](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.3)
     pub fn new_account_response(response: serde_json::Value) -> RustyAcmeResult<AcmeAccount> {
         let account = serde_json::from_value::<AcmeAccount>(response)
             .map_err(|_| RustyAcmeError::SmallstepImplementationError("Invalid account response"))?;
@@ -90,7 +90,7 @@ impl AcmeAccount {
                 "Account should have 'orders' url",
             ))?;
         let mut orders = orders.clone();
-        if orders.path_segments().and_then(|paths| paths.last()) == Some("orders") {
+        if orders.path_segments().and_then(|mut paths| paths.next_back()) == Some("orders") {
             orders
                 .path_segments_mut()
                 .map_err(|_| RustyAcmeError::ImplementationError)?
