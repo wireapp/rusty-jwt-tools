@@ -3,7 +3,7 @@
 [tasks.hs-test]
 script = '''
     # cargo clean
-    cargo build --release
+    cargo build --release --locked
 
     cd bindings/haskell
     # link Rust libs we just built
