@@ -74,7 +74,6 @@ async fn google_demo_should_succeed() {
 }
 
 /// Tests using the custom SPI Provider to be able to use the refreshToken to get a new idToken with the current ACME challenges
-#[cfg(not(ci))]
 #[tokio::test]
 async fn refresh_token_can_be_used_to_renew() {
     let test = E2eTest::new_demo().start().await;
@@ -102,7 +101,6 @@ async fn refresh_token_can_be_used_to_renew() {
 }
 
 /// Verify that it works for all MLS ciphersuites
-#[cfg(not(ci))]
 mod alg {
     use super::*;
 
@@ -153,7 +151,6 @@ mod alg {
 }
 
 /// Since the acme server is a fork, verify its invariants are respected
-#[cfg(not(ci))]
 mod acme_server {
     use super::*;
     use rusty_acme::prelude::x509::RustyX509CheckError;
@@ -316,7 +313,6 @@ mod acme_server {
     }
 }
 
-#[cfg(not(ci))]
 mod dpop_challenge {
     use super::*;
 
@@ -812,7 +808,6 @@ mod dpop_challenge {
     }
 }
 
-#[cfg(not(ci))]
 mod oidc_challenge {
     use super::*;
 
