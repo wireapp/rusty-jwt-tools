@@ -4427,6 +4427,7 @@ dependencies = [
  "jwt-simple",
  "keycloak",
  "lazy_static",
+ "libc",
  "native-tls",
  "oauth2",
  "openidconnect",
