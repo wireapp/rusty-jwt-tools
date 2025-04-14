@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.13.0 - 2025-04-14
+
+### Documentation
+
+- add safety notes for unsafe code in ffi (e6ceed3)
+- add safety notes for unsafe code in test helpers (7abd065)
+
+### Testing
+
+- e2e-identity: add a marker on nominal_enrollment [WPB-17039] (3e0fc42)
+- e2e-identity: add a comment describing nominal enrollment tests [WPB-17039] (9569061)
+- e2e-identity: add a nominal enrollment test for P521 [WPB-17039] (66a80b9)
+- e2e-identity: add additional tests [WPB-17039] (6c82b8f)
+- e2e-identity: fix test hostname generation (9422b26)
+
 ## v0.12.0 - 2024-12-17
 
 ### Documentation
