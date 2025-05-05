@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use rand::distr::{Alphanumeric, SampleString as _};
 
 use rusty_jwt_tools::prelude::ClientId;
 
@@ -20,8 +21,7 @@ pub mod keys;
 pub mod wire_server;
 
 pub(crate) fn rand_str(size: usize) -> String {
-    use rand::distributions::{Alphanumeric, DistString};
-    Alphanumeric.sample_string(&mut rand::thread_rng(), size)
+    Alphanumeric.sample_string(&mut rand::rng(), size)
 }
 
 pub fn rand_base64_str(size: usize) -> String {

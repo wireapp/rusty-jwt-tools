@@ -277,7 +277,7 @@ impl JwtEdKey {
         match alg {
             JwsEdAlgorithm::Ed25519 => (
                 alg,
-                (*ed25519_dalek::SigningKey::generate(&mut rand::thread_rng())
+                (*ed25519_dalek::SigningKey::generate(&mut rand::rng())
                     .to_pkcs8_pem(sec1::LineEnding::LF)
                     .unwrap())
                 .clone()

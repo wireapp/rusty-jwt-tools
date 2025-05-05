@@ -1,4 +1,5 @@
 use base64::Engine;
+use rand::distr::{Alphanumeric, SampleString as _};
 use jwt_simple::prelude::*;
 
 use rusty_jwt_tools::prelude::*;
@@ -143,7 +144,6 @@ fn keys() -> Vec<(JwsAlgorithm, Pem, Pem, HashAlgorithm)> {
 }
 
 pub fn rand_base64_str(size: usize) -> String {
-    use rand::distributions::{Alphanumeric, DistString};
-    let challenge: String = Alphanumeric.sample_string(&mut rand::thread_rng(), size);
+    let challenge: String = Alphanumeric.sample_string(&mut rand::rng(), size);
     base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(challenge)
 }
