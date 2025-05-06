@@ -154,13 +154,29 @@ async fn run_command(node: &ContainerAsync<GenericImage>, cmd: &str) {
     // until the command finishes. Otherwise, it could happen that we submit the command
     // to the container, immediately return from this function and start another command
     // that requires the previous command to have completed.
-    let cmd = ExecCommand::new(cmd).with_cmd_ready_condition(CmdWaitFor::exit_code(0));
-    node.exec(cmd).await.unwrap();
+    dbg!(&cmd);
+    let cmd = ExecCommand::new(cmd).with_cmd_ready_condition(CmdWaitFor::Nothing);
+    match node.exec(cmd).await {
+        Err(x) => {
+            dbg!(&x);
+        }
+        Ok(mut r) => {
+            println!("{}", String::from_utf8(r.stdout_to_vec().await.unwrap()).unwrap());
+            println!("{}", String::from_utf8(r.stderr_to_vec().await.unwrap()).unwrap());
+        }
+    }
 }
 
 pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
     let host_volume = std::env::temp_dir().join(rand_str());
     std::fs::create_dir(&host_volume).unwrap();
+    use std::os::unix::fs::PermissionsExt;
+    let _ = std::fs::set_permissions(&host_volume, std::fs::Permissions::from_mode(0o777));
+
+    let uid = unsafe {
+        libc::getuid()
+    };
+    dbg!(uid);
 
     // Prepare the container image. Note that instead of just starting the image as-is, we're
     // overriding the command to be a long sleep, in order to be able to issue commands inside
@@ -184,6 +200,7 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
     let node = image.start().await.expect("Error running Step CA image");
 
     // Generate the root certificate.
+    run_command(&node, "bash -c 'ls -la && id && pwd'").await;
     run_command(&node, "bash -c 'dd if=/dev/random bs=1 count=20 | base64 > password'").await;
     run_command(
         &node,
@@ -225,6 +242,12 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
     run_command(&node, "mv intermediate-ca.crt certs/intermediate_ca.crt").await;
     run_command(&node, "mv intermediate-ca.key secrets/intermediate_ca_key").await;
 
+    run_command(&node, "bash -c 'ls -la'").await;
+    run_command(&node, "bash -c 'ls -la config'").await;
+    run_command(&node, "bash -c 'chmod o+rx config'").await;
+    run_command(&node, "bash -c 'chmod o+rw config/ca.json'").await;
+    run_command(&node, "bash -c 'ls -la'").await;
+    run_command(&node, "bash -c 'ls -la config'").await;
     // Alter the CA configuration by substituting our provisioner.
     alter_configuration(&host_volume, &ca_cfg).await;
 
@@ -233,6 +256,8 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
 
     let port = node.get_host_port_ipv4(PORT).await.unwrap();
     let uri = format!("https://{}:{}", &ca_cfg.host, port);
+    run_command(&node, "bash -c 'chmod o+rx certs'").await;
+    run_command(&node, "bash -c 'chmod o+r certs/*'").await;
     let ca_cert = ca_cert(&host_volume);
     dbg!(&uri);
     dbg!(&ca_cert);
