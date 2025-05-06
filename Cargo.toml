@@ -48,7 +48,7 @@ biscuit = { version = "0.6.0-beta1", git = "https://github.com/beltram/biscuit",
 clap = { version = "4.5", default-features = false, features = ["std"] }
 console = { version = "0.15", default-features = false }
 json-patch = { version = "0.3", default-features = false }
-tokio = { version = "1.44", default-features = false }
+tokio = { version = "1.45", default-features = false }
 hyper = { version = "1.6", default-features = false }
 wasm-bindgen-test = { version = "0.3", default-features = false }
 webbrowser = { version = "0.8", default-features = false }
