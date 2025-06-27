@@ -1,3 +1,5 @@
+use std::fmt;
+
 use biscuit::jwa::{ContentEncryptionAlgorithm, KeyManagementAlgorithm};
 
 /// Narrows the supported encryption algorithms to the ones we define
@@ -64,13 +66,12 @@ impl From<JweAlgorithm> for ContentEncryptionAlgorithm {
     }
 }
 
-impl ToString for JweAlgorithm {
-    fn to_string(&self) -> String {
-        match self {
+impl fmt::Display for JweAlgorithm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
             Self::AES128GCM => "A128GCM",
             Self::AES256GCM => "A256GCM",
-        }
-        .to_string()
+        })
     }
 }
 
@@ -102,12 +103,11 @@ impl From<JweKeyManagementAlgorithm> for KeyManagementAlgorithm {
     }
 }
 
-impl ToString for JweKeyManagementAlgorithm {
-    fn to_string(&self) -> String {
-        match self {
+impl fmt::Display for JweKeyManagementAlgorithm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
             Self::AES128GCMKW => "A128GCMKW",
             Self::AES256GCMKW => "A256GCMKW",
-        }
-        .to_string()
+        })
     }
 }
