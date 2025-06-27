@@ -293,7 +293,7 @@ pub mod tests {
             #[test]
             #[wasm_bindgen_test]
             fn should_fail_when_invalid_uuid_user() {
-                let invalid_user = format!("{}abcd", USER_ID);
+                let invalid_user = format!("{USER_ID}abcd");
                 let subject = format!("{}{invalid_user}:{CLIENT_ID}@{DOMAIN}", ClientId::URI_SCHEME);
                 let parsed = ClientId::try_from_uri(&subject);
                 assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));
@@ -358,7 +358,7 @@ pub mod tests {
             #[test]
             #[wasm_bindgen_test]
             fn should_fail_when_invalid_uuid_user() {
-                let invalid_user = format!("{}abcd", USER_ID);
+                let invalid_user = format!("{USER_ID}abcd");
                 let subject = format!("{invalid_user}:{CLIENT_ID}@{DOMAIN}");
                 let parsed = ClientId::try_from_qualified(&subject);
                 assert!(matches!(parsed.unwrap_err(), RustyJwtError::InvalidClientId));

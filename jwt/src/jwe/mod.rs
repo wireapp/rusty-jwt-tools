@@ -204,7 +204,7 @@ pub mod tests {
             let rng = ChaCha20Rng::from_entropy();
             let jwe = RustyJwtTools::jwe_encrypt(key.alg, key.value.clone(), b"a".to_vec(), &mut Some(rng)).unwrap();
             let jwe = Compact::<Empty, Empty>::new_encrypted(&jwe).unwrap_encrypted();
-            let header = jwe.parts.get(0).unwrap().str();
+            let header = jwe.parts.first().unwrap().str();
             let header = base64::prelude::BASE64_URL_SAFE_NO_PAD.decode(header).unwrap();
             let header = serde_json::from_slice::<Value>(&header).unwrap();
             let header = header.as_object().unwrap();
