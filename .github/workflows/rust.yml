@@ -30,6 +30,11 @@ jobs:
 
   check:
     runs-on: ubuntu-latest
+    env:
+        # Manually list packages that support Wasm, because Cargo does not
+        # have a simple way to exclude specific packages on unsupported platforms.
+        # Notably missing from the list here is test-wire-server.
+        WASM_PACKAGES: "-p wire-e2e-identity -p rusty-jwt-tools -p rusty-jwt-tools-ffi -p rusty-acme -p rusty-x509-check"
     steps:
       - uses: actions/checkout@v4
       - name: ensure tags are signed
@@ -45,9 +50,9 @@ jobs:
           target: wasm32-unknown-unknown
       - run: cargo fmt --all -- --check
       - run: cargo clippy --locked -- -D warnings
-      - run: cargo clippy --locked --target wasm32-unknown-unknown -- -D warnings
+      - run: cargo clippy --locked --target wasm32-unknown-unknown ${WASM_PACKAGES} -- -D warnings
       - run: cargo check --tests --locked
-      - run: cargo check --tests --locked --target wasm32-unknown-unknown
+      - run: cargo check --tests --locked --target wasm32-unknown-unknown ${WASM_PACKAGES}
 
   build:
     runs-on: ubuntu-latest
