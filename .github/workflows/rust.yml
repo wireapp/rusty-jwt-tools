@@ -67,7 +67,7 @@ jobs:
           rustflags: ''
       - uses: taiki-e/install-action@nextest
       - name: "Test rusty-jwt-tools"
-        run: cargo nextest run --verbose --locked
+        run: sh run-tests.sh
       - name: "Upload test results"
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
