@@ -1,5 +1,5 @@
 [workspace]
-members = ["e2e-identity", "jwt", "ffi", "acme", "x509-check"]
+members = ["e2e-identity", "jwt", "ffi", "acme", "x509-check", "test-wire-server"]
 resolver = "2"
 
 [workspace.lints.clippy]
