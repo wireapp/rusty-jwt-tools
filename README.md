@@ -39,9 +39,7 @@ cargo build
 
 ## Testing
 
-Install cargo-nextest if you haven't done so, it yields some substantial speedup.
-Also, it allows us to group tests easily and have custom settings for those groups (see [`.config/nextest.toml`](.config/nextest.toml)).
-
+Install cargo-nextest to allow running tests in parallel:
 ```bash
 cargo install cargo-nextest
 ```
@@ -49,10 +47,39 @@ cargo install cargo-nextest
 Make sure the docker daemon is running (this is needed because the test suite runs an OIDC provider
 inside a container).
 
-Run tests:
+
+### Running all tests at once
+
+Simply execute the `run-tests.sh` script:
 ```bash
-cargo nextest run
+sh run-tests.sh
 ```
+The script will take care of cleaning up processes and containers that are started during tests.
+
+### Manually invoking specific tests
+
+First, you need to start `test-wire-server`:
+```bash
+$ cargo run test-wire-server
+[...]
+127.0.0.1:20530
+```
+
+Note the IP and port printed by `test-wire-server` and export that as `TEST_WIRE_SERVER_ADDR`:
+```bash
+export TEST_WIRE_SERVER_ADDR=127.0.0.1:20530
+```
+
+Now that the environment is ready, you can run a specific test, or any subset of tests, e.g.
+```bash
+cargo nextest run --locked alg::p256
+```
+
+Once you are done with testing, terminate the Keycloak container that has been started:
+```bash
+docker kill keycloak && docker rm keycloak
+```
+as well as the `test-wire-server` instance.
 
 ### Testing the Haskell FFI
 
