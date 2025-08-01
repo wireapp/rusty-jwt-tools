@@ -1,5 +1,6 @@
 use base64::prelude::*;
 use std::net::SocketAddr;
+use std::os::unix::fs::PermissionsExt as _;
 use std::path::Path;
 
 use serde_json::json;
@@ -148,6 +149,7 @@ async fn alter_configuration(host_volume: &Path, ca_cfg: &CaCfg) {
 }
 
 async fn run_command(node: &ContainerAsync<GenericImage>, cmd: &str) {
+    let cmd_string = cmd.to_owned();
     let cmd = shlex::split(cmd).unwrap();
 
     // Note the usage of CmdWaitFor::exit_code here. This is because we want to wait
@@ -155,11 +157,18 @@ async fn run_command(node: &ContainerAsync<GenericImage>, cmd: &str) {
     // to the container, immediately return from this function and start another command
     // that requires the previous command to have completed.
     let cmd = ExecCommand::new(cmd).with_cmd_ready_condition(CmdWaitFor::exit_code(0));
-    node.exec(cmd).await.unwrap();
+    let cmd_result = node.exec(cmd).await;
+    if cmd_result.is_err() {
+        println!("--------");
+        println!("command failed: {cmd_string}");
+        println!("--------");
+        // loop {}
+    }
+    cmd_result.unwrap();
 }
 
 pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
-    let host_volume = std::env::temp_dir().join(rand_str());
+    let host_volume = std::env::temp_dir().join(format!("test-acme-server-volume-{}", rand_str()));
     std::fs::create_dir(&host_volume).unwrap();
 
     #[cfg(unix)]
@@ -168,6 +177,11 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
         use std::os::unix::fs::PermissionsExt;
         let permissions = std::fs::Permissions::from_mode(0o777);
         std::fs::set_permissions(&host_volume, permissions).unwrap();
+        std::fs::write(
+            host_volume.join("intermediate.template"),
+            INTERMEDIATE_CERT_TEMPLATE.to_string().into_bytes(),
+        )
+        .unwrap();
     }
 
     // Prepare the container image. Note that instead of just starting the image as-is, we're
@@ -183,10 +197,6 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
         .with_network(NETWORK)
         .with_mount(Mount::bind_mount(host_volume.to_str().unwrap(), "/home/step"))
         .with_shm_size(SHM)
-        .with_copy_to(
-            "/home/step/intermediate.template",
-            INTERMEDIATE_CERT_TEMPLATE.to_string().into_bytes(),
-        )
         .with_cmd(["bash", "-c", "sleep 1h"]);
 
     let node = image.start().await.expect("Error running Step CA image");
@@ -229,14 +239,38 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
     )
     .await;
 
-    // Overwrite the generated intermediate certificate and key with our own.
-    run_command(&node, "mv intermediate-ca.crt certs/intermediate_ca.crt").await;
-    run_command(&node, "mv intermediate-ca.key secrets/intermediate_ca_key").await;
-
     // Allow the user outside the container to read certificates and modify CA configuration.
     run_command(&node, "chmod -R o+r certs").await;
     run_command(&node, "chmod o+rx config certs").await;
-    run_command(&node, "chmod o+rw config/ca.json").await;
+
+    // Overwrite the generated intermediate certificate and key with our own.
+    std::fs::copy(
+        host_volume.join("intermediate-ca.crt"),
+        host_volume.join("certs").join("intermediate-ca.crt"),
+    )
+    .unwrap();
+    std::fs::copy(
+        host_volume.join("intermediate-ca.key"),
+        host_volume.join("secrets").join("intermediate-ca.key"),
+    )
+    .unwrap();
+    // run_command(&node, "mv intermediate-ca.crt certs/intermediate_ca.crt").await;
+    // run_command(&node, "mv intermediate-ca.key secrets/intermediate_ca_key").await;
+
+    let permissions = std::fs::Permissions::from_mode(0o777);
+    // std::fs::set_permissions(host_volume.join("certs"), permissions.clone()).unwrap();
+    // std::fs::set_permissions(host_volume.join("config"), permissions.clone()).unwrap();
+    run_command(&node, "bash -c 'chmod o+rw config/ca.json'").await;
+    // std::fs::set_permissions(host_volume.join("config").join("ca.json"), permissions.clone()).unwrap();
+
+    use std::os::unix::fs::PermissionsExt;
+    let permissions = std::fs::Permissions::from_mode(0o777);
+    std::fs::set_permissions(&host_volume, permissions).unwrap();
+    std::fs::write(
+        host_volume.join("intermediate.template"),
+        INTERMEDIATE_CERT_TEMPLATE.to_string().into_bytes(),
+    )
+    .unwrap();
 
     // Alter the CA configuration by substituting our provisioner.
     alter_configuration(&host_volume, ca_cfg).await;
