@@ -15,7 +15,8 @@ test_wire_server_pid=$!
 read TEST_WIRE_SERVER_ADDR < ${tmpfile}
 export TEST_WIRE_SERVER_ADDR
 
-cargo nextest run --locked
+echo \\nRunning nextest with arguments \"$@\"\\n
+cargo nextest run --locked "$@"
 
 # Clean up.
 docker kill keycloak && docker rm keycloak
