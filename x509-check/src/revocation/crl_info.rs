@@ -124,10 +124,10 @@ impl TryFrom<&CertificateList> for CrlInfo {
                         }
                     } // end ID_CE_ISSUING_DISTRIBUTION_POINT
                     ID_CE_AUTHORITY_KEY_IDENTIFIER => {
-                        if let Ok(akid) = AuthorityKeyIdentifier::from_der(ext.extn_value.as_bytes()) {
-                            if let Some(kid) = akid.key_identifier {
-                                skid = Some(kid.as_bytes().to_vec());
-                            }
+                        if let Ok(akid) = AuthorityKeyIdentifier::from_der(ext.extn_value.as_bytes())
+                            && let Some(kid) = akid.key_identifier
+                        {
+                            skid = Some(kid.as_bytes().to_vec());
                         }
                     }
                     ID_CE_DELTA_CRL_INDICATOR => {

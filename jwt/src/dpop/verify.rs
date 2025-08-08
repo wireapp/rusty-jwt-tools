@@ -71,18 +71,18 @@ impl VerifyDpop for &str {
         };
 
         let claims = (*self).verify_jwt::<Dpop>(&pk, max_expiration, verify)?;
-        if let Some(expected_htm) = htm {
-            if expected_htm != claims.custom.htm {
-                return Err(RustyJwtError::DpopHtmMismatch);
-            }
+        if let Some(expected_htm) = htm
+            && expected_htm != claims.custom.htm
+        {
+            return Err(RustyJwtError::DpopHtmMismatch);
         }
         if htu != &claims.custom.htu {
             return Err(RustyJwtError::DpopHtuMismatch);
         }
-        if let Some(chal) = challenge {
-            if chal != &claims.custom.challenge {
-                return Err(RustyJwtError::DpopChallengeMismatch);
-            }
+        if let Some(chal) = challenge
+            && chal != &claims.custom.challenge
+        {
+            return Err(RustyJwtError::DpopChallengeMismatch);
         }
         if &claims.custom.handle != handle {
             return Err(RustyJwtError::DpopHandleMismatch);

@@ -15,10 +15,10 @@ pub(crate) fn check_crl_valid_at_toi(toi: u64, crl: &CertificateList) -> bool {
         return false;
     }
 
-    if let Some(nu) = crl.tbs_cert_list.next_update {
-        if nu.to_unix_duration().as_secs() < toi {
-            return false;
-        }
+    if let Some(nu) = crl.tbs_cert_list.next_update
+        && nu.to_unix_duration().as_secs() < toi
+    {
+        return false;
     }
 
     true
@@ -27,14 +27,13 @@ pub(crate) fn check_crl_valid_at_toi(toi: u64, crl: &CertificateList) -> bool {
 pub(crate) fn get_dp_from_crl(crl: &CertificateList) -> Option<Vec<u8>> {
     if let Some(exts) = &crl.tbs_cert_list.crl_extensions {
         for ext in exts {
-            if ext.extn_id == ID_CE_ISSUING_DISTRIBUTION_POINT {
-                if let Some(enc_dp) = IssuingDistributionPoint::from_der(ext.extn_value.as_bytes())
+            if ext.extn_id == ID_CE_ISSUING_DISTRIBUTION_POINT
+                && let Some(enc_dp) = IssuingDistributionPoint::from_der(ext.extn_value.as_bytes())
                     .ok()
                     .and_then(|idp| idp.distribution_point)
                     .and_then(|dp| dp.to_der().ok())
-                {
-                    return Some(enc_dp);
-                }
+            {
+                return Some(enc_dp);
             }
         }
     }

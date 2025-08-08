@@ -140,19 +140,18 @@ impl CrlSource for CrlStore {
         // AKI matching
         if let Ok(Some(PDVExtension::AuthorityKeyIdentifier(akid))) =
             cert.get_extension(&ID_CE_AUTHORITY_KEY_IDENTIFIER)
+            && let Some(kid) = &akid.key_identifier
         {
-            if let Some(kid) = &akid.key_identifier {
-                let skids = self.sk_ids.lock().map_err(|_| certval::Error::Unrecognized)?;
-                let kid_bytes = kid.as_bytes();
-                if let Some(indices) = skids.get(kid_bytes) {
-                    let mut retval = vec![];
-                    for index in indices {
-                        if let Some(crl) = crls.get(*index) {
-                            retval.push(crl.to_der()?);
-                        }
+            let skids = self.sk_ids.lock().map_err(|_| certval::Error::Unrecognized)?;
+            let kid_bytes = kid.as_bytes();
+            if let Some(indices) = skids.get(kid_bytes) {
+                let mut retval = vec![];
+                for index in indices {
+                    if let Some(crl) = crls.get(*index) {
+                        retval.push(crl.to_der()?);
                     }
-                    return Ok(retval);
                 }
+                return Ok(retval);
             }
         }
 

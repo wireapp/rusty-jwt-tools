@@ -32,10 +32,10 @@ impl RevocationStatusCache for RevocationCache {
             return PathValidationStatus::RevocationStatusNotDetermined;
         };
 
-        if let Some(status_and_time) = cache_map.get(&get_name_serial_pair(cert)) {
-            if status_and_time.valid_until > time_of_interest {
-                return status_and_time.status;
-            }
+        if let Some(status_and_time) = cache_map.get(&get_name_serial_pair(cert))
+            && status_and_time.valid_until > time_of_interest
+        {
+            return status_and_time.status;
         }
 
         PathValidationStatus::RevocationStatusNotDetermined
