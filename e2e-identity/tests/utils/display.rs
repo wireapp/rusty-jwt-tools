@@ -97,8 +97,9 @@ impl TestDisplay {
         from: Actor,
         to: Actor,
         req: Option<&reqwest::Request>,
-        url_pattern: Option<&'static str>,
+        url_pattern: Option<impl Into<String>>,
     ) {
+        let url_pattern = url_pattern.map(Into::into);
         let event = Event::Request {
             from,
             to,
@@ -467,7 +468,7 @@ const EXCEPT_HEADERS: [&str; 2] = ["date", "content-length"];
 pub struct Req(String, String, bool);
 
 impl Req {
-    pub fn new(req: &reqwest::Request, url_pattern: Option<&'static str>) -> Self {
+    pub fn new(req: &reqwest::Request, url_pattern: Option<String>) -> Self {
         let is_tls = matches!(req.url().scheme(), "https");
         let method = req.method().as_str();
         let url = req.url().as_str();
