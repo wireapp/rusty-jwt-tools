@@ -8,9 +8,23 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[Makefile]
-indent_style = space
-indent_size = 4
-
 [*.{md,mdx}]
 trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.{kt,kts,gradle}]
+ktlint_standard_class-signature = disabled
+ktlint_standard_function-signature = disabled
+ktlint_standard_chain-method-continuation = disabled
+ktlint_standard_multiline-expression-wrapping = disabled
+ktlint_standard_trailing-comma-on-call-site = disabled
+ktlint_standard_function-expression-body = disabled
+ktlint_standard_trailing-comma-on-declaration-site = disabled
+
+[Makefile]
+indent_style = tab
+
+[*.toml]
+indent_size = 2
