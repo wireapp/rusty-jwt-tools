@@ -1,6 +1,7 @@
 use base64::prelude::*;
 use std::net::SocketAddr;
 use std::path::Path;
+use std::time::Duration;
 
 use serde_json::json;
 use testcontainers::core::{CmdWaitFor, ContainerPort, ExecCommand, Mount};
@@ -148,14 +149,32 @@ async fn alter_configuration(host_volume: &Path, ca_cfg: &CaCfg) {
 }
 
 async fn run_command(node: &ContainerAsync<GenericImage>, cmd: &str) {
+    run_command_with_ready_conditions(node, cmd, CmdWaitFor::exit_code(0)).await
+}
+
+async fn run_command_with_ready_conditions(
+    node: &ContainerAsync<GenericImage>,
+    cmd: &str,
+    ready_conditions: impl Into<CmdWaitFor>,
+) {
+    let cmd_string = cmd.to_owned();
     let cmd = shlex::split(cmd).unwrap();
 
     // Note the usage of CmdWaitFor::exit_code here. This is because we want to wait
     // until the command finishes. Otherwise, it could happen that we submit the command
     // to the container, immediately return from this function and start another command
     // that requires the previous command to have completed.
-    let cmd = ExecCommand::new(cmd).with_cmd_ready_condition(CmdWaitFor::exit_code(0));
-    node.exec(cmd).await.unwrap();
+    let cmd = ExecCommand::new(cmd).with_cmd_ready_condition(ready_conditions);
+    let cmd_result = node.exec(cmd).await.unwrap();
+
+    let mut result_unwrapped = cmd_result;
+    println!("--------");
+    println!(
+        "command run: {cmd_string} with err\n{}\nand stdout\n{}",
+        std::str::from_utf8(&result_unwrapped.stderr_to_vec().await.unwrap()).unwrap(),
+        std::str::from_utf8(&result_unwrapped.stdout_to_vec().await.unwrap()).unwrap(),
+    );
+    println!("--------");
 }
 
 pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
@@ -184,6 +203,7 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
     // template that includes name constraints.
     let image = GenericImage::new("smallstep/step-ca", "0.27.4")
         .with_exposed_port(PORT)
+        .with_env_var("STEPDEBUG", "1")
         .with_container_name(&ca_cfg.host)
         .with_network(NETWORK)
         .with_mount(Mount::bind_mount(host_volume.to_str().unwrap(), "/home/step"))
@@ -225,7 +245,7 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
                             --dns localhost,stepca --address :{port}
                             --provisioner wire
                             --provisioner-password-file password
-                            --password-file password"
+                            --password-file password",
         ),
     )
     .await;
@@ -241,6 +261,8 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
 
     // Alter the CA configuration by substituting our provisioner.
     alter_configuration(&host_volume, ca_cfg).await;
+
+    tokio::time::sleep(Duration::from_millis(3000)).await;
 
     // We're now ready to start.
     run_command(
