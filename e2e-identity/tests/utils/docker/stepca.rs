@@ -168,6 +168,11 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
         use std::os::unix::fs::PermissionsExt;
         let permissions = std::fs::Permissions::from_mode(0o777);
         std::fs::set_permissions(&host_volume, permissions).unwrap();
+        std::fs::write(
+            host_volume.join("intermediate.template"),
+            INTERMEDIATE_CERT_TEMPLATE.to_string().into_bytes(),
+        )
+        .unwrap();
     }
 
     // Prepare the container image. Note that instead of just starting the image as-is, we're
@@ -183,10 +188,6 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
         .with_network(NETWORK)
         .with_mount(Mount::bind_mount(host_volume.to_str().unwrap(), "/home/step"))
         .with_shm_size(SHM)
-        .with_copy_to(
-            "/home/step/intermediate.template",
-            INTERMEDIATE_CERT_TEMPLATE.to_string().into_bytes(),
-        )
         .with_cmd(["bash", "-c", "sleep 1h"]);
 
     let node = image.start().await.expect("Error running Step CA image");
@@ -242,7 +243,11 @@ pub async fn start_acme_server(ca_cfg: &CaCfg) -> AcmeServer {
     alter_configuration(&host_volume, ca_cfg).await;
 
     // We're now ready to start.
-    run_command(&node, "bash -c 'step-ca --password-file password &'").await;
+    run_command(
+        &node,
+        "nohup bash -c 'step-ca --password-file password >/tmp/step-ca.log 2>&1 &'",
+    )
+    .await;
 
     let port = node.get_host_port_ipv4(PORT).await.unwrap();
     let uri = format!("https://{}:{}", &ca_cfg.host, port);
