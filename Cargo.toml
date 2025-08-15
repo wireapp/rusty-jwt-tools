@@ -1,5 +1,12 @@
 [workspace]
-members = ["e2e-identity", "jwt", "ffi", "acme", "x509-check", "test-wire-server"]
+members = [
+  "e2e-identity",
+  "jwt",
+  "ffi",
+  "acme",
+  "x509-check",
+  "test-wire-server",
+]
 resolver = "2"
 
 [workspace.lints.clippy]
@@ -9,7 +16,9 @@ undocumented_unsafe_blocks = "deny"
 [workspace.dependencies]
 anyhow = { version = "1.0", default-features = false }
 base64 = { version = "0.22", default-features = false, features = ["std"] }
-certval = { git = "https://github.com/wireapp/rust-pki.git", branch = "wire/stable", package = "certval", default-features = false, features = ["revocation"] }
+certval = { git = "https://github.com/wireapp/rust-pki.git", branch = "wire/stable", package = "certval", default-features = false, features = [
+  "revocation",
+] }
 const-oid = { version = "0.9", default-features = false, features = ["std"] }
 const_format = { version = "0.2", default-features = false }
 derive_more = { version = "2.0.1", default-features = false }
@@ -20,7 +29,9 @@ flagset = { version = "0.4", default-features = false }
 web-time = { version = "1.1.0", default-features = false }
 getrandom = { version = "0.2.8", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
-itertools = { version = "0.12", default-features = false, features = ["use_alloc"] }
+itertools = { version = "0.12", default-features = false, features = [
+  "use_alloc",
+] }
 lazy_static = { version = "1.4", default-features = false }
 p256 = { version = "0.13", default-features = false }
 p384 = { version = "0.13", default-features = false }
@@ -52,7 +63,9 @@ tokio = { version = "1.45", default-features = false }
 hyper = { version = "1.6", default-features = false }
 wasm-bindgen-test = { version = "0.3", default-features = false }
 webbrowser = { version = "0.8", default-features = false }
-reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
+reqwest = { version = "0.12", default-features = false, features = [
+  "native-tls",
+] }
 rstest = { version = "0.19", default-features = false }
 rstest_reuse = { version = "0.6", default-features = false }
 scraper = { version = "0.23", default-features = false }

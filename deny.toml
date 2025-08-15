@@ -1,54 +1,47 @@
 [graph]
 targets = [
-    # Desktop
-    { triple = "x86_64-unknown-linux-gnu" },
-    { triple = "aarch64-unknown-linux-gnu" },
-    { triple = "x86_64-unknown-linux-musl" },
-    { triple = "aarch64-apple-darwin" },
-    { triple = "x86_64-apple-darwin" },
-    { triple = "x86_64-pc-windows-msvc" },
-    # WASM
-    { triple = "wasm32-unknown-unknown" },
-    # iOS
-    { triple = "aarch64-apple-ios-sim" },
-    { triple = "x86_64-apple-ios" },
-    { triple = "aarch64-apple-ios" },
-    # Android
-    { triple = "aarch64-linux-android" },
-    { triple = "armv7-linux-androideabi" },
-    { triple = "x86_64-linux-android" },
+  # Desktop
+  { triple = "x86_64-unknown-linux-gnu" },
+  { triple = "aarch64-unknown-linux-gnu" },
+  { triple = "x86_64-unknown-linux-musl" },
+  { triple = "aarch64-apple-darwin" },
+  { triple = "x86_64-apple-darwin" },
+  { triple = "x86_64-pc-windows-msvc" },
+  # WASM
+  { triple = "wasm32-unknown-unknown" },
+  # iOS
+  { triple = "aarch64-apple-ios-sim" },
+  { triple = "x86_64-apple-ios" },
+  { triple = "aarch64-apple-ios" },
+  # Android
+  { triple = "aarch64-linux-android" },
+  { triple = "armv7-linux-androideabi" },
+  { triple = "x86_64-linux-android" },
 ]
 
 [advisories]
-ignore = [{ id = "RUSTSEC-2023-0071", reason = "No fix released yet. Working issue: https://github.com/RustCrypto/RSA/pull/394" }]
+ignore = [
+  { id = "RUSTSEC-2023-0071", reason = "No fix released yet. Working issue: https://github.com/RustCrypto/RSA/pull/394" },
+]
 
 [licenses]
 confidence-threshold = 0.93
 # Checked for compatibility with our license (MPL-2.0)
 # using https://joinup.ec.europa.eu/collection/eupl/solution/joinup-licensing-assistant/jla-compatibility-checker
-allow = [
-    "MPL-2.0",
-    "Apache-2.0",
-    "BSD-3-Clause",
-    "MIT",
-    "ISC",
-    "Zlib",
-]
+allow = ["MPL-2.0", "Apache-2.0", "BSD-3-Clause", "MIT", "ISC", "Zlib"]
 exceptions = [{ allow = ["Unicode-DFS-2016"], name = "unicode-ident" }]
 
 [[licenses.clarify]]
 name = "ring"
 expression = "MIT AND ISC"
-license-files = [
-    { path = "LICENSE", hash = 0xbd0eed23 }
-]
+license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
 
 [[licenses.clarify]]
 name = "pkiprocmacros"
 expression = "Apache-2.0 OR MIT"
 license-files = [
-    { path = "../certval/LICENSE-APACHE", hash = 0x001c7e6c },
-    { path = "../certval/LICENSE-MIT", hash = 0x001c7e6c }
+  { path = "../certval/LICENSE-APACHE", hash = 0x001c7e6c },
+  { path = "../certval/LICENSE-MIT", hash = 0x001c7e6c },
 ]
 
 [sources]
@@ -56,8 +49,8 @@ allow-org = { github = ["wireapp"] }
 
 # We need to allow briansmith/ring since beltram/biscuit depends on it.
 allow-git = [
-    "https://github.com/beltram/biscuit",
-    "https://github.com/briansmith/ring"
+  "https://github.com/beltram/biscuit",
+  "https://github.com/briansmith/ring",
 ]
 
 [bans]

@@ -22,7 +22,11 @@ thiserror = { workspace = true }
 jwt-simple = { workspace = true }
 base64 = { workspace = true }
 url = { workspace = true, features = ["serde"] }
-time = { workspace = true, features = ["serde", "serde-well-known", "wasm-bindgen"] }
+time = { workspace = true, features = [
+  "serde",
+  "serde-well-known",
+  "wasm-bindgen",
+] }
 x509-cert = { workspace = true }
 const-oid = { workspace = true }
 signature = { workspace = true }
@@ -37,6 +41,8 @@ web-time = { workspace = true }
 hex = { workspace = true }
 
 [dev-dependencies]
-rusty-jwt-tools = { version = "0.13.0", path = "../jwt", features = ["test-utils"] }
+rusty-jwt-tools = { version = "0.13.0", path = "../jwt", features = [
+  "test-utils",
+] }
 wasm-bindgen-test = { workspace = true }
 hex = { workspace = true }

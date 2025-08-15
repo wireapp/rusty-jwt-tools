@@ -28,9 +28,9 @@ serde_json = { workspace = true }
 sha2 = { workspace = true }
 either = { workspace = true, features = ["serde"] }
 time = { workspace = true, features = [
-    "serde",
-    "serde-well-known",
-    "wasm-bindgen",
+  "serde",
+  "serde-well-known",
+  "wasm-bindgen",
 ] }
 json-patch = { workspace = true }
 jwt-simple = { workspace = true }
