@@ -9,18 +9,18 @@ use crate::{
 };
 
 impl RustyJwtTools {
-    /// Validate the provided [dpop_proof] DPoP proof JWT from the client, and if valid, return an
+    /// Validate the provided `dpop_proof` DPoP proof JWT from the client, and if valid, return an
     /// introspectable DPoP access token.
     ///
     /// Verifications:
-    /// * [dpop_proof] has the correct syntax
+    /// * `dpop_proof` has the correct syntax
     /// * `typ` header field is "dpop+jwt"
     /// * signature algorithm (alg) in JWT header is a supported algorithm
     /// * signature corresponds to the public key (jwk) in the JWT header
-    /// * [client_id] corresponds to the (sub) claim expressed as URI
-    /// * [backend_nonce] corresponds to the (nonce) claim encoded as base64url.
-    /// * [uri] corresponds to the (htu) claim.
-    /// * [method] corresponds to the (htm) claim.
+    /// * `client_id` corresponds to the (sub) claim expressed as URI
+    /// * `backend_nonce` corresponds to the (nonce) claim encoded as base64url.
+    /// * `uri` corresponds to the (htu) claim.
+    /// * `method` corresponds to the (htm) claim.
     /// * `jti` claim is present
     /// * `chal` claim is present
     /// * `iat` claim is present and no earlier or later than max_skew_secs seconds of now
@@ -33,7 +33,7 @@ impl RustyJwtTools {
     ///   ex: b"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" (whitespace in the example is not included in the actual proof)
     /// * `client_id` - see [ClientId]
     /// * `backend_nonce` - The most recent DPoP nonce provided by the backend to the current client ex: hex!("b62551e728771515234fac0b04b2008d")
-    /// * `uri` - The HTTPS URI on the backend for the DPoP auth token endpoint ex: "https://wire.example.com/clients/authtoken"
+    /// * `uri` - The HTTPS URI on the backend for the DPoP auth token endpoint ex: <https://wire.example.com/clients/authtoken>
     /// * `method` - The HTTPS method used on the backend for the DPoP auth token endpoint ex: b"POST"
     /// * `max_skew_secs` - The maximum number of seconds of clock skew the implementation will allow ex: 360 (5 min)
     /// * `max_expiration` - The maximal expiration date and time, in seconds since epoch ex: 1668987368

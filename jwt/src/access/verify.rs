@@ -12,12 +12,12 @@ impl RustyJwtTools {
     /// provided to the ACME server, and return OK or an error.
     ///
     /// Verifications:
-    /// * [access_token] has the correct syntax for an introspectable token [TODO]
+    /// * `access_token` has the correct syntax for an introspectable token TODO
     /// * `typ` header field is "dpop+jwt"
     /// * signature algorithm (alg) in JWT header is a supported algorithm
-    /// * signature corresponds to the public key (jwk) in the JWT header [TODO]
-    /// * [client_id] corresponds to the (sub) claim expressed as URI
-    /// * [challenge] corresponds to the (chal) claim encoded as base64url.
+    /// * signature corresponds to the public key (jwk) in the JWT header TODO
+    /// * `client_id` corresponds to the (sub) claim expressed as URI
+    /// * `challenge` corresponds to the (chal) claim encoded as base64url.
     /// * `jti` claim is present in token
     /// * `nonce` claim is present in token
     /// * `iat` claim is present and no earlier or later than max_skew_secs seconds of now

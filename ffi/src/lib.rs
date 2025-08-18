@@ -22,7 +22,7 @@ use rusty_jwt_tools::prelude::*;
 pub struct RustyJwtToolsFfi;
 
 impl RustyJwtToolsFfi {
-    /// see [RustyJwtTools::generate_dpop_access_token]
+    /// see [RustyJwtTools::generate_access_token]
     ///
     /// ## Safety
     ///
@@ -208,13 +208,13 @@ pub enum HsError {
     UnsupportedDpopAlgorithm = 6,
     /// DPoP signature does not correspond to the public key (jwk) in the JWT header
     InvalidDpopSignature = 7,
-    /// [client_id] does not correspond to the (sub) claim expressed as URI
+    /// `client_id` does not correspond to the (sub) claim expressed as URI
     ClientIdMismatch = 8,
-    /// [backend_nonce] does not correspond to the (nonce) claim in DPoP token (base64url encoded)
+    /// `backend_nonce` does not correspond to the (nonce) claim in DPoP token (base64url encoded)
     BackendNonceMismatch = 9,
-    /// [uri] does not correspond to the (htu) claim in DPoP token
+    /// `uri` does not correspond to the (htu) claim in DPoP token
     InvalidHtu = 10,
-    /// [method] does not correspond to the (htm) claim in DPoP token
+    /// `method` does not correspond to the (htm) claim in DPoP token
     InvalidHtm = 11,
     /// (jti) claim is absent in DPoP token
     MissingJti = 12,
@@ -222,13 +222,13 @@ pub enum HsError {
     MissingChallenge = 13,
     /// (iat) claim is absent in DPoP token
     MissingIat = 14,
-    /// (iat) claim in DPoP token is not earlier of now (with [max_skew_secs] leeway)
+    /// (iat) claim in DPoP token is not earlier of now (with `max_skew_secs` leeway)
     InvalidIat = 15,
     /// (exp) claim is absent in DPoP token
     MissingExp = 16,
-    /// (exp) claim in DPoP token is larger than supplied [max_expiration]
+    /// (exp) claim in DPoP token is larger than supplied `max_expiration`
     ExpMismatch = 17,
-    /// (exp) claim in DPoP token is sooner than now (with [max_skew_secs] leeway)
+    /// (exp) claim in DPoP token is sooner than now (with `max_skew_secs` leeway)
     Expired = 18,
     /// userId supplied across the FFI is invalid
     InvalidUserId = 19,

@@ -111,7 +111,7 @@ pub enum RustyJwtError {
     /// Supplied backend keys have an invalid format
     #[error("Supplied backend keys have an invalid format because {0}")]
     InvalidBackendKeys(&'static str),
-    /// see [crate::client_id::QualifiedClientId]
+    /// see [crate::prelude::ClientId]
     #[error("Supplied client identifier is invalid")]
     InvalidClientId,
     /// Verified a token with an unsupported wire-server API version
