@@ -2365,15 +2365,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "portpicker"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be97d76faf1bfab666e1375477b23fde79eccf0276e9b63b92a39d676a889ba9"
-dependencies = [
- "rand 0.8.5",
-]
-
-[[package]]
 name = "powerfmt"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3381,7 +3372,6 @@ dependencies = [
  "http-body-util",
  "hyper",
  "hyper-util",
- "portpicker",
  "rusty-jwt-tools",
  "serde_json",
  "tokio",
@@ -4213,7 +4203,6 @@ dependencies = [
  "oauth2",
  "openidconnect",
  "pem",
- "portpicker",
  "rand 0.8.5",
  "reqwest",
  "rstest",
