@@ -43,8 +43,7 @@ impl Default for Team {
 impl PartialEq for Team {
     fn eq(&self, server_team: &Self) -> bool {
         match (&self.0, &server_team.0) {
-            // TODO: forbid this before releasing
-            (None, Some(_)) | (Some(_), None) => true, // this probably means that client & server are operating on different versions.
+            (None, Some(_)) | (Some(_), None) => false, // this probably means that client & server are operating on different versions.
             (Some(a), Some(b)) => a.eq(b),
             (None, None) => true,
         }

@@ -1038,7 +1038,7 @@ pub mod tests {
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                team: team.clone(),
+                team: None.into(),
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);

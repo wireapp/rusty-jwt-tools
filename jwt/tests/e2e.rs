@@ -98,6 +98,7 @@ fn e2e_jwt() {
             &alice,
             &handle,
             display_name,
+            &team.into(),
             challenge,
             leeway,
             max_expiration,

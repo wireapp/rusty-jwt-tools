@@ -29,6 +29,7 @@ impl RustyJwtTools {
     ///   of base64url characters (header, claims, signature) separated by period characters.
     ///   ex: b"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" (whitespace in the example is not included in the actual proof)
     /// * `client_id` - see [ClientId]
+    /// * `team` - see [Team]
     /// * `challenge` - The most recent challenge nonce provided by the ACME server to the current client ex: hex!("71515234fac0b04b2008db62551e7287")
     /// * `max_skew_secs` - The maximum number of seconds of clock skew the implementation will allow ex: 360 (5 min)
     /// * `max_expiration` - The maximal expiration date and time, in seconds since epoch ex: 1668987368
@@ -42,6 +43,7 @@ impl RustyJwtTools {
         client_id: &ClientId,
         handle: &QualifiedHandle,
         display_name: &str,
+        team: &Team,
         challenge: AcmeNonce,
         max_skew_secs: u16,
         max_expiration: u64,
@@ -61,6 +63,7 @@ impl RustyJwtTools {
             client_id,
             handle,
             display_name,
+            team,
             &challenge,
             max_expiration,
             issuer,
@@ -91,6 +94,7 @@ impl RustyJwtTools {
         client_id: &ClientId,
         handle: &QualifiedHandle,
         display_name: &str,
+        team: &Team,
         challenge: &AcmeNonce,
         max_expiration: u64,
         issuer: Htu,
@@ -144,7 +148,7 @@ impl RustyJwtTools {
             client_id,
             handle,
             display_name,
-            &None.into(),
+            team,
             &nonce,
             Some(&claims.custom.challenge),
             None,
@@ -1606,6 +1610,7 @@ pub mod tests {
         pub client_id: ClientId,
         pub handle: QualifiedHandle,
         pub display_name: String,
+        pub team: Team,
         pub challenge: AcmeNonce,
         pub leeway: u16,
         pub max_expiration: u64,
@@ -1622,6 +1627,7 @@ pub mod tests {
                 client_id: ClientId::default(),
                 handle: QualifiedHandle::default(),
                 display_name: "John Doe".to_string(),
+                team: Team::default(),
                 challenge: AcmeNonce::default(),
                 leeway: 5,
                 max_expiration: 2136351646, // somewhere in 2037
@@ -1639,6 +1645,7 @@ pub mod tests {
             client_id,
             handle,
             display_name,
+            team,
             challenge,
             leeway,
             max_expiration,
@@ -1674,6 +1681,7 @@ pub mod tests {
             &client_id,
             &handle,
             &display_name,
+            &team,
             challenge,
             leeway,
             max_expiration,
