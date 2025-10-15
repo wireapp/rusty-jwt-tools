@@ -18,10 +18,12 @@ export TEST_WIRE_SERVER_ADDR
 echo \\nRunning nextest with arguments \"$@\"\\n
 cargo nextest run --locked "$@"
 test_exit_code="$?"
+echo $test_exit_code
 
 # Clean up.
 docker kill keycloak && docker rm keycloak
 kill ${test_wire_server_pid}
 rm ${tmpfile}
 
+echo ===, $test_exit_code
 exit "$test_exit_code"
