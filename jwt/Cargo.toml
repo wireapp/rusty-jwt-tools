@@ -33,7 +33,6 @@ time = { workspace = true, features = [
   "serde-well-known",
   "wasm-bindgen",
 ] }
-json-patch = { workspace = true }
 jwt-simple = { workspace = true }
 zeroize = { workspace = true, features = ["zeroize_derive"] }
 biscuit = { workspace = true, optional = true }

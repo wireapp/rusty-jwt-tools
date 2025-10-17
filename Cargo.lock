@@ -1586,17 +1586,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "json-patch"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e712e62827c382a77b87f590532febb1f8b2fdbc3eefa1ee37fe7281687075ef"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 1.0.69",
-]
-
-[[package]]
 name = "jwt-simple"
 version = "0.13.0"
 source = "git+https://github.com/wireapp/rust-jwt-simple?tag=v0.13.0-pre.core-crypto-1.0.0#35201bea2ccb55cbb876be03cde2d3906f15547e"
@@ -2773,7 +2762,6 @@ dependencies = [
  "either",
  "getrandom 0.2.15",
  "josekit",
- "json-patch",
  "jwt-simple",
  "lazy_static",
  "p256",
