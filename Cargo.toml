@@ -68,7 +68,7 @@ reqwest = { version = "0.12", default-features = false, features = [
   "native-tls",
 ] }
 rstest = { version = "0.26", default-features = false }
-rstest_reuse = { version = "0.6", default-features = false }
+rstest_reuse = { version = "0.7", default-features = false }
 scraper = { version = "0.23", default-features = false }
 html_parser = { version = "0.6", default-features = false }
 openidconnect = { version = "4", default-features = false }
