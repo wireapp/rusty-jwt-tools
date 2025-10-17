@@ -251,10 +251,6 @@ pub enum HsError {
     /// Bubbling up errors
     JsonError = 28,
     /// Bubbling up errors
-    InvalidJsonPath = 29,
-    /// Bubbling up errors
-    JsonPathError = 30,
-    /// Bubbling up errors
     InvalidJwkThumbprint = 31,
     /// Bubbling up errors
     MissingDpopHeader = 32,
@@ -311,8 +307,6 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::Utf8Error(_) => Self::Utf8Error,
             RustyJwtError::Base64DecodeError(_) => Self::Base64DecodeError,
             RustyJwtError::JsonError(_) => Self::JsonError,
-            RustyJwtError::InvalidJsonPath(_) => Self::InvalidJsonPath,
-            RustyJwtError::JsonPathError(_) => Self::JsonPathError,
             RustyJwtError::InvalidJwkThumbprint => Self::InvalidJwkThumbprint,
             RustyJwtError::MissingDpopHeader(_) => Self::MissingDpopHeader,
             RustyJwtError::MissingIssuer => Self::MissingIssuer,

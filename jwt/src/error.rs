@@ -33,12 +33,6 @@ pub enum RustyJwtError {
     /// Json error
     #[error(transparent)]
     JsonError(#[from] serde_json::Error),
-    /// Invalid JSON Patch supplied according to RFC 6902
-    #[error("Invalid JSON Patch according to RFC 6902 because {0}")]
-    InvalidJsonPath(serde_json::Error),
-    /// Failed applying given Json patch
-    #[error(transparent)]
-    JsonPathError(#[from] json_patch::PatchError),
     /// Invalid URL
     #[error("Invalid Htu '{0}' in DPoP token because {1}")]
     InvalidHtu(url::Url, &'static str),
