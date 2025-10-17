@@ -1,13 +1,10 @@
-use jwt_simple::prelude::*;
-use serde::{Deserialize, Serialize};
-
 pub use htm::Htm;
 pub use htu::Htu;
-pub(crate) use verify::VerifyDpop;
-pub(crate) use verify::VerifyDpopTokenHeader;
+use jwt_simple::prelude::*;
+use serde::{Deserialize, Serialize};
+pub(crate) use verify::{VerifyDpop, VerifyDpopTokenHeader};
 
-use crate::jwt::new_jti;
-use crate::prelude::*;
+use crate::{jwt::new_jti, prelude::*};
 
 mod generate;
 mod htm;

@@ -1,8 +1,6 @@
 use jwt_simple::prelude::*;
 
-use crate::jwk_thumbprint::JwkThumbprint;
-use crate::jwt::new_jti;
-use crate::prelude::*;
+use crate::{jwk_thumbprint::JwkThumbprint, jwt::new_jti, prelude::*};
 
 mod generate;
 mod verify;

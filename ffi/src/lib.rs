@@ -285,7 +285,7 @@ pub enum HsError {
 impl From<RustyJwtError> for HsError {
     fn from(e: RustyJwtError) -> Self {
         match e {
-            RustyJwtError::InvalidHtu(_, _) => Self::InvalidHtu,
+            RustyJwtError::InvalidHtu(..) => Self::InvalidHtu,
             RustyJwtError::InvalidHtm(_) => Self::InvalidHtm,
             RustyJwtError::InvalidDpopJwk => Self::InvalidDpopSyntax,
             RustyJwtError::InvalidDpopTyp => Self::InvalidDpopTyp,

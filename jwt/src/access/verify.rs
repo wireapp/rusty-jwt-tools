@@ -177,9 +177,8 @@ impl RustyJwtTools {
 pub mod tests {
     use jwt_simple::prelude::*;
 
-    use crate::test_utils::*;
-
     use super::*;
+    use crate::test_utils::*;
 
     mod access {
         use super::*;

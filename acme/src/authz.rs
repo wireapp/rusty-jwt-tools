@@ -1,9 +1,7 @@
 use base64::Engine;
-
 use rusty_jwt_tools::prelude::*;
 
-use crate::chall::AcmeChallengeType;
-use crate::prelude::*;
+use crate::{chall::AcmeChallengeType, prelude::*};
 
 impl RustyAcme {
     /// create authorizations

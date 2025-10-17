@@ -1,3 +1,12 @@
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex, MutexGuard},
+};
+
+use certval::{CrlScope, CrlSource, ExtensionProcessing, PDVCertificate, PDVExtension, name_to_string};
+use const_oid::db::rfc5912::ID_CE_AUTHORITY_KEY_IDENTIFIER;
+use x509_cert::{crl::CertificateList, der::Encode};
+
 use crate::{
     RustyX509CheckError, RustyX509CheckResult,
     revocation::{
@@ -5,14 +14,6 @@ use crate::{
         misc::{check_crl_valid_at_toi, get_dp_from_crl, get_dps_from_cert},
     },
 };
-use certval::{CrlScope, CrlSource, ExtensionProcessing, PDVCertificate, PDVExtension, name_to_string};
-use const_oid::db::rfc5912::ID_CE_AUTHORITY_KEY_IDENTIFIER;
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, Mutex, MutexGuard},
-};
-
-use x509_cert::{crl::CertificateList, der::Encode};
 
 type IssuerMap = BTreeMap<String, Vec<usize>>;
 type SkidMap = BTreeMap<Vec<u8>, Vec<usize>>;

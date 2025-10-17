@@ -1,5 +1,7 @@
 use certval::{CrlAuthority, CrlCoverage, CrlReasons, CrlScope, CrlType, name_to_string};
-
+use const_oid::db::rfc5912::{
+    ID_CE_AUTHORITY_KEY_IDENTIFIER, ID_CE_DELTA_CRL_INDICATOR, ID_CE_ISSUING_DISTRIBUTION_POINT,
+};
 use x509_cert::{
     crl::CertificateList,
     der::{Decode, Encode},
@@ -7,10 +9,6 @@ use x509_cert::{
         AuthorityKeyIdentifier, IssuingDistributionPoint,
         name::{DistributionPointName, GeneralName},
     },
-};
-
-use const_oid::db::rfc5912::{
-    ID_CE_AUTHORITY_KEY_IDENTIFIER, ID_CE_DELTA_CRL_INDICATOR, ID_CE_ISSUING_DISTRIBUTION_POINT,
 };
 
 use crate::RustyX509CheckError;

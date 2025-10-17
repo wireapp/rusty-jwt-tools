@@ -1,8 +1,8 @@
-use crate::identifier::CanonicalIdentifier;
-use rusty_jwt_tools::prelude::*;
 use std::collections::HashSet;
 
-use crate::prelude::*;
+use rusty_jwt_tools::prelude::*;
+
+use crate::{identifier::CanonicalIdentifier, prelude::*};
 
 // Order creation
 impl RustyAcme {

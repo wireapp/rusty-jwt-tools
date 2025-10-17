@@ -8,13 +8,14 @@ use certval::{
     validator::{PDVCertificate, path_validator::check_validity},
     verify_signatures,
 };
-
 use const_oid::AssociatedOid;
-use x509_cert::der::{Decode, DecodePem, Encode};
-use x509_cert::ext::pkix::AuthorityKeyIdentifier;
+use crl_store::CrlStore;
+use x509_cert::{
+    der::{Decode, DecodePem, Encode},
+    ext::pkix::AuthorityKeyIdentifier,
+};
 
 use crate::{RustyX509CheckError, RustyX509CheckResult, revocation::cache::RevocationCache};
-use crl_store::CrlStore;
 
 mod cache;
 mod crl_info;

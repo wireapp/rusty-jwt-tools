@@ -27,8 +27,9 @@ pub struct AcmeDirectory {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

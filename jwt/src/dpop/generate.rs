@@ -40,12 +40,16 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use base64::Engine;
+    use serde_json::{Value, json};
     use wasm_bindgen_test::*;
     use web_time::{SystemTime, UNIX_EPOCH};
 
-    use crate::{dpop::*, jwk::RustyJwk, jwk::TryFromJwk, test_utils::*};
-    use base64::Engine;
-    use serde_json::{Value, json};
+    use crate::{
+        dpop::*,
+        jwk::{RustyJwk, TryFromJwk},
+        test_utils::*,
+    };
 
     wasm_bindgen_test_configure!(run_in_browser);
 

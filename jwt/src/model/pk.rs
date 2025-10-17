@@ -1,8 +1,7 @@
 use jwt_simple::prelude::*;
 use serde::de::DeserializeOwned;
 
-use crate::jwk::TryFromJwk;
-use crate::prelude::*;
+use crate::{jwk::TryFromJwk, prelude::*};
 
 /// Abstraction over a public cryptographic key to upcast it in order to ease and factorize its usage with `jwt_simple`
 #[derive(Debug, Clone)]

@@ -1,7 +1,11 @@
-use crate::model::DEFAULT_URL;
-use crate::prelude::{ClientId, RustyJwtError, RustyJwtResult};
-use percent_encoding::percent_decode_str;
 use std::str::FromStr;
+
+use percent_encoding::percent_decode_str;
+
+use crate::{
+    model::DEFAULT_URL,
+    prelude::{ClientId, RustyJwtError, RustyJwtResult},
+};
 
 /// A unique human-friendly identifier for a user e.g. `beltram_wire`
 #[derive(Debug, Clone, Eq, PartialEq, derive_more::From, derive_more::Into, derive_more::Deref)]
@@ -99,8 +103,9 @@ impl Default for QualifiedHandle {
 #[cfg(test)]
 pub mod tests {
 
-    use super::*;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

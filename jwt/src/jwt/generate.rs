@@ -1,5 +1,6 @@
-use crate::prelude::*;
 use jwt_simple::prelude::*;
+
+use crate::prelude::*;
 
 impl RustyJwtTools {
     /// Build a new generic JWT

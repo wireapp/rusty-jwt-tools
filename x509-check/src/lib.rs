@@ -1,5 +1,6 @@
-use crate::revocation::PkiEnvironment;
 use certval::PathValidationStatus;
+
+use crate::revocation::PkiEnvironment;
 
 pub mod reexports {
     pub use certval;

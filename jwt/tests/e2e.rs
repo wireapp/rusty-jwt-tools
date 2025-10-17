@@ -1,6 +1,5 @@
 use base64::Engine;
 use jwt_simple::prelude::*;
-
 use rusty_jwt_tools::prelude::*;
 
 #[test]

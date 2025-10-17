@@ -1,11 +1,9 @@
-use certval::PDVCertificate;
-use certval::PathValidationStatus;
-use certval::RevocationStatusCache;
-use certval::buffer_to_hex;
-use certval::name_to_string;
-use std::collections::BTreeMap;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
+
+use certval::{PDVCertificate, PathValidationStatus, RevocationStatusCache, buffer_to_hex, name_to_string};
 
 #[derive(Clone, Copy, Debug)]
 struct StatusAndTime {

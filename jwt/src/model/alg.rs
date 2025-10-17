@@ -1,5 +1,4 @@
-use std::fmt::Formatter;
-use std::str::FromStr;
+use std::{fmt::Formatter, str::FromStr};
 
 use jwt_simple::prelude::*;
 

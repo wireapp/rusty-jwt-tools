@@ -1,10 +1,9 @@
-use crate::model::DEFAULT_URL;
 use base64::Engine;
 use percent_encoding::percent_decode_str;
 use url::Url;
 use uuid::Uuid;
 
-use crate::prelude::*;
+use crate::{model::DEFAULT_URL, prelude::*};
 
 /// Unique user handle
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -177,8 +176,9 @@ impl ClientId {
 pub mod tests {
     use std::str::FromStr as _;
 
-    use super::*;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

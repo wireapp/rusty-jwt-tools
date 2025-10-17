@@ -77,9 +77,8 @@ impl JwkThumbprint {
 pub mod tests {
     use wasm_bindgen_test::*;
 
-    use crate::{jwk::RustyJwk, test_utils::*};
-
     use super::*;
+    use crate::{jwk::RustyJwk, test_utils::*};
 
     wasm_bindgen_test_configure!(run_in_browser);
 

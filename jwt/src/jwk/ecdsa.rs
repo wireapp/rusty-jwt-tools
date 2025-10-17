@@ -123,9 +123,8 @@ pub mod tests {
     use jwt_simple::prelude::*;
     use wasm_bindgen_test::*;
 
-    use crate::test_utils::*;
-
     use super::*;
+    use crate::test_utils::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

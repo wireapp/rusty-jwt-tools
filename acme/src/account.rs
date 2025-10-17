@@ -1,5 +1,6 @@
-use crate::prelude::*;
 use rusty_jwt_tools::prelude::*;
+
+use crate::prelude::*;
 
 impl RustyAcme {
     /// 5. Create a new acme account
@@ -143,9 +144,10 @@ pub enum AcmeAccountStatus {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
     use serde_json::json;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 

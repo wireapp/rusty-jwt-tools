@@ -1,11 +1,10 @@
 use base64::Engine;
 use jwt_simple::prelude::*;
+use rusty_jwt_tools::prelude::*;
 use x509_cert::der::Encode;
 
-use rusty_jwt_tools::prelude::*;
-
-use crate::identifier::CanonicalIdentifier;
 use crate::{
+    identifier::CanonicalIdentifier,
     order::{AcmeOrderError, AcmeOrderStatus},
     prelude::*,
 };

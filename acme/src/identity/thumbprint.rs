@@ -1,15 +1,14 @@
-use crate::{
-    error::CertificateError,
-    prelude::{RustyAcmeError, RustyAcmeResult},
-};
-
 use jwt_simple::prelude::*;
 use rusty_jwt_tools::{
     jwk::TryIntoJwk,
     prelude::{HashAlgorithm, JwkThumbprint, JwsAlgorithm},
 };
-
 use x509_cert::spki::SubjectPublicKeyInfoOwned;
+
+use crate::{
+    error::CertificateError,
+    prelude::{RustyAcmeError, RustyAcmeResult},
+};
 
 /// Used to compute the MLS thumbprint of a Basic Credential
 pub fn compute_raw_key_thumbprint(

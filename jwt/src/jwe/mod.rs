@@ -1,11 +1,10 @@
+use alg::JweAlgorithm;
 use biscuit::{
     Empty,
     jwa::{Algorithm, EncryptionOptions},
     jwe::{Compact, RegisteredHeader},
     jwk::{AlgorithmParameters, CommonParameters, JWK, OctetKeyParameters, OctetKeyType},
 };
-
-use alg::JweAlgorithm;
 
 use crate::prelude::*;
 
@@ -106,16 +105,14 @@ impl RustyJwtTools {
 pub mod tests {
     use base64::Engine;
     use biscuit::jwe::Header;
+    use helpers::*;
     use rand::SeedableRng as _;
     use rand_chacha::ChaCha20Rng;
     use serde_json::Value;
     use wasm_bindgen_test::*;
 
-    use helpers::*;
-
-    use crate::test_utils::*;
-
     use super::*;
+    use crate::test_utils::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 
@@ -279,8 +276,9 @@ pub mod tests {
 
     #[cfg(not(target_family = "wasm"))]
     mod interop {
-        use super::*;
         use serde_json::json;
+
+        use super::*;
 
         // because josekit generates 32 bytes nonce for Key Wrapping whereas biscuit expects 12 bytes
         #[ignore]

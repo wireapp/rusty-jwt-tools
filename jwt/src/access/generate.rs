@@ -172,9 +172,8 @@ pub mod tests {
     use jwt_simple::prelude::*;
     use serde_json::{Value, json};
 
-    use crate::{dpop::Dpop, jwk::TryFromJwk, test_utils::*};
-
     use super::*;
+    use crate::{dpop::Dpop, jwk::TryFromJwk, test_utils::*};
 
     mod generated_access_token {
         use super::*;

@@ -1,10 +1,11 @@
-use crate::{
-    jwk::TryFromJwk,
-    prelude::{RustyJwtError, RustyJwtResult},
-};
 use jwt_simple::prelude::{
     AlgorithmParameters, ES256PublicKey, ES384PublicKey, ES512PublicKey, Ed25519PublicKey, EdwardCurve, EllipticCurve,
     EllipticCurveKeyParameters, EllipticCurveKeyType, Jwk, OctetKeyPairParameters, OctetKeyPairType,
+};
+
+use crate::{
+    jwk::TryFromJwk,
+    prelude::{RustyJwtError, RustyJwtResult},
 };
 
 /// Parses a raw JWK Json serialized

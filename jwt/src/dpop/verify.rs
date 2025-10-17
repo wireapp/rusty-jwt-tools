@@ -1,7 +1,9 @@
 use jwt_simple::prelude::*;
 
-use crate::jwt::{Verify, VerifyJwt, VerifyJwtHeader};
-use crate::prelude::*;
+use crate::{
+    jwt::{Verify, VerifyJwt, VerifyJwtHeader},
+    prelude::*,
+};
 
 /// Verifies DPoP token specific header
 pub(crate) trait VerifyDpopTokenHeader {
