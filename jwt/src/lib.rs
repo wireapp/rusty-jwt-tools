@@ -6,12 +6,8 @@
 extern crate core;
 
 #[cfg(test)]
-use rstest_reuse;
-
-#[cfg(test)]
 #[macro_use]
 pub mod test_utils;
-// both imports above have to be defined at the beginning of the crate for rstest to work
 
 mod access;
 mod dpop;
