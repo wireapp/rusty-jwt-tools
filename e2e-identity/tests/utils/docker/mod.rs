@@ -1,5 +1,6 @@
 #![cfg(not(target_family = "wasm"))]
 
+pub mod authelia;
 pub mod keycloak;
 pub mod stepca;
 

@@ -54,6 +54,7 @@ fn setup_test_environment() -> TestEnvironment {
                 let runtime = tokio::runtime::Runtime::new().unwrap();
                 runtime.block_on(async {
                     let idp_server = start_idp_server(&wire_server.hostname, &wire_server.oauth_redirect_uri()).await;
+                    dbg!("IN SETUP TEST", &idp_server);
                     TestEnvironment {
                         wire_server,
                         idp_server,
