@@ -2,6 +2,7 @@
 
 pub mod keycloak;
 pub mod stepca;
+pub mod authelia;
 
 use jwt_simple::reexports::rand;
 
