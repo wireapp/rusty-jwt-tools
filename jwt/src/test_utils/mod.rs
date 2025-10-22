@@ -383,26 +383,3 @@ pub fn all_hash(hash: HashAlgorithm) {}
 )]
 #[allow(non_snake_case)]
 pub fn all_cipher(key: JweKey) {}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-#[cfg(feature = "jwe")]
-pub struct JweKey {
-    pub alg: JweAlgorithm,
-    pub value: Vec<u8>,
-}
-
-#[cfg(feature = "jwe")]
-impl JweKey {
-    pub fn new(alg: JweAlgorithm) -> Self {
-        let key = Self::rand_key(alg.key_length());
-        Self { alg, value: key }
-    }
-
-    fn rand_key(size: usize) -> Vec<u8> {
-        use rand::{RngCore as _, SeedableRng as _};
-        let mut key = vec![0u8; size];
-        let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
-        rng.fill_bytes(&mut key);
-        key
-    }
-}

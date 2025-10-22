@@ -35,7 +35,6 @@ time = { workspace = true, features = [
 ] }
 jwt-simple = { workspace = true }
 zeroize = { workspace = true, features = ["zeroize_derive"] }
-biscuit = { workspace = true, optional = true }
 getrandom = { workspace = true, features = ["js"] }
 derive_more = { workspace = true, features = ["from", "into", "deref"] }
 const_format = { workspace = true }
@@ -63,6 +62,5 @@ workspace = true
 features = ["std", "js"]
 
 [features]
-jwe = ["biscuit", "rand", "rand_chacha"]
 test-utils = []
 rsa = ["jwt-simple/rsa"]
