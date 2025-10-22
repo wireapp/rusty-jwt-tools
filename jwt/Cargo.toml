@@ -27,7 +27,6 @@ sec1 = { workspace = true }
 url = { workspace = true, features = ["serde"] }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
-either = { workspace = true, features = ["serde"] }
 time = { workspace = true, features = [
   "serde",
   "serde-well-known",

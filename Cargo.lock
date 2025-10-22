@@ -157,23 +157,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7e0d60973d9320722cb1206f412740e162a33b8547ea8d6be75d7cff237c7a85"
 
 [[package]]
-name = "biscuit"
-version = "0.6.0-beta1"
-source = "git+https://github.com/beltram/biscuit?tag=v0.6.2-pre.core-crypto-0.7.0#fe28ef69c3e0b2a42a9e736a7cde8bdd448ffe69"
-dependencies = [
- "base64 0.21.7",
- "chrono",
- "data-encoding",
- "num-bigint",
- "num-traits",
- "once_cell",
- "rand 0.8.5",
- "ring 0.17.0-not-released-yet",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -645,12 +628,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "data-encoding"
-version = "2.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8566979429cf69b49a5c740c60791108e86440e8be149bbea4fe54d2c32d6e2"
-
-[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -820,9 +797,6 @@ name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "elliptic-curve"
@@ -1751,7 +1725,7 @@ version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 dependencies = [
- "spin 0.5.2",
+ "spin",
 ]
 
 [[package]]
@@ -2750,19 +2724,6 @@ dependencies = [
 
 [[package]]
 name = "ring"
-version = "0.17.0-not-released-yet"
-source = "git+https://github.com/briansmith/ring.git?rev=450ada28#450ada288f1805795140097ec96396b890bcf722"
-dependencies = [
- "cc",
- "getrandom 0.2.15",
- "libc",
- "spin 0.9.8",
- "untrusted",
- "winapi",
-]
-
-[[package]]
-name = "ring"
 version = "0.17.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7"
@@ -2862,7 +2823,7 @@ checksum = "47796c98c480fce5406ef69d1c76378375492c3b0a0de587be0c1d9feb12f395"
 dependencies = [
  "log",
  "once_cell",
- "ring 0.17.14",
+ "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",
@@ -2902,7 +2863,7 @@ version = "0.102.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64ca1bc8749bd4cf37b5ce386cc146580777b4e8572c7b97baf22c83f444bee9"
 dependencies = [
- "ring 0.17.14",
+ "ring",
  "rustls-pki-types",
  "untrusted",
 ]
@@ -2946,11 +2907,9 @@ name = "rusty-jwt-tools"
 version = "0.13.0"
 dependencies = [
  "base64 0.22.1",
- "biscuit",
  "const_format",
  "derive_more 2.0.1",
  "ed25519-dalek",
- "either",
  "getrandom 0.2.15",
  "josekit",
  "jwt-simple",
@@ -3349,12 +3308,6 @@ name = "spin"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
-
-[[package]]
-name = "spin"
-version = "0.9.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 
 [[package]]
 name = "spki"

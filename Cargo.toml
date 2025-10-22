@@ -59,7 +59,6 @@ der = { version = "0.7", default-features = false, features = ["std"] }
 jwt-simple = { version = "0.13", git = "https://github.com/wireapp/rust-jwt-simple", tag = "v0.13.0-pre.core-crypto-1.0.0", default-features = false }
 
 # Test or unused dependencies
-biscuit = { version = "0.6.0-beta1", git = "https://github.com/beltram/biscuit", tag = "v0.6.2-pre.core-crypto-0.7.0", default-features = false }
 tokio = { version = "1.48", default-features = false }
 hyper = { version = "1.7", default-features = false }
 wasm-bindgen-test = { version = "0.3", default-features = false }
