@@ -47,11 +47,5 @@ license-files = [
 [sources]
 allow-org = { github = ["wireapp"] }
 
-# We need to allow briansmith/ring since beltram/biscuit depends on it.
-allow-git = [
-  "https://github.com/beltram/biscuit",
-  "https://github.com/briansmith/ring",
-]
-
 [bans]
 multiple-versions = "allow"
