@@ -20,16 +20,36 @@ targets = [
 ]
 
 [advisories]
+version = 2
 ignore = [
-  { id = "RUSTSEC-2023-0071", reason = "No fix released yet. Working issue: https://github.com/RustCrypto/RSA/pull/394" },
+  # The fix at https://github.com/RustCrypto/RSA/pull/394 is merged,
+  # and will be in rsa v0.10, once that comes out of the eternal
+  # pre-release state. We need to update it via our rusty-jwt-simple.
+  "RUSTSEC-2023-0071",
+
+  # This is fixed in idna >= 1.0.0, however we depend on it indirectly,
+  # via keycloak -> reqwest...
+  "RUSTSEC-2024-0421",
+
+  # This is fixed in hashbrown >= 0.15.1, however we depend on it indirectly,
+  # via testcontainers, keycloak -> reqwest...
+  "RUSTSEC-2024-0402",
+
+  # fxhash is no longer maintained, but scraper depends on it.
+  "RUSTSEC-2025-0057",
 ]
 
 [licenses]
-confidence-threshold = 0.93
-# Checked for compatibility with our license (MPL-2.0)
-# using https://joinup.ec.europa.eu/collection/eupl/solution/joinup-licensing-assistant/jla-compatibility-checker
-allow = ["MPL-2.0", "Apache-2.0", "BSD-3-Clause", "MIT", "ISC", "Zlib"]
-exceptions = [{ allow = ["Unicode-DFS-2016"], name = "unicode-ident" }]
+version = 2
+allow = [
+  "Apache-2.0",
+  "MIT",
+  "MPL-2.0",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "Unicode-3.0",
+]
 
 [[licenses.clarify]]
 name = "ring"
