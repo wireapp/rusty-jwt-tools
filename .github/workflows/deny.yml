@@ -25,5 +25,4 @@ jobs:
           rustflags: ''
       - uses: taiki-e/install-action@cargo-deny
       - name: "Check Licenses / Supply Chain"
-        run: |
-          echo "`$(cargo deny --all-features check)`" >> $GITHUB_STEP_SUMMARY
+        run: cargo deny --all-features check >> $GITHUB_STEP_SUMMARY
