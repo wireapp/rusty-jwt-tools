@@ -1,13 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "cargo"
-    directories:
-      - "acme"
-      - "e2e-identity"
-      - "ffi"
-      - "jwt"
-      - "test-wire-server"
-      - "x509-check"
+    directory: "/"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
