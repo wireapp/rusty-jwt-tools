@@ -2,7 +2,6 @@ version: 2
 updates:
   - package-ecosystem: "cargo"
     directories:
-      - "/"
       - "acme"
       - "e2e-identity"
       - "ffi"
