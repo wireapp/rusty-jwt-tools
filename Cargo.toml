@@ -62,7 +62,7 @@ log = "0.4"
 # Test or unused dependencies
 env_logger = "0.11"
 tokio = { version = "1.48", default-features = false }
-hyper = { version = "1.7", default-features = false }
+hyper = { version = "1.8", default-features = false }
 wasm-bindgen-test = { version = "0.3", default-features = false }
 webbrowser = { version = "1.0", default-features = false }
 reqwest = { version = "0.12", default-features = false, features = [
