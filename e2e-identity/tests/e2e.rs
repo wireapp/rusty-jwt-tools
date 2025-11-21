@@ -11,9 +11,9 @@ use rusty_jwt_tools::prelude::*;
 use utils::{
     TestError,
     cfg::{E2eTest, EnrollmentFlow, TestEnvironment, WireServer},
-    docker::stepca::CaCfg,
-    idp::{IdpServer, start_idp_server},
+    idp::{IdpServer, OidcProvider, start_idp_server},
     rand_base64_str, rand_client_id,
+    stepca::CaCfg,
 };
 
 #[path = "utils/mod.rs"]
@@ -36,24 +36,35 @@ fn get_wire_server() -> WireServer {
         .parse()
         .unwrap();
     WireServer {
-        hostname: "wire.com".to_string(),
+        hostname: "wire.localhost".to_string(),
         addr,
     }
 }
 
 fn setup_test_environment() -> TestEnvironment {
-    let run_id = std::env::var("NEXTEST_RUN_ID").unwrap();
+    // It's fine if the logger was already initialized.
+    let _ = env_logger::try_init();
+
+    let run_id = std::env::var("NEXTEST_RUN_ID").expect("NEXTEST_RUN_ID must be defined");
     let mut path = std::env::temp_dir();
     path.push(run_id);
+
+    let provider = std::env::var("TEST_IDP").expect("TEST_IDP must be defined");
+    let provider = match provider.as_ref() {
+        "authelia" => OidcProvider::Authelia,
+        "keycloak" => OidcProvider::Keycloak,
+        _ => panic!("unexpected OIDC provider: {provider}"),
+    };
 
     let wire_server = get_wire_server();
     match std::fs::File::create_new(&path) {
         Ok(file) => {
             // We're the first, so it's up to us to start all servers.
-            let env = std::thread::spawn(|| {
+            let env = std::thread::spawn(move || {
                 let runtime = tokio::runtime::Runtime::new().unwrap();
                 runtime.block_on(async {
-                    let idp_server = start_idp_server(&wire_server.hostname, &wire_server.oauth_redirect_uri()).await;
+                    let idp_server =
+                        start_idp_server(provider, &wire_server.hostname, &wire_server.oauth_redirect_uri()).await;
                     TestEnvironment {
                         wire_server,
                         idp_server,

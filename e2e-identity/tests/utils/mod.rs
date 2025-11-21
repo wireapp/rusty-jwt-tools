@@ -9,14 +9,20 @@ pub mod ctx;
 #[cfg(not(target_family = "wasm"))]
 pub mod display;
 #[cfg(not(target_family = "wasm"))]
-pub mod docker;
-#[cfg(not(target_family = "wasm"))]
 pub mod fmk;
 #[cfg(not(target_family = "wasm"))]
 pub mod helpers;
 #[cfg(not(target_family = "wasm"))]
 pub mod idp;
 pub mod keys;
+#[cfg(not(target_family = "wasm"))]
+pub mod stepca;
+
+/// Container network name.
+pub const NETWORK: &str = "wire";
+
+/// Container shared memory size in bytes. By default Docker allocates 64MB.
+pub const SHM: u64 = 8 * 1000 * 1000; // 8MB
 
 pub(crate) fn rand_str(size: usize) -> String {
     use rand::distributions::{Alphanumeric, DistString};

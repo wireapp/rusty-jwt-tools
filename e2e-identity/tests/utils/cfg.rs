@@ -10,12 +10,9 @@ use crate::utils::{
     TestResult,
     ctx::ctx_store_http_client,
     display::TestDisplay,
-    docker::{
-        stepca,
-        stepca::{AcmeServer, CaCfg},
-    },
     idp::IdpServer,
-    rand_str,
+    rand_str, stepca,
+    stepca::{AcmeServer, CaCfg},
 };
 
 pub fn scrap_login(html: String) -> String {
@@ -70,7 +67,6 @@ pub struct E2eTest {
     pub acme_server: Option<AcmeServer>,
     pub oidc_cfg: Option<OidcCfg>,
     pub client: reqwest::Client,
-    pub oidc_provider: OidcProvider,
 }
 
 #[derive(Debug, Clone)]
@@ -103,14 +99,7 @@ impl std::fmt::Debug for E2eTest {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum OidcProvider {
-    Keycloak,
-}
-
 impl E2eTest {
-    const STEPCA_HOST: &'static str = "stepca";
-
     pub fn new(env: TestEnvironment) -> Self {
         Self::new_internal(false, JwsAlgorithm::Ed25519, env)
     }
@@ -120,12 +109,7 @@ impl E2eTest {
     }
 
     pub fn new_internal(is_demo: bool, alg: JwsAlgorithm, env: TestEnvironment) -> Self {
-        let oidc_provider = OidcProvider::Keycloak;
-        let ca_host = if is_demo {
-            Self::STEPCA_HOST.to_string()
-        } else {
-            format!("{}.{}", rand_str(6).to_lowercase(), Self::STEPCA_HOST)
-        };
+        let ca_host = format!("{}.stepca", rand_str(6).to_lowercase());
         let domain = env.wire_server.hostname.clone();
         let (firstname, lastname) = ("Alice", "Smith");
         let display_name = format!("{firstname} {lastname}");
@@ -224,7 +208,6 @@ impl E2eTest {
             oidc_cfg: None,
             is_demo,
             client: reqwest::Client::new(),
-            oidc_provider,
         }
     }
 
@@ -272,9 +255,11 @@ impl E2eTest {
 
     pub async fn fetch_oidc_cfg(&self) -> OidcCfg {
         let hostname = &self.env.idp_server.hostname;
-        let realm = &self.env.idp_server.realm;
-        let port = self.env.idp_server.addr.port();
-        let uri = format!("http://{hostname}:{port}/realms/{realm}/.well-known/openid-configuration");
+
+        let uri = format!(
+            "{}/.well-known/openid-configuration",
+            self.env.idp_server.discovery_base_url
+        );
         let response = self.client.get(&uri).send().await.unwrap();
         let status = response.status();
         let response_text = response.text().await.unwrap();
