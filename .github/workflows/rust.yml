@@ -50,10 +50,10 @@ jobs:
           rustflags: '-D warnings'
           target: wasm32-unknown-unknown
       - run: cargo fmt --all -- --check
-      - run: cargo clippy --locked -- -D warnings
-      - run: cargo clippy --locked --target wasm32-unknown-unknown ${WASM_PACKAGES} -- -D warnings
-      - run: cargo check --tests --locked
-      - run: cargo check --tests --locked --target wasm32-unknown-unknown ${WASM_PACKAGES}
+      - run: cargo clippy --locked --all-targets
+      - run: cargo clippy --locked --target wasm32-unknown-unknown ${WASM_PACKAGES}
+      - run: cargo check --locked --all-targets
+      - run: cargo check --locked --all-targets --target wasm32-unknown-unknown ${WASM_PACKAGES}
 
   build:
     runs-on: ubuntu-latest
