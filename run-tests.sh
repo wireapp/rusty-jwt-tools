@@ -4,6 +4,17 @@
 # because starting Keycloak requires that the redirect URL, which points to the
 # test Wire server, is known.
 
+case "$TEST_IDP" in
+    authelia | keycloak)
+        echo Using $TEST_IDP
+        ;;
+
+    *)
+        echo "You need to set TEST_IDP variable to 'authelia' or 'keycloak'."
+        exit 1
+        ;;
+esac
+
 tmpfile=$(mktemp)
 rm ${tmpfile}
 mkfifo ${tmpfile}
@@ -20,7 +31,16 @@ cargo nextest run --locked "$@"
 test_exit_code="$?"
 
 # Clean up.
-docker kill keycloak && docker rm keycloak
+case "$TEST_IDP" in
+    authelia)
+        docker kill authelia.local && docker rm authelia.local
+        ;;
+
+    keycloak)
+        docker kill keycloak && docker rm keycloak
+        ;;
+esac
+
 kill ${test_wire_server_pid}
 rm ${tmpfile}
 
