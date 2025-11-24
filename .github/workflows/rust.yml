@@ -22,7 +22,7 @@ jobs:
   doc:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: 'stable'
@@ -37,7 +37,7 @@ jobs:
         # Notably missing from the list here is test-wire-server.
         WASM_PACKAGES: "-p wire-e2e-identity -p rusty-jwt-tools -p rusty-jwt-tools-ffi -p rusty-acme -p rusty-x509-check"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: ensure tags are signed
         run: |
           if [[ ${{ github.ref_type }} == tag ]]; then
@@ -58,7 +58,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           rustflags: ''
@@ -68,7 +68,7 @@ jobs:
   test-with-authelia:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           rustflags: ''
@@ -85,7 +85,7 @@ jobs:
   test-with-keycloak:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           rustflags: ''
@@ -102,7 +102,7 @@ jobs:
   haskell-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: haskell-actions/setup@v2
         with:
             ghc-version: '9.2'
@@ -120,7 +120,7 @@ jobs:
       matrix:
         workspace: ["jwt", "acme", "e2e-identity"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           rustflags: ''
@@ -136,7 +136,7 @@ jobs:
       matrix:
         workspace: ["jwt", "acme", "e2e-identity"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           rustflags: ''
@@ -149,7 +149,7 @@ jobs:
   hack:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           rustflags: ''
