@@ -33,11 +33,11 @@ test_exit_code="$?"
 # Clean up.
 case "$TEST_IDP" in
     authelia)
-        docker kill authelia.local && docker rm authelia.local
+        (docker kill authelia.local && docker rm authelia.local) > /dev/null
         ;;
 
     keycloak)
-        docker kill keycloak && docker rm keycloak
+        (docker kill keycloak && docker rm keycloak) > /dev/null
         ;;
 esac
 
