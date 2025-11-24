@@ -26,7 +26,7 @@ test_wire_server_pid=$!
 read TEST_WIRE_SERVER_ADDR < ${tmpfile}
 export TEST_WIRE_SERVER_ADDR
 
-echo \\nRunning nextest with arguments \"$@\"\\n
+echo -e \\nRunning nextest with arguments \"$@\"
 cargo nextest run --locked "$@"
 test_exit_code="$?"
 
