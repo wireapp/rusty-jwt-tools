@@ -47,6 +47,14 @@ cargo install cargo-nextest
 Make sure the docker daemon is running (this is needed because the test suite runs an OIDC provider
 inside a container).
 
+Choose the OIDC identity provider to use in tests by setting the `TEST_IDP` variable:
+```bash
+# use Keycloak
+export TEST_IDP=keycloak
+
+# or Authelia
+export TEST_IDP=authelia
+```
 
 ### Running all tests at once
 
@@ -83,9 +91,13 @@ Now that the environment is ready, you can run a specific test, or any subset of
 cargo nextest run --locked alg::p256
 ```
 
-Once you are done with testing, terminate the Keycloak container that has been started:
+Once you are done with testing, terminate the IdP container that has been started:
 ```bash
+# if you're using Keycloak
 docker kill keycloak && docker rm keycloak
+
+# if you're using Authelia
+docker kill authelia.local && docker rm authelia.local
 ```
 as well as the `test-wire-server` instance.
 
