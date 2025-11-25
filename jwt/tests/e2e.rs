@@ -112,7 +112,7 @@ fn e2e_jwt() {
             println!("✅ access token verified");
             results.push(verify);
         } else {
-            panic!("❌ access token invalid because {:?}", verify.unwrap_err());
+            panic!("❌ access token invalid because {:?}", verify);
         }
         println!("---------------------------------------------------------------------\n");
     }
