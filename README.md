@@ -60,7 +60,7 @@ export TEST_IDP=authelia
 
 Simply execute the `run-tests.sh` script:
 ```bash
-sh run-tests.sh
+bash run-tests.sh
 ```
 The script will take care of cleaning up processes and containers that are started during tests.
 
@@ -69,7 +69,7 @@ The script will take care of cleaning up processes and containers that are start
 `run-tests.sh` forwards its arguments to `cargo nextest`, so, to run a specific test, or any
 subset of tests, e.g.
 ```bash
-sh run-tests.sh alg::p256
+bash run-tests.sh alg::p256
 ```
 
 ### Manually invoking tests
