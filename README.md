@@ -44,8 +44,72 @@ Install cargo-nextest to allow running tests in parallel:
 cargo install cargo-nextest
 ```
 
-Make sure the docker daemon is running (this is needed because the test suite runs an OIDC provider
-inside a container).
+### Preparing the container runtime environment
+
+Some tests require a working container runtime, so make sure to prepare one
+before running all tests. Platform-specific instructions follow below.
+
+#### On Linux with Docker
+
+Make sure to start the Docker service if it is not already running:
+```bash
+systemctl start docker.service
+```
+
+#### On Linux with Podman
+
+```bash
+# start socket activation, which will cause Podman to start once
+# anything connects to the socket:
+systemctl --user start podman.socket
+
+# check that socket activation works
+podman version
+
+# if the above didn't work, depending on the distribution and installed packages,
+# it may be necessary to configure the DOCKER_HOST variable to point to Podman's socket
+export DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock
+```
+
+#### On macOS with Docker
+
+Note: Docker under macOS requires Docker Desktop, which must run as a GUI application.
+
+```bash
+# install docker and docker-desktop
+brew install docker docker-desktop
+
+# start the Docker daemon by launching docker-desktop as a GUI application
+
+# check if everything went fine
+docker version
+```
+
+#### On macOS with Podman
+
+```bash
+# install Podman
+brew install podman
+
+# install podman-mac-helper
+sudo podman-mac-helper install
+
+# create new VM based on machine-os:5.5; note that we're explicitly specifying
+# an older image version because the newest one seems to be broken
+podman machine init --image docker://quay.io/podman/machine-os:5.5
+
+# start the machine
+podman machine start
+
+# if everything went well, this should print server version `5.5.x`
+podman version
+
+# symlink docker to podman (test scripts and code assume existence
+# of the `docker` command)
+ln -s /opt/homebrew/bin/podman /opt/homebrew/bin/docker
+```
+
+### Choosing the OIDC identity provider
 
 Choose the OIDC identity provider to use in tests by setting the `TEST_IDP` variable:
 ```bash
