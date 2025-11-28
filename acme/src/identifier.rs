@@ -92,7 +92,8 @@ pub struct WireIdentifier {
     pub domain: String,
 }
 
-/// Internal view of 2 merged [WireIdentifier], one of type [AcmeIdentifier::WireappUser] and one of [AcmeIdentifier::WireappDevice]
+/// Internal view of 2 merged [WireIdentifier], one of type [AcmeIdentifier::WireappUser] and one of
+/// [AcmeIdentifier::WireappDevice]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CanonicalIdentifier {
     pub client_id: String,
