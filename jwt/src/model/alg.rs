@@ -28,7 +28,8 @@ pub enum JwsAlgorithm {
     /// EdDSA using Ed25519
     ///
     /// Specified in [RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)][1] and
-    /// [RFC 8037: CFRG Elliptic Curve Diffie-Hellman (ECDH) and Signatures in JSON Object Signing and Encryption (JOSE)][2]
+    /// [RFC 8037: CFRG Elliptic Curve Diffie-Hellman (ECDH) and Signatures in JSON Object Signing and Encryption
+    /// (JOSE)][2]
     ///
     /// [1]: https://tools.ietf.org/html/rfc8032
     /// [2]: https://tools.ietf.org/html/rfc8037
