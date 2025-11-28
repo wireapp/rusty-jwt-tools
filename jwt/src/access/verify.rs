@@ -25,12 +25,15 @@ impl RustyJwtTools {
     /// * `exp` claim is no later than now plus max_skew_secs.
     ///
     /// # Arguments
-    /// * `dpop_proof` - JWS Compact Serialization format. Note that the proof consists of three runs
-    ///   of base64url characters (header, claims, signature) separated by period characters.
-    ///   ex: b"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" (whitespace in the example is not included in the actual proof)
+    /// * `dpop_proof` - JWS Compact Serialization format. Note that the proof consists of three runs of base64url
+    ///   characters (header, claims, signature) separated by period characters. ex:
+    ///   b"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.
+    ///   eyJpc3MiOiJqb2UiLA0KICJleiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.
+    ///   dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk" (whitespace in the example is not included in the actual proof)
     /// * `client_id` - see [ClientId]
     /// * `team` - see [Team]
-    /// * `challenge` - The most recent challenge nonce provided by the ACME server to the current client ex: hex!("71515234fac0b04b2008db62551e7287")
+    /// * `challenge` - The most recent challenge nonce provided by the ACME server to the current client ex:
+    ///   hex!("71515234fac0b04b2008db62551e7287")
     /// * `max_skew_secs` - The maximum number of seconds of clock skew the implementation will allow ex: 360 (5 min)
     /// * `max_expiration` - The maximal expiration date and time, in seconds since epoch ex: 1668987368
     /// * `now` - Current time in seconds since epoch ex: 1661211368

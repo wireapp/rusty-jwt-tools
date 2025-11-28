@@ -79,8 +79,8 @@ impl RustyAcme {
             })
     }
 
-    /// Ensure that the generated certificate matches our expectations (i.e. that the acme server is configured the right way)
-    /// We verify that the fields in the certificate match the ones in the ACME order
+    /// Ensure that the generated certificate matches our expectations (i.e. that the acme server is configured the
+    /// right way) We verify that the fields in the certificate match the ones in the ACME order
     fn verify_leaf_certificate(
         cert: Certificate,
         identifier: &CanonicalIdentifier,
