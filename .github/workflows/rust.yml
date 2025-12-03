@@ -35,7 +35,7 @@ jobs:
         # Manually list packages that support Wasm, because Cargo does not
         # have a simple way to exclude specific packages on unsupported platforms.
         # Notably missing from the list here is test-wire-server.
-        WASM_PACKAGES: "-p wire-e2e-identity -p rusty-jwt-tools -p rusty-jwt-tools-ffi -p rusty-acme"
+        WASM_PACKAGES: "-p wire-e2e-identity -p rusty-jwt-tools -p rusty-jwt-tools-ffi"
     steps:
       - uses: actions/checkout@v6
       - name: ensure tags are signed
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        workspace: ["jwt", "acme", "e2e-identity"]
+        workspace: ["jwt", "e2e-identity"]
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -143,7 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        workspace: ["jwt", "acme", "e2e-identity"]
+        workspace: ["jwt", "e2e-identity"]
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
