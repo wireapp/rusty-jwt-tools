@@ -38,6 +38,9 @@ pem = { workspace = true }
 getrandom = { workspace = true, features = ["js"] }
 web-time = { workspace = true }
 hex = { workspace = true }
+flagset = { workspace = true }
+certval = { workspace = true }
+der = { workspace = true }
 
 [dev-dependencies]
 rusty-jwt-tools = { version = "0.13.0", path = "../jwt", features = [

@@ -3034,9 +3034,12 @@ name = "rusty-acme"
 version = "0.13.0"
 dependencies = [
  "base64 0.22.1",
+ "certval",
  "const-oid",
+ "der",
  "ecdsa",
  "ed25519-dalek",
+ "flagset",
  "getrandom 0.2.15",
  "hex",
  "jwt-simple",
@@ -3045,7 +3048,6 @@ dependencies = [
  "p521",
  "pem",
  "rusty-jwt-tools",
- "rusty-x509-check",
  "serde",
  "serde_json",
  "signature",
@@ -3097,20 +3099,6 @@ version = "0.13.0"
 dependencies = [
  "rusty-jwt-tools",
  "uuid",
-]
-
-[[package]]
-name = "rusty-x509-check"
-version = "0.13.0"
-dependencies = [
- "certval",
- "const-oid",
- "der",
- "flagset",
- "hex",
- "thiserror 2.0.17",
- "web-time",
- "x509-cert",
 ]
 
 [[package]]
