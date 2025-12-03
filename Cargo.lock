@@ -3030,36 +3030,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
-name = "rusty-acme"
-version = "0.13.0"
-dependencies = [
- "base64 0.22.1",
- "certval",
- "const-oid",
- "der",
- "ecdsa",
- "ed25519-dalek",
- "flagset",
- "getrandom 0.2.15",
- "hex",
- "jwt-simple",
- "p256",
- "p384",
- "p521",
- "pem",
- "rusty-jwt-tools",
- "serde",
- "serde_json",
- "signature",
- "thiserror 2.0.17",
- "time",
- "url",
- "wasm-bindgen-test",
- "web-time",
- "x509-cert",
-]
-
-[[package]]
 name = "rusty-jwt-tools"
 version = "0.13.0"
 dependencies = [
@@ -4591,10 +4561,15 @@ dependencies = [
  "anyhow",
  "argon2",
  "base64 0.22.1",
+ "certval",
  "const-oid",
+ "der",
  "derive_more",
+ "ecdsa",
  "ed25519-dalek",
  "env_logger",
+ "flagset",
+ "getrandom 0.2.15",
  "hex",
  "html_parser",
  "http",
@@ -4609,12 +4584,14 @@ dependencies = [
  "native-tls",
  "oauth2",
  "openidconnect",
+ "p256",
+ "p384",
+ "p521",
  "password-hash",
  "pem",
  "rand 0.8.5",
  "reqwest",
  "rstest",
- "rusty-acme",
  "rusty-jwt-tools",
  "scraper",
  "serde",
@@ -4628,6 +4605,7 @@ dependencies = [
  "url",
  "uuid",
  "wasm-bindgen-test",
+ "web-time",
  "webbrowser",
  "wire-e2e-identity",
  "x509-cert",
