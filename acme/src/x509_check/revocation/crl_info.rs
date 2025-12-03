@@ -11,7 +11,7 @@ use x509_cert::{
     },
 };
 
-use crate::RustyX509CheckError;
+use crate::x509_check::RustyX509CheckError;
 
 flagset::flags! {
     enum CrlQuestions: u8 {

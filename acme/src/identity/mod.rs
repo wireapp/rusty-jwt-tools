@@ -1,8 +1,11 @@
 use rusty_jwt_tools::prelude::*;
-use rusty_x509_check::{IdentityStatus, revocation::PkiEnvironment};
 use x509_cert::der::Decode as _;
 
-use crate::{error::CertificateError, prelude::*};
+use crate::{
+    error::CertificateError,
+    prelude::*,
+    x509_check::{IdentityStatus, revocation::PkiEnvironment},
+};
 
 pub(crate) mod thumbprint;
 
@@ -158,10 +161,10 @@ fn try_extract_san(cert: &x509_cert::TbsCertificate) -> RustyAcmeResult<(String,
 
 #[cfg(test)]
 pub mod tests {
-    use rusty_x509_check::revocation::PkiEnvironmentParams;
     use wasm_bindgen_test::*;
 
     use super::*;
+    use crate::x509_check::revocation::PkiEnvironmentParams;
 
     wasm_bindgen_test_configure!(run_in_browser);
 
