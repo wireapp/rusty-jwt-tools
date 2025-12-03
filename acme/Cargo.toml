@@ -15,7 +15,6 @@ workspace = true
 
 [dependencies]
 rusty-jwt-tools = { version = "0.13.0", path = "../jwt" }
-rusty-x509-check = { version = "0.13.0", path = "../x509-check" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
