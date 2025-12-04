@@ -36,7 +36,7 @@ p384 = { version = "0.13", default-features = false }
 p521 = { version = "0.13", default-features = false }
 pem = { version = "3.0", default-features = false, features = ["std"] }
 percent-encoding = { version = "2.3", default-features = false }
-rand = { version = "0.8", default-features = false }
+rand = { version = "0.9", default-features = false }
 sec1 = { version = "0.7", default-features = false }
 serde = { version = "1.0", default-features = false }
 serde_json = { version = "1.0", default-features = false }
