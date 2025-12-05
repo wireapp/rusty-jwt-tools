@@ -35,7 +35,7 @@ jobs:
         # Manually list packages that support Wasm, because Cargo does not
         # have a simple way to exclude specific packages on unsupported platforms.
         # Notably missing from the list here is test-wire-server.
-        WASM_PACKAGES: "-p wire-e2e-identity -p rusty-jwt-tools -p rusty-jwt-tools-ffi"
+        WASM_PACKAGES: "-p rusty-jwt-tools -p rusty-jwt-tools-ffi"
     steps:
       - uses: actions/checkout@v6
       - name: ensure tags are signed
@@ -74,40 +74,6 @@ jobs:
           toolchain: 'stable'
       - run: cargo build --locked
 
-  test-with-authelia:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          rustflags: ''
-          toolchain: 'stable'
-      - uses: taiki-e/install-action@nextest
-      - name: "Test rusty-jwt-tools"
-        run: TEST_IDP=authelia sh run-tests.sh
-      - name: "Upload test results"
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-            files: target/nextest/default/junit.xml
-
-  test-with-keycloak:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          rustflags: ''
-          toolchain: 'stable'
-      - uses: taiki-e/install-action@nextest
-      - name: "Test rusty-jwt-tools"
-        run: TEST_IDP=keycloak sh run-tests.sh
-      - name: "Upload test results"
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-            files: target/nextest/default/junit.xml
-
   haskell-test:
     runs-on: ubuntu-latest
     steps:
@@ -125,9 +91,6 @@ jobs:
 
   wasm-build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        workspace: ["jwt", "e2e-identity"]
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -137,13 +100,10 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: WASM build
-        run: wasm-pack build --dev --target web ${{ matrix.workspace }}
+        run: wasm-pack build --dev --target web jwt
 
   wasm-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        workspace: ["jwt", "e2e-identity"]
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -153,7 +113,7 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Run tests (wasm)
-        run: wasm-pack test --headless --chrome ${{ matrix.workspace }}
+        run: wasm-pack test --headless --chrome jwt
 
   hack:
     runs-on: ubuntu-latest
