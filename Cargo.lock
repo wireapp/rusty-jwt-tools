@@ -1449,7 +1449,6 @@ dependencies = [
  "p521",
  "percent-encoding",
  "rand",
- "rand_chacha",
  "reqwest",
  "rstest",
  "rstest_reuse",

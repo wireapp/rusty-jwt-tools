@@ -39,7 +39,6 @@ const_format = { workspace = true }
 lazy_static = { workspace = true }
 percent-encoding = { workspace = true }
 rand = { workspace = true, optional = true }
-rand_chacha = { workspace = true, optional = true }
 
 [dev-dependencies]
 wasm-bindgen-test = { workspace = true }
