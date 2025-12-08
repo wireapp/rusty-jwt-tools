@@ -80,9 +80,8 @@ jobs:
         with:
           rustflags: ''
           toolchain: 'stable'
-      - uses: davidB/rust-cargo-make@v1
       - name: "Run Haskell test"
-        run: cd ffi && cargo make hs-test
+        run: cd ffi && make hs-test
 
   wasm-build:
     runs-on: ubuntu-latest
