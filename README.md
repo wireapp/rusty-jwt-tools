@@ -16,11 +16,8 @@ express prior written consent of Wire Swiss GmbH.
 
 ## Parts
 
-- acme: types that deal with ACME certificate enrollment
-- e2e-identity: implementation of the Wire end-to-end identity workflow, built on top of acme and jwt
 - ffi: Haskell bindings for rusty-jwt-tools, only used by wire-server
 - jwt: a collection of JWT utilities
-- x509-check: helpers for X509 certificate validation, only used by acme
 
 ## Building
 
