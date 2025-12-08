@@ -59,7 +59,7 @@ Then run:
 
 ```bash
 cd ffi
-cargo make hs-test
+make hs-test
 ```
 
 ## Git workflow

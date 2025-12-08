@@ -23,15 +23,14 @@ ACME DPoP challenge validation
 
 ## Haskell
 
-To run the demo you need:
+To run the tests you need:
 
 * [Rust toolchain](https://rustup.rs/)
-* [cargo-make](https://crates.io/crates/cargo-make)
 * [cabal](https://www.haskell.org/cabal/)
 
 Then simply
 
 ```bash
 cd ffi
-cargo make hs-test
+make hs-test
 ```
