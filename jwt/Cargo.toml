@@ -48,7 +48,6 @@ serde_json = { workspace = true }
 ed25519-dalek = { workspace = true }
 web-time = { workspace = true }
 time = { workspace = true, features = ["macros"] }
-reqwest = { workspace = true, features = ["json"] }
 rand = { workspace = true }
 
 [target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
