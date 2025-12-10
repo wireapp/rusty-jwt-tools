@@ -999,7 +999,6 @@ dependencies = [
  "derive_more",
  "ed25519-dalek",
  "jwt-simple",
- "lazy_static",
  "p256",
  "p384",
  "p521",
