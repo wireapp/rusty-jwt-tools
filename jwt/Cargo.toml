@@ -33,7 +33,6 @@ time = { workspace = true, features = [
 ] }
 jwt-simple = { workspace = true }
 zeroize = { workspace = true, features = ["zeroize_derive"] }
-getrandom = { workspace = true, features = ["js"] }
 derive_more = { workspace = true, features = ["from", "into", "deref"] }
 const_format = { workspace = true }
 lazy_static = { workspace = true }

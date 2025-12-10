@@ -1130,7 +1130,6 @@ dependencies = [
  "const_format",
  "derive_more",
  "ed25519-dalek",
- "getrandom 0.2.15",
  "josekit",
  "jwt-simple",
  "lazy_static",
