@@ -25,16 +25,9 @@ ignore = [
   # pre-release state. We need to update it via our rusty-jwt-simple.
   "RUSTSEC-2023-0071",
 
-  # This is fixed in idna >= 1.0.0, however we depend on it indirectly,
-  # via keycloak -> reqwest...
-  "RUSTSEC-2024-0421",
-
   # This is fixed in hashbrown >= 0.15.1, however we depend on it indirectly,
   # via testcontainers, keycloak -> reqwest...
   "RUSTSEC-2024-0402",
-
-  # fxhash is no longer maintained, but scraper depends on it.
-  "RUSTSEC-2025-0057",
 ]
 
 [licenses]
