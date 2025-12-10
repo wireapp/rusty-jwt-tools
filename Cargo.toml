@@ -36,6 +36,5 @@ jwt-simple = { version = "0.13", git = "https://github.com/wireapp/rust-jwt-simp
 
 # Test dependencies
 wasm-bindgen-test = { version = "0.3", default-features = false }
-josekit = { version = "0.10", default-features = false }
 rstest = { version = "0.26", default-features = false }
 rstest_reuse = { version = "0.7", default-features = false }

@@ -49,9 +49,6 @@ web-time = { workspace = true }
 time = { workspace = true, features = ["macros"] }
 rand = { workspace = true }
 
-[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
-josekit = { workspace = true }
-
 [target.'cfg(target_family = "wasm")'.dependencies.uuid]
 workspace = true
 features = ["std", "js"]
