@@ -33,6 +33,6 @@ zeroize = { version = "1.8", default-features = false }
 jwt-simple = { version = "0.13", git = "https://github.com/wireapp/rust-jwt-simple", tag = "v0.13.0-pre.core-crypto-1.0.0", default-features = false }
 
 # Test dependencies
-wasm-bindgen-test = { version = "0.3", default-features = false }
+wasm-bindgen-test = { version = "0.3" }
 rstest = { version = "0.26", default-features = false }
 rstest_reuse = { version = "0.7", default-features = false }
