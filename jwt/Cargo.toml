@@ -31,7 +31,6 @@ zeroize = { workspace = true, features = ["zeroize_derive"] }
 derive_more = { workspace = true, features = ["from", "into", "deref"] }
 const_format = { workspace = true }
 percent-encoding = { workspace = true }
-rand = { workspace = true, optional = true }
 
 [dev-dependencies]
 wasm-bindgen-test = { workspace = true }
