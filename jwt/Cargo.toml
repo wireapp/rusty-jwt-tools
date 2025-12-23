@@ -29,7 +29,7 @@ serde_json = { version = "1.0", default-features = false }
 sha2 = { version = "0.10", default-features = false }
 thiserror = { version = "2.0", default-features = false }
 url = { version = "2.5", features = ["serde"] }
-uuid = { workspace = true, features = ["v4"] }
+uuid = { workspace = true, features = ["std", "v4"] }
 zeroize = { version = "1.8", features = ["derive"] }
 
 [dev-dependencies]
@@ -42,7 +42,7 @@ rand = { version = "0.8", default-features = false }
 
 [target.'cfg(target_family = "wasm")'.dependencies.uuid]
 workspace = true
-features = ["std", "js"]
+features = ["std", "js", "v4"]
 
 [features]
 test-utils = []
