@@ -31,7 +31,7 @@ For the build requirements, look at [the information in core-crypto repo](https:
 Building is as simple as
 
 ```bash
-cargo build
+make
 ```
 
 ## Testing
@@ -45,20 +45,18 @@ cargo install cargo-nextest
 and then just run
 
 ```bash
-cargo nextest run --locked
+make test
 ```
 
 ### Testing the FFI
 
 Make sure you have [Python](https://www.python.org/) installed.
 
-Then run the Python test script, specifying the path to the FFI library:
+Then run
 
 ```bash
-python ffi/test/test-bindings.py target/debug/librusty_jwt_tools_ffi.so
+make ffi-test
 ```
-
-(note that the library path may differ depending on whether you build in development or release mode)
 
 ## Git workflow
 
