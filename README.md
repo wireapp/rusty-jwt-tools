@@ -75,12 +75,6 @@ The versioning scheme used is [SemVer AKA Semantic Versioning](https://semver.or
 
 1. Make a branch based on `main` to prepare for release (`git checkout -b prepare-release/X.Y.Z`)
 1. Update the version of all workspace members to `X.Y.Z`, including places that refer to them.
-1. Generate a fresh `e2e-identity/README.md.test`:
-   ```
-    cargo test --package wire-e2e-identity --test e2e demo_should_succeed
-   ```
-   If there are non-trivial differences between `e2e-identity/README.md` and the generated file,
-   update `e2e-identity/README.md` and commit the changes.
 1. Generate the relevant changelog section:
    ```
    git cliff --bump --unreleased
