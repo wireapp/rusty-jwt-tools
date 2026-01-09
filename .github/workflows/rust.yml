@@ -59,7 +59,7 @@ jobs:
           toolchain: nightly
       - run: cargo +nightly fmt --all -- --check
 
-  build:
+  build-and-test-ffi:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -68,6 +68,7 @@ jobs:
           rustflags: ''
           toolchain: 'stable'
       - run: cargo build --release --locked
+      - run: python ffi/test/test-bindings.py target/release/librusty_jwt_tools_ffi.so
 
   haskell-test:
     runs-on: ubuntu-latest
