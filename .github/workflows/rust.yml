@@ -67,7 +67,7 @@ jobs:
         with:
           rustflags: ''
           toolchain: 'stable'
-      - run: cargo build --locked
+      - run: cargo build --release --locked
 
   haskell-test:
     runs-on: ubuntu-latest
