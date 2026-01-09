@@ -40,7 +40,7 @@ impl RustyJwtToolsFfi {
     #[unsafe(no_mangle)]
     pub extern "C" fn generate_dpop_access_token(
         dpop_proof: *const c_char,
-        user: *const c_char,
+        user_id: *const c_char,
         client_id: u64,
         handle: *const c_char,
         display_name: *const c_char,
@@ -63,9 +63,9 @@ impl RustyJwtToolsFfi {
         // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
-        // SAFETY: safe if the rules in the function signature are all followed for `user`
-        let user = unsafe { CStr::from_ptr(user) };
-        let Some(user) = std::str::from_utf8(user.to_bytes())
+        // SAFETY: safe if the rules in the function signature are all followed for `user_id`
+        let user_id = unsafe { CStr::from_ptr(user_id) };
+        let Some(user_id) = std::str::from_utf8(user_id.to_bytes())
             .ok()
             .and_then(|s| uuid::Uuid::from_str(s).ok())
         else {
@@ -75,7 +75,7 @@ impl RustyJwtToolsFfi {
         let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
         // SAFETY: safe if the rules in the function signature are all followed for `team`
         let team = unsafe { CStr::from_ptr(team).to_bytes() }.try_into();
-        let client_id = ClientId::try_from_raw_parts(user.as_ref(), client_id, domain);
+        let client_id = ClientId::try_from_raw_parts(user_id.as_ref(), client_id, domain);
         // SAFETY: safe if the rules in the function signature are all followed for `handle`
         let handle: Result<Handle, _> = unsafe { CStr::from_ptr(handle).to_bytes() }.try_into();
         // SAFETY: safe if the rules in the function signature are all followed for `display_name`
