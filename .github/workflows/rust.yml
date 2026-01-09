@@ -24,9 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: 'stable'
-          rustflags: '-D warnings -W unreachable-pub'
       - run: RUSTDOCFLAGS="-D warnings" cargo doc --all --no-deps
 
   check:
@@ -42,7 +39,6 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy
-          rustflags: '-D warnings'
           target: wasm32-unknown-unknown
       - run: cargo clippy --locked --all-targets
       - run: cargo clippy --locked --target wasm32-unknown-unknown
@@ -64,9 +60,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          rustflags: ''
-          toolchain: 'stable'
       - uses: taiki-e/install-action@nextest
       - run: make all RELEASE=1
       - run: make test RELEASE=1
@@ -77,9 +70,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          rustflags: ''
-          toolchain: 'stable'
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: WASM build
@@ -92,9 +82,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          rustflags: ''
-          toolchain: 'stable'
       - uses: taiki-e/install-action@cargo-hack
       - name: cargo/hack (verify features compile in isolation)
         run: cargo hack check --each-feature --no-dev-deps
