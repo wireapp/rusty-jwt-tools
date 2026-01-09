@@ -72,7 +72,7 @@ jobs:
       - run: make test RELEASE=1
       - run: make ffi-test RELEASE=1
 
-  wasm-build:
+  wasm-build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -84,18 +84,7 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: WASM build
         run: wasm-pack build --dev --target web jwt
-
-  wasm-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          rustflags: ''
-          toolchain: 'stable'
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: Run tests (wasm)
+      - name: WASM test
         run: wasm-pack test --headless --chrome jwt
 
   hack:
