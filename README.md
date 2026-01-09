@@ -16,7 +16,7 @@ express prior written consent of Wire Swiss GmbH.
 
 ## Parts
 
-- ffi: Haskell bindings for rusty-jwt-tools, only used by wire-server
+- ffi: C bindings for rusty-jwt-tools, only used by wire-server
 - jwt: a collection of JWT utilities
 
 ## Building
@@ -48,16 +48,17 @@ and then just run
 cargo nextest run --locked
 ```
 
-### Testing the Haskell FFI
+### Testing the FFI
 
-Make sure you have [Cabal](https://www.haskell.org/cabal/) installed.
+Make sure you have [Python](https://www.python.org/) installed.
 
-Then run:
+Then run the Python test script, specifying the path to the FFI library:
 
 ```bash
-cd ffi
-make hs-test
+python ffi/test/test-bindings.py target/debug/librusty_jwt_tools_ffi.so
 ```
+
+(note that the library path may differ depending on whether you build in development or release mode)
 
 ## Git workflow
 
