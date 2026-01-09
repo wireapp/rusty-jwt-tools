@@ -1,2 +1,0 @@
-build:
-	cabal build
