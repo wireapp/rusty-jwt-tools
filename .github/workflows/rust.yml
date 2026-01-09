@@ -83,9 +83,9 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: WASM build
-        run: wasm-pack build --dev --target web jwt
+        run: wasm-pack build --release --target web jwt
       - name: WASM test
-        run: wasm-pack test --headless --chrome jwt
+        run: wasm-pack test --release --headless --chrome jwt
 
   hack:
     runs-on: ubuntu-latest
