@@ -33,6 +33,15 @@ pub struct RustyJwtToolsFfi;
 //
 const ACCESS_TOKEN_EXPIRY: std::time::Duration = std::time::Duration::from_secs(360);
 
+// The value of the `api_version` claim in the access token.
+//
+// The claim doesn't seem to be meaningfully used by the Smallstep ACME server
+// (well, apart from the server expecting it to be there). Ideally, we would
+// not add this claim when creating the access token, but we cannot do that
+// without also modifying the Smallstep ACME server to remove the mention of
+// this claim.
+const ACCESS_TOKEN_API_VERSION: u32 = 5;
+
 impl RustyJwtToolsFfi {
     /// see [RustyJwtTools::generate_access_token]
     ///
@@ -66,9 +75,6 @@ impl RustyJwtToolsFfi {
         _now: u64,
         backend_keys: *const c_char,
     ) -> *const HsResult<String> {
-        // TODO: setting default values for now. Do it properly later
-        let api_version = 5;
-
         // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
@@ -139,7 +145,7 @@ impl RustyJwtToolsFfi {
                 max_expiration,
                 kp,
                 hash_algorithm,
-                api_version,
+                ACCESS_TOKEN_API_VERSION,
                 ACCESS_TOKEN_EXPIRY,
             )
             .map_err(HsError::from);
