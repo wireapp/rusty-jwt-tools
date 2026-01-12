@@ -72,7 +72,6 @@ impl RustyJwtToolsFfi {
         method: *const c_char,
         max_skew_secs: u16,
         max_expiration: u64,
-        _now: u64,
         backend_keys: *const c_char,
     ) -> *const HsResult<String> {
         // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
