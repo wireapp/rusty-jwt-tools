@@ -53,8 +53,6 @@ impl RustyJwtToolsFfi {
         max_expiration: u64,
         _now: u64,
         backend_keys: *const c_char,
-        // api_version: u32,
-        // expiry_secs: u64,
     ) -> *const HsResult<String> {
         // TODO: setting default values for now. Do it properly later
         let api_version = 5;
