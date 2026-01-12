@@ -21,6 +21,18 @@ use rusty_jwt_tools::prelude::*;
 
 pub struct RustyJwtToolsFfi;
 
+// Expiration time for the access token. Note that the token will actually be valid for more
+// than this due to NOW_LEEWAY_SECONDS subtracted from the actual time of issuance.
+// I.e. we will end up with
+//
+//                NOW_LEEWAY_SECONDS                ACCESS_TOKEN_EXPIRY
+//     |--------------------------------------|---------------------------|
+//
+//    iat                              time of issuance                  exp
+//    nbf
+//
+const ACCESS_TOKEN_EXPIRY: std::time::Duration = std::time::Duration::from_secs(360);
+
 impl RustyJwtToolsFfi {
     /// see [RustyJwtTools::generate_access_token]
     ///
@@ -56,7 +68,6 @@ impl RustyJwtToolsFfi {
     ) -> *const HsResult<String> {
         // TODO: setting default values for now. Do it properly later
         let api_version = 5;
-        let expiry_secs = 360;
 
         // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
@@ -89,7 +100,6 @@ impl RustyJwtToolsFfi {
         let backend_kp = unsafe { CStr::from_ptr(backend_keys).to_bytes() }.try_into();
         // TODO: change in API
         let hash_algorithm = HashAlgorithm::SHA256;
-        let expiry = core::time::Duration::from_secs(expiry_secs);
 
         if let (
             Ok(dpop),
@@ -130,7 +140,7 @@ impl RustyJwtToolsFfi {
                 kp,
                 hash_algorithm,
                 api_version,
-                expiry,
+                ACCESS_TOKEN_EXPIRY,
             )
             .map_err(HsError::from);
             return Box::into_raw(Box::new(res));
