@@ -30,7 +30,6 @@ def load_ffi_library(path):
         ctypes.c_char_p,  # method
         ctypes.c_uint16,  # max_skew_secs
         ctypes.c_uint64,  # max_expiration
-        ctypes.c_uint64,  # _now
         ctypes.c_char_p,  # backend_keys
     ]
     lib.generate_dpop_access_token.restype = ctypes.c_void_p
@@ -51,7 +50,6 @@ def sample_args():
         method=b"POST",
         max_skew_secs=1,
         max_expiration=2042742401,
-        now=1704982162,
         backend_keys=textwrap.dedent("""
         -----BEGIN PRIVATE KEY-----
         MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5i88D4XpjBudqAkS
@@ -76,7 +74,6 @@ def generate_token(lib, args):
         args["method"],
         args["max_skew_secs"],
         args["max_expiration"],
-        args["now"],
         args["backend_keys"],
     )
 
