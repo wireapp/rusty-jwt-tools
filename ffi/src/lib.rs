@@ -2,14 +2,17 @@
 #![warn(dead_code)]
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-//! We only declare here intermediate FFI representation with raw types. But we do not generate
-//! all the bindings and wrappers here.
-//! * Haskell: we expose a C-FFI and [wire-server](https://github.com/wireapp/wire-server) will maintain the Haskell
-//!   wrapper
-//! * WASM: we handle bindings here but we let [core-crypto](https://github.com/wireapp/core-crypto) maintain the
-//!   Typescript wrapper
-//! * Android/iOS: we just expose raw types and let [core-crypto](https://github.com/wireapp/core-crypto) generate the
-//!   bindings and wrappers
+//! This crate exposes API needed to generate DPoP access tokens in foreign code.
+//!
+//! The primary user is [wire-server](https://github.com/wireapp/wire-server), which
+//! uses it to generate an access token for the purpose of validating a 'wire-dpop-01'
+//! ACME challenge, as implemented in [Smallstep CA](https://github.com/smallstep/certificates).
+//!
+//! The bindings comprise the following functions:
+//! - generate_dpop_access_token
+//! - free_dpop_access_token
+//! - get_error
+//! - get_token
 
 use std::{
     ffi::{CStr, CString},
