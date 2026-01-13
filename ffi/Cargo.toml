@@ -1,6 +1,6 @@
 [package]
 name = "rusty-jwt-tools-ffi"
-description = "Exposing utilities to handle JWTs in Haskell"
+description = "FFI bindings that provide DPoP access token creation API"
 version = "0.13.0"
 edition = "2024"
 repository = "https://github.com/wireapp/rusty-jwt-tools"
