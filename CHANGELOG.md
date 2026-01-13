@@ -1,5 +1,121 @@
 # Changelog
 
+## v0.14.0 - 2026-01-13
+
+### Highlights
+
+In addition to Keycloak, we now also suppport Authelia as an alternative OIDC
+provider, which makes testing easier and faster. Note: the minimum supported
+Authelia version is 4.39.15.
+
+Crates dealing with end-to-end-identity enrollment have been moved to the
+core-crypto repository, resulting in better module organization and improved
+separation of concerns.
+
+Haskell bindings have been removed since they were unused.
+
+A number of fixes, simplifications and documentation improvements have been
+made.
+
+### Breaking Changes
+
+- The `now` parameter to the `generate_dpop_access_token` function has been removed.
+
+  It was unused internally.
+
+  Migration: simply remove the respective argument in calls to this function.
+
+### Features
+
+- [**breaking**] ffi: drop "now" parameter from the function (4e506fd)
+
+### Bug Fixes
+
+- ci: make CI fail if `cargo deny` fails (34a8e13)
+- add team parameter to verify_access_token (1c552aa)
+- be more strict when comparing if two teams are equal. (8e0e34b)
+- ci: fix permission issues with the container (b1103bf)
+
+### Documentation
+
+- README: remove the part about updating e2e-identity README (5ff7911)
+- update README to use make targets (2bfb467)
+- update README (37d3900)
+- README: remove mentions of moved crates (980a796)
+- README: we don't require cargo-make anymore (a55eab9)
+- update README (62d84e3)
+- README: document some peculiarities of the Podman and Docker setup (f1ade0c)
+- README: explicitly use bash (7c4afbc)
+- update README with Authelia info and the new TEST_IDP variable (048fc99)
+- e2e-identity: add a comment explaining why we're using the localhost domain (5af9cbd)
+- e2e-identity: add some documentation bits to the e2e test module (8aefe19)
+- e2e-identity: document OIDC and DPoP challenges (d99e3b8)
+- e2e-identity: update README with new demo results (fbef63e)
+- fix warnings (6937239)
+- README: extend testing instructions (a37641d)
+
+### Testing
+
+- ffi: fix tests (abbd310)
+- ffi: add Python tests for the FFI library (9144a27)
+- e2e-identity: always allow the outside user to alter configuration (32c7115)
+- e2e-identity: switch from Authelia master to 4.39.15 (ac8f2e4)
+- e2e-identity: don't break when showing Authelia access tokens (b089621)
+- e2e-identity: use 'wire.localhost' instead of 'wire.com' for Wire test server hostname (77015fa)
+- e2e-identity: remove E2eTest::oidc_provider (a8ffa8d)
+- e2e-identity: choose the IdP to use by setting the TEST_IDP env variable (096b902)
+- e2e-identity: support fetching the ID token from Authelia (694eebd)
+- e2e-identity: add Authelia as another OIDC identity provider (d4571e3)
+- e2e-identity: adjust for the new User type (7453825)
+- e2e-identity: use discover base URL, don't hardcode Keycloak specifics (3163bf2)
+- e2e-identity: remove STEPCA_HOST (ad25ffb)
+- e2e-identity: adapt the Keycloak impl to new API (3b26f21)
+- e2e-identity: push Keycloak specifics out of the toplevel idp module (6a17726)
+- e2e-identity: move OidcProvider enum to idp/mod.rs, where it belongs (71db86b)
+- e2e-identity: enable logging in E2EI tests (5d76ecf)
+- e2e-identity: add a helper ctx_get_http_client_builder (09689c8)
+- e2e-identity: drop the docker module (6bcad9c)
+- e2e-identity: adjust the location of the Dockerfile (1758348)
+- e2e-identity: move keycloak related files to idp/keycloak (8c2409a)
+- e2e-identity: move stepca.rs out of docker subdir (d97a54d)
+- e2e-identity: move idp.rs to a new subdir (385d33d)
+- e2e-identity: move SHM and NETWORK to toplevel test utils module (ede0c8b)
+- e2e-identity: remove docker::rand_str (8ca2f16)
+- e2e-identity: use rand_str from utils module, not docker (db45d09)
+- e2e-identity: remove the id_token module (fae819f)
+- e2e-identity: remove e2ei-keycloak-oidc-mapper-0.1.1.jar (2a87803)
+- jwt: remove unused import and inaccurate comment (abb1101)
+- e2e-identity: convert error responses to WireServerError (6186211)
+- test-wire-server: return HTTP 401 (Unauthorized) if we can't provide an access token (097ff42)
+- e2e-identity: sleep 1s between attempts to read the test environment config (07489ab)
+- support running e2e tests via podman and on macOS [WPB-19213] (b5fe9c1)
+- forward arguments from `run-tests.sh` to `cargo nextest` (cbe67c8)
+- remove docker/wiremock.rs, it's not used anymore [WPB-18558] (4a300d3)
+- remove ignored tests [WPB-18558] (11fc5a6)
+- add run-tests.sh script (f74cc3f)
+- don't use new_demo in refresh_token_can_be_used_to_renew (4ff2e9c)
+- don't run tests sequentially (3f4dd74)
+- e2e-identity: use test_env fixture (3416bf1)
+- e2e-identity: add an rstest fixture, test_env (ee05f94)
+- e2e-identity: add new TestEnvironment infrastructure (16cb885)
+- e2e-identity: add a new utils/idp module (f95a9b2)
+- e2e-identity: remove utils/wire_server module (e6d8693)
+- add test-wire-server (7199833)
+- e2e-identity: enable reuse of Keycloak container instance (bc8832c)
+- e2e-identity: remove unused import (dc3d54d)
+- e2e-identity: remove unused fields from OauthCfg (e905c80)
+- e2e-identity: move OauthCfg to utils/cfg.rs (27fe0ff)
+- e2e-identity: silence clippy warning (8e9d98b)
+- e2e-identity: move handle_callback to server_api.rs and drop oidc.rs (9c72cff)
+- e2e-identity: move scrap_login and OidcCfg to utils/cfg.rs (deeb241)
+- e2e-identity: drop Oidc type, it is unused (3179308)
+- e2e-identity: drop "login" endpoint of the test Wire server (23d9e53)
+- e2e-identity: adjust to API changes with new oauth2 and openidconnnect (ca982b3)
+- e2e-identity: remove unused variable (e0f1ff1)
+- e2e-identity: remove support for Dex (150a1bb)
+- e2e-identity: remove interactive Google test (38fa021)
+
+
 ## v0.13.0 - 2025-04-14
 
 ### Documentation
