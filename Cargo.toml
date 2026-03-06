@@ -12,4 +12,4 @@ unexpected_cfgs = { level = "warn", check-cfg = [
 ] }
 
 [workspace.dependencies]
-uuid = { version = "1.21", default-features = false }
+uuid = { version = "1.22", default-features = false }
