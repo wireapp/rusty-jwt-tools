@@ -337,7 +337,7 @@ dependencies = [
  "pem-rfc7468",
  "pkcs8",
  "rand_core",
- "sec1",
+ "sec1 0.7.3",
  "subtle",
  "zeroize",
 ]
@@ -1093,7 +1093,7 @@ dependencies = [
  "rand",
  "rstest",
  "rstest_reuse",
- "sec1",
+ "sec1 0.8.0",
  "serde",
  "serde_json",
  "sha2 0.11.0",
@@ -1135,6 +1135,12 @@ dependencies = [
  "subtle",
  "zeroize",
 ]
+
+[[package]]
+name = "sec1"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f46b9a5ab87780a3189a1d704766579517a04ad59de653b7aad7d38e8a15f7dc"
 
 [[package]]
 name = "semver"
