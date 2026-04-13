@@ -19,6 +19,10 @@ targets = [
 
 [advisories]
 version = 2
+
+# Fail if ignored advisories don't exist (anymore).
+unused-ignored-advisory = "deny"
+
 ignore = [
   # The fix at https://github.com/RustCrypto/RSA/pull/394 is merged,
   # and will be in rsa v0.10, once that comes out of the eternal
