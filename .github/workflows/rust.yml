@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1.16.0
       - run: RUSTDOCFLAGS="-D warnings" cargo doc --all --no-deps
 
   check:
@@ -36,7 +36,7 @@ jobs:
             git fetch -f origin ${{ github.ref }}:${{ github.ref }}
             git cat-file tag ${{ github.ref_name }} | grep -q -- '-----BEGIN PGP SIGNATURE-----'
           fi
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1.16.0
         with:
           components: clippy
           target: wasm32-unknown-unknown
@@ -49,7 +49,7 @@ jobs:
      runs-on: ubuntu-latest
      steps:
       - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1.16.0
         with:
           components: rustfmt
           toolchain: nightly
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1.16.0
       - uses: taiki-e/install-action@nextest
       - run: make all RELEASE=1
       - run: make test RELEASE=1
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1.16.0
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: WASM build
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1.16.0
       - uses: taiki-e/install-action@cargo-hack
       - name: cargo/hack (verify features compile in isolation)
         run: cargo hack check --each-feature --no-dev-deps
