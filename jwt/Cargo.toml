@@ -15,7 +15,7 @@ crate-type = ["cdylib", "rlib"]
 workspace = true
 
 [dependencies]
-base64 = { version = "0.22", default-features = false, features = ["std"] }
+base64 = { version = "0.23", default-features = false, features = ["std"] }
 const_format = { version = "0.2", default-features = false }
 derive_more = { version = "2.1.1", features = ["from", "into", "deref"] }
 jwt-simple = { version = "0.13", git = "https://github.com/wireapp/rust-jwt-simple", tag = "v0.13.0-pre.core-crypto-1.0.0", default-features = false }
