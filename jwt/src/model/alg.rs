@@ -1,5 +1,6 @@
 use std::{fmt::Formatter, str::FromStr};
 
+use jsonwebtoken::Algorithm;
 use jwt_simple::prelude::*;
 
 use crate::prelude::*;
@@ -34,6 +35,31 @@ pub enum JwsAlgorithm {
     /// [1]: https://tools.ietf.org/html/rfc8032
     /// [2]: https://tools.ietf.org/html/rfc8037
     EdDSA,
+}
+
+impl From<JwsAlgorithm> for jsonwebtoken::Algorithm {
+    fn from(alg: JwsAlgorithm) -> Self {
+        match alg {
+            JwsAlgorithm::ES256 => Self::ES256,
+            JwsAlgorithm::ES384 => Self::ES384,
+            JwsAlgorithm::ES512 => Self::ES512,
+            JwsAlgorithm::EdDSA => Self::EdDSA,
+        }
+    }
+}
+
+impl TryFrom<Algorithm> for JwsAlgorithm {
+    type Error = RustyJwtError;
+
+    fn try_from(value: Algorithm) -> Result<Self, Self::Error> {
+        match value {
+            Algorithm::ES256 => Ok(Self::ES256),
+            Algorithm::ES384 => Ok(Self::ES384),
+            Algorithm::ES512 => Ok(Self::ES512),
+            Algorithm::EdDSA => Ok(Self::EdDSA),
+            _ => Err(RustyJwtError::UnsupportedAlgorithm),
+        }
+    }
 }
 
 impl std::fmt::Display for JwsAlgorithm {
