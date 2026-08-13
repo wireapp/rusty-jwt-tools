@@ -2,18 +2,15 @@ pub use access::*;
 pub use dpop::*;
 use ed25519_dalek::pkcs8::{DecodePrivateKey as _, EncodePrivateKey as _, EncodePublicKey as _};
 #[allow(unused_imports)]
-pub use jwk::*;
-use jwt_simple::prelude::*;
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
 use serde::de::DeserializeOwned;
 pub use utils::*;
 
-use crate::{dpop::Dpop, jwk::TryIntoJwk, jwk_thumbprint::JwkThumbprint, prelude::*};
+use crate::{dpop::Dpop, jwk_thumbprint::JwkThumbprint, prelude::*};
 
 pub mod access;
 pub mod dpop;
-pub mod jwk;
 pub mod utils;
 
 #[template]

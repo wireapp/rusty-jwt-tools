@@ -12,7 +12,6 @@ pub mod test_utils;
 mod access;
 mod dpop;
 mod error;
-pub mod jwk;
 pub mod jwk_thumbprint;
 pub mod jwt;
 mod model;
@@ -22,8 +21,6 @@ pub mod prelude {
     pub use dpop::{Dpop, Htm, Htu};
     pub use error::{RustyJwtError, RustyJwtResult};
     #[cfg(feature = "test-utils")]
-    pub use jwk::generate_jwk;
-    pub use jwk::json::parse_json_jwk;
     pub use jwk_thumbprint::JwkThumbprint;
     pub use model::{
         alg::{HashAlgorithm, JwsAlgorithm, JwsEcAlgorithm, JwsEdAlgorithm},
