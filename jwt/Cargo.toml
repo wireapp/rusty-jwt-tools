@@ -21,6 +21,9 @@ derive_more = { version = "2.1.1", features = ["from", "into", "deref"] }
 hybrid-array = "0.4"
 jwt-simple = { version = "0.13", git = "https://github.com/wireapp/rust-jwt-simple", tag = "v0.13.0-pre.core-crypto-1.0.0", default-features = false }
 pkcs8 = { version = "0.11", features = ["pem"] }
+jsonwebtoken = { git = "https://github.com/wireapp/jsonwebtoken", rev = "99fbbda7e70c470c160aa7c37ae32f6f108b7efd", features = [
+  "rust_crypto",
+] }
 p256 = { version = "0.14", default-features = false }
 p384 = { version = "0.14", default-features = false }
 p521 = { version = "0.14", default-features = false }
