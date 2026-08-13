@@ -1,4 +1,6 @@
-use jwt_simple::prelude::*;
+use jsonwebtoken::{EncodingKey, Header, jwk::Jwk};
+use jwt_simple::claims::JWTClaims;
+use serde::{Deserialize, Serialize};
 
 use crate::prelude::*;
 
@@ -6,8 +8,8 @@ impl RustyJwtTools {
     /// Build a new generic JWT
     pub fn generate_jwt<T>(
         alg: JwsAlgorithm,
-        header: JWTHeader,
-        claims: Option<JWTClaims<T>>,
+        mut header: Header,
+        claims: JWTClaims<T>,
         kp: &Pem,
         with_jwk: bool,
     ) -> RustyJwtResult<String>
@@ -15,40 +17,16 @@ impl RustyJwtTools {
         T: Serialize,
         for<'de> T: Deserialize<'de>,
     {
-        use crate::jwk::TryIntoJwk as _;
-
-        let with_jwk = |jwk: Jwk| {
-            if with_jwk {
-                KeyMetadata::default().with_public_key(jwk)
-            } else {
-                KeyMetadata::default()
-            }
+        let key = match alg {
+            JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(kp.as_ref())?,
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => EncodingKey::from_ec_pem(kp.as_ref())?,
         };
-        match alg {
-            JwsAlgorithm::EdDSA => {
-                let mut kp = Ed25519KeyPair::from_pem(kp.as_str())?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                Ok(kp.sign_with_header(claims, header)?)
-            }
-            JwsAlgorithm::ES256 => {
-                let mut kp = ES256KeyPair::from_pem(kp.as_str())?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                Ok(kp.sign_with_header(claims, header)?)
-            }
-            JwsAlgorithm::ES384 => {
-                let mut kp = ES384KeyPair::from_pem(kp.as_str())?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                Ok(kp.sign_with_header(claims, header)?)
-            }
-            JwsAlgorithm::ES512 => {
-                let mut kp = ES512KeyPair::from_pem(kp.as_str())?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                Ok(kp.sign_with_header(claims, header)?)
-            }
-        }
+
+        if with_jwk {
+            let jwk = Jwk::from_encoding_key(&key, alg.into())?;
+            header.jwk = Some(jwk);
+        };
+
+        Ok(jsonwebtoken::encode(&header, &claims, &key)?)
     }
 }
