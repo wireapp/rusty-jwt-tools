@@ -75,19 +75,19 @@ impl AccessBuilder {
     pub fn build(self) -> String {
         let kp = self.ciphersuite.key.kp.as_str();
         match self.ciphersuite.key.alg {
-            JwsAlgorithm::P256 => ES256KeyPair::from_pem(kp)
+            JwsAlgorithm::ES256 => ES256KeyPair::from_pem(kp)
                 .unwrap()
                 .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
-            JwsAlgorithm::P384 => ES384KeyPair::from_pem(kp)
+            JwsAlgorithm::ES384 => ES384KeyPair::from_pem(kp)
                 .unwrap()
                 .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
-            JwsAlgorithm::P521 => ES512KeyPair::from_pem(kp)
+            JwsAlgorithm::ES512 => ES512KeyPair::from_pem(kp)
                 .unwrap()
                 .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(kp)
+            JwsAlgorithm::EdDSA => Ed25519KeyPair::from_pem(kp)
                 .unwrap()
                 .sign_with_header(Some(self.claims()), self.header())
                 .unwrap(),

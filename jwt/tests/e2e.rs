@@ -68,22 +68,22 @@ fn e2e_jwt() {
 
         // now acme server will verify the access token
         let backend_pk: Pem = match alg {
-            JwsAlgorithm::P256 => ES256KeyPair::from_pem(backend_keys.as_str())
+            JwsAlgorithm::ES256 => ES256KeyPair::from_pem(backend_keys.as_str())
                 .unwrap()
                 .public_key()
                 .to_pem()
                 .unwrap(),
-            JwsAlgorithm::P384 => ES384KeyPair::from_pem(backend_keys.as_str())
+            JwsAlgorithm::ES384 => ES384KeyPair::from_pem(backend_keys.as_str())
                 .unwrap()
                 .public_key()
                 .to_pem()
                 .unwrap(),
-            JwsAlgorithm::P521 => ES512KeyPair::from_pem(backend_keys.as_str())
+            JwsAlgorithm::ES512 => ES512KeyPair::from_pem(backend_keys.as_str())
                 .unwrap()
                 .public_key()
                 .to_pem()
                 .unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(backend_keys.as_str())
+            JwsAlgorithm::EdDSA => Ed25519KeyPair::from_pem(backend_keys.as_str())
                 .unwrap()
                 .public_key()
                 .to_pem(),
@@ -122,19 +122,19 @@ fn e2e_jwt() {
 fn keys() -> Vec<(JwsAlgorithm, Pem, Pem, HashAlgorithm)> {
     vec![
         (
-            JwsAlgorithm::Ed25519,
+            JwsAlgorithm::EdDSA,
             Ed25519KeyPair::generate().to_pem().into(),
             Ed25519KeyPair::generate().to_pem().into(),
             HashAlgorithm::SHA256,
         ),
         (
-            JwsAlgorithm::P256,
+            JwsAlgorithm::ES256,
             ES256KeyPair::generate().to_pem().unwrap().into(),
             ES256KeyPair::generate().to_pem().unwrap().into(),
             HashAlgorithm::SHA256,
         ),
         (
-            JwsAlgorithm::P384,
+            JwsAlgorithm::ES384,
             ES384KeyPair::generate().to_pem().unwrap().into(),
             ES384KeyPair::generate().to_pem().unwrap().into(),
             HashAlgorithm::SHA384,

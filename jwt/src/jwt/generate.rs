@@ -25,25 +25,25 @@ impl RustyJwtTools {
             }
         };
         match alg {
-            JwsAlgorithm::Ed25519 => {
+            JwsAlgorithm::EdDSA => {
                 let mut kp = Ed25519KeyPair::from_pem(kp.as_str())?;
                 let jwk = kp.public_key().try_into_jwk()?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 Ok(kp.sign_with_header(claims, header)?)
             }
-            JwsAlgorithm::P256 => {
+            JwsAlgorithm::ES256 => {
                 let mut kp = ES256KeyPair::from_pem(kp.as_str())?;
                 let jwk = kp.public_key().try_into_jwk()?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 Ok(kp.sign_with_header(claims, header)?)
             }
-            JwsAlgorithm::P384 => {
+            JwsAlgorithm::ES384 => {
                 let mut kp = ES384KeyPair::from_pem(kp.as_str())?;
                 let jwk = kp.public_key().try_into_jwk()?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 Ok(kp.sign_with_header(claims, header)?)
             }
-            JwsAlgorithm::P521 => {
+            JwsAlgorithm::ES512 => {
                 let mut kp = ES512KeyPair::from_pem(kp.as_str())?;
                 let jwk = kp.public_key().try_into_jwk()?;
                 kp.attach_metadata(with_jwk(jwk))?;

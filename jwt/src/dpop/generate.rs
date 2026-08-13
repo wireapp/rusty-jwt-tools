@@ -111,7 +111,7 @@ pub mod tests {
             assert!(jwk.get("crv").unwrap().as_str().is_some());
             assert!(jwk.get("x").unwrap().as_str().is_some());
             match key.alg {
-                JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
                     assert!(jwk.get("y").unwrap().as_str().is_some());
                 }
                 _ => {

@@ -128,28 +128,28 @@ impl RustyJwtTools {
             .into_jwt_claims(client_id, nonce, proof_claims.custom.htu, audience, expiry)
         };
         let access_token = match alg {
-            JwsAlgorithm::P256 => {
+            JwsAlgorithm::ES256 => {
                 let mut kp = ES256KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES256 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 kp.sign_with_header(Some(claims), header)?
             }
-            JwsAlgorithm::P384 => {
+            JwsAlgorithm::ES384 => {
                 let mut kp = ES384KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES384 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 kp.sign_with_header(Some(claims), header)?
             }
-            JwsAlgorithm::Ed25519 => {
+            JwsAlgorithm::EdDSA => {
                 let mut kp = Ed25519KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ED25519 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
                 kp.attach_metadata(with_jwk(jwk))?;
                 kp.sign_with_header(Some(claims), header)?
             }
-            JwsAlgorithm::P521 => {
+            JwsAlgorithm::ES512 => {
                 let mut kp = ES512KeyPair::from_pem(backend_keys.as_str())
                     .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES512 key pair"))?;
                 let jwk = kp.public_key().try_into_jwk()?;
@@ -211,7 +211,7 @@ pub mod tests {
                 assert!(jwk.get("crv").unwrap().as_str().is_some());
                 assert!(jwk.get("x").unwrap().as_str().is_some());
                 match ciphersuite.key.alg {
-                    JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+                    JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
                         assert!(jwk.get("y").unwrap().as_str().is_some());
                     }
                     _ => {
@@ -552,19 +552,19 @@ pub mod tests {
             let backend_keys = params.backend_keys.clone();
             let access_token = access_token(params).unwrap();
             let verify = match ciphersuite.key.alg {
-                JwsAlgorithm::P256 => ES256KeyPair::from_pem(backend_keys.as_str())
+                JwsAlgorithm::ES256 => ES256KeyPair::from_pem(backend_keys.as_str())
                     .unwrap()
                     .public_key()
                     .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::P384 => ES384KeyPair::from_pem(backend_keys.as_str())
+                JwsAlgorithm::ES384 => ES384KeyPair::from_pem(backend_keys.as_str())
                     .unwrap()
                     .public_key()
                     .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::P521 => ES512KeyPair::from_pem(backend_keys.as_str())
+                JwsAlgorithm::ES512 => ES512KeyPair::from_pem(backend_keys.as_str())
                     .unwrap()
                     .public_key()
                     .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(backend_keys.as_str())
+                JwsAlgorithm::EdDSA => Ed25519KeyPair::from_pem(backend_keys.as_str())
                     .unwrap()
                     .public_key()
                     .verify_token::<NoCustomClaims>(&access_token, None),
@@ -581,10 +581,10 @@ pub mod tests {
             };
             let result = access_token(params);
             let reason = match ciphersuite.key.alg {
-                JwsAlgorithm::P256 => "Invalid ES256 key pair",
-                JwsAlgorithm::P384 => "Invalid ES384 key pair",
-                JwsAlgorithm::P521 => "Invalid ES512 key pair",
-                JwsAlgorithm::Ed25519 => "Invalid ED25519 key pair",
+                JwsAlgorithm::ES256 => "Invalid ES256 key pair",
+                JwsAlgorithm::ES384 => "Invalid ES384 key pair",
+                JwsAlgorithm::ES512 => "Invalid ES512 key pair",
+                JwsAlgorithm::EdDSA => "Invalid ED25519 key pair",
             };
             assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidBackendKeys(r) if r == reason));
         }
