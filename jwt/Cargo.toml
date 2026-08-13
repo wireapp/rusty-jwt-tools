@@ -19,6 +19,9 @@ base64 = { version = "0.23", default-features = false, features = ["std"] }
 const_format = { version = "0.2", default-features = false }
 derive_more = { version = "2.1.1", features = ["from", "into", "deref"] }
 jwt-simple = { version = "0.13", git = "https://github.com/wireapp/rust-jwt-simple", tag = "v0.13.0-pre.core-crypto-1.0.0", default-features = false }
+jsonwebtoken = { git = "https://github.com/Keats/jsonwebtoken", rev = "61c12ee61137cb365239e9062e4edcdc347d652d", features = [
+  "rust_crypto",
+] }
 p256 = { version = "0.13", default-features = false }
 p384 = { version = "0.13", default-features = false }
 p521 = { version = "0.13", default-features = false }
