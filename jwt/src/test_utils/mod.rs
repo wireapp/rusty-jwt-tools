@@ -1,19 +1,16 @@
 pub use access::*;
 pub use dpop::*;
 #[allow(unused_imports)]
-pub use jwk::*;
-use jwt_simple::prelude::*;
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
 use sec1::pkcs8::{DecodePrivateKey, EncodePrivateKey, EncodePublicKey};
 use serde::de::DeserializeOwned;
 pub use utils::*;
 
-use crate::{dpop::Dpop, jwk::TryIntoJwk, jwk_thumbprint::JwkThumbprint, prelude::*};
+use crate::{dpop::Dpop, jwk_thumbprint::JwkThumbprint, prelude::*};
 
 pub mod access;
 pub mod dpop;
-pub mod jwk;
 pub mod utils;
 
 #[template]
