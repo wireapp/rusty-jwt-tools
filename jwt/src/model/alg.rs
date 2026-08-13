@@ -12,19 +12,19 @@ pub enum JwsAlgorithm {
     /// Specified in [RFC 7518 Section 3.4: Digital Signature with ECDSA][1]
     ///
     /// [1]: https://tools.ietf.org/html/rfc7518#section-3.4
-    P256,
+    ES256,
     /// ECDSA using P-384 and SHA-384
     ///
     /// Specified in [RFC 7518 Section 3.4: Digital Signature with ECDSA][1]
     ///
     /// [1]: https://tools.ietf.org/html/rfc7518#section-3.4
-    P384,
+    ES384,
     /// ECDSA using P-521 and SHA-512
     ///
     /// Specified in [RFC 7518 Section 3.4: Digital Signature with ECDSA][1]
     ///
     /// [1]: https://tools.ietf.org/html/rfc7518#section-3.4
-    P521,
+    ES512,
     /// EdDSA using Ed25519
     ///
     /// Specified in [RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)][1] and
@@ -33,16 +33,16 @@ pub enum JwsAlgorithm {
     ///
     /// [1]: https://tools.ietf.org/html/rfc8032
     /// [2]: https://tools.ietf.org/html/rfc8037
-    Ed25519,
+    EdDSA,
 }
 
 impl std::fmt::Display for JwsAlgorithm {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let name = match self {
-            JwsAlgorithm::P256 => "ES256",
-            JwsAlgorithm::P384 => "ES384",
-            JwsAlgorithm::P521 => "ES512",
-            JwsAlgorithm::Ed25519 => "EdDSA",
+            JwsAlgorithm::ES256 => "ES256",
+            JwsAlgorithm::ES384 => "ES384",
+            JwsAlgorithm::ES512 => "ES512",
+            JwsAlgorithm::EdDSA => "EdDSA",
         };
         write!(f, "{name}")
     }
@@ -53,10 +53,10 @@ impl TryFrom<&str> for JwsAlgorithm {
 
     fn try_from(alg: &str) -> Result<Self, Self::Error> {
         Ok(match alg {
-            "ES256" => JwsAlgorithm::P256,
-            "ES384" => JwsAlgorithm::P384,
-            "ES512" => JwsAlgorithm::P521,
-            "EdDSA" => JwsAlgorithm::Ed25519,
+            "ES256" => JwsAlgorithm::ES256,
+            "ES384" => JwsAlgorithm::ES384,
+            "ES512" => JwsAlgorithm::ES512,
+            "EdDSA" => JwsAlgorithm::EdDSA,
             _ => return Err(RustyJwtError::UnsupportedAlgorithm),
         })
     }
@@ -102,10 +102,10 @@ impl TryFrom<JwsAlgorithm> for JwsEcAlgorithm {
 
     fn try_from(alg: JwsAlgorithm) -> RustyJwtResult<Self> {
         match alg {
-            JwsAlgorithm::P256 => Ok(Self::P256),
-            JwsAlgorithm::P384 => Ok(Self::P384),
-            JwsAlgorithm::P521 => Ok(Self::P521),
-            JwsAlgorithm::Ed25519 => Err(RustyJwtError::ImplementationError),
+            JwsAlgorithm::ES256 => Ok(Self::P256),
+            JwsAlgorithm::ES384 => Ok(Self::P384),
+            JwsAlgorithm::ES512 => Ok(Self::P521),
+            JwsAlgorithm::EdDSA => Err(RustyJwtError::ImplementationError),
         }
     }
 }
@@ -113,9 +113,9 @@ impl TryFrom<JwsAlgorithm> for JwsEcAlgorithm {
 impl From<JwsEcAlgorithm> for JwsAlgorithm {
     fn from(alg: JwsEcAlgorithm) -> Self {
         match alg {
-            JwsEcAlgorithm::P256 => Self::P256,
-            JwsEcAlgorithm::P384 => Self::P384,
-            JwsEcAlgorithm::P521 => Self::P521,
+            JwsEcAlgorithm::P256 => Self::ES256,
+            JwsEcAlgorithm::P384 => Self::ES384,
+            JwsEcAlgorithm::P521 => Self::ES512,
         }
     }
 }
@@ -146,8 +146,8 @@ impl TryFrom<JwsAlgorithm> for JwsEdAlgorithm {
 
     fn try_from(alg: JwsAlgorithm) -> RustyJwtResult<Self> {
         match alg {
-            JwsAlgorithm::Ed25519 => Ok(Self::Ed25519),
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => Err(RustyJwtError::ImplementationError),
+            JwsAlgorithm::EdDSA => Ok(Self::Ed25519),
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => Err(RustyJwtError::ImplementationError),
         }
     }
 }
@@ -155,7 +155,7 @@ impl TryFrom<JwsAlgorithm> for JwsEdAlgorithm {
 impl From<JwsEdAlgorithm> for JwsAlgorithm {
     fn from(alg: JwsEdAlgorithm) -> Self {
         match alg {
-            JwsEdAlgorithm::Ed25519 => Self::Ed25519,
+            JwsEdAlgorithm::Ed25519 => Self::EdDSA,
         }
     }
 }
@@ -206,9 +206,9 @@ impl FromStr for HashAlgorithm {
 impl From<JwsAlgorithm> for HashAlgorithm {
     fn from(alg: JwsAlgorithm) -> Self {
         match alg {
-            JwsAlgorithm::Ed25519 | JwsAlgorithm::P256 => Self::SHA256,
-            JwsAlgorithm::P384 => Self::SHA384,
-            JwsAlgorithm::P521 => Self::SHA512,
+            JwsAlgorithm::EdDSA | JwsAlgorithm::ES256 => Self::SHA256,
+            JwsAlgorithm::ES384 => Self::SHA384,
+            JwsAlgorithm::ES512 => Self::SHA512,
         }
     }
 }
