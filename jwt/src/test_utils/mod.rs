@@ -20,10 +20,10 @@ pub mod utils;
 #[export]
 #[rstest(
     key,
-    case::Ed25519($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::Ed25519)),
-    case::P256($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P256)),
-    case::P384($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P384)),
-    case::P521($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P521))
+    case::Ed25519($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::EdDSA)),
+    case::P256($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::ES256)),
+    case::P384($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::ES384)),
+    case::P521($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::ES512))
 )]
 #[allow(non_snake_case)]
 pub fn all_keys(key: JwtKey) {}
@@ -43,10 +43,10 @@ pub struct JwtKey {
 impl JwtKey {
     pub fn new_key(alg: JwsAlgorithm) -> Self {
         match alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
                 JwtEcKey::new_key(alg.try_into().unwrap()).into()
             }
-            JwsAlgorithm::Ed25519 => JwtEdKey::new_key(alg.try_into().unwrap()).into(),
+            JwsAlgorithm::EdDSA => JwtEdKey::new_key(alg.try_into().unwrap()).into(),
         }
     }
 
@@ -55,8 +55,8 @@ impl JwtKey {
         T: Serialize + DeserializeOwned,
     {
         match self.alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => JwtEcKey::from(self).claims::<T>(token),
-            JwsAlgorithm::Ed25519 => JwtEdKey::from(self).claims::<T>(token),
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => JwtEcKey::from(self).claims::<T>(token),
+            JwsAlgorithm::EdDSA => JwtEdKey::from(self).claims::<T>(token),
         }
     }
 
@@ -68,28 +68,28 @@ impl JwtKey {
     /// Given an algorithm X returns all the algorithms which are not X
     pub fn reverse_algorithms(&self) -> [JwsAlgorithm; 3] {
         match self.alg {
-            JwsAlgorithm::P256 => [JwsAlgorithm::P384, JwsAlgorithm::P521, JwsAlgorithm::Ed25519],
-            JwsAlgorithm::P384 => [JwsAlgorithm::P256, JwsAlgorithm::P521, JwsAlgorithm::Ed25519],
-            JwsAlgorithm::P521 => [JwsAlgorithm::P256, JwsAlgorithm::P384, JwsAlgorithm::Ed25519],
-            JwsAlgorithm::Ed25519 => [JwsAlgorithm::P256, JwsAlgorithm::P384, JwsAlgorithm::P521],
+            JwsAlgorithm::ES256 => [JwsAlgorithm::ES384, JwsAlgorithm::ES512, JwsAlgorithm::EdDSA],
+            JwsAlgorithm::ES384 => [JwsAlgorithm::ES256, JwsAlgorithm::ES512, JwsAlgorithm::EdDSA],
+            JwsAlgorithm::ES512 => [JwsAlgorithm::ES256, JwsAlgorithm::ES384, JwsAlgorithm::EdDSA],
+            JwsAlgorithm::EdDSA => [JwsAlgorithm::ES256, JwsAlgorithm::ES384, JwsAlgorithm::ES512],
         }
     }
 
     pub fn to_jwk(&self) -> Jwk {
         match self.alg {
-            JwsAlgorithm::P256 => ES256PublicKey::from_pem(self.pk.as_str())
+            JwsAlgorithm::ES256 => ES256PublicKey::from_pem(self.pk.as_str())
                 .unwrap()
                 .try_into_jwk()
                 .unwrap(),
-            JwsAlgorithm::P384 => ES384PublicKey::from_pem(self.pk.as_str())
+            JwsAlgorithm::ES384 => ES384PublicKey::from_pem(self.pk.as_str())
                 .unwrap()
                 .try_into_jwk()
                 .unwrap(),
-            JwsAlgorithm::P521 => ES512PublicKey::from_pem(self.pk.as_str())
+            JwsAlgorithm::ES512 => ES512PublicKey::from_pem(self.pk.as_str())
                 .unwrap()
                 .try_into_jwk()
                 .unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(self.pk.as_str())
+            JwsAlgorithm::EdDSA => Ed25519PublicKey::from_pem(self.pk.as_str())
                 .unwrap()
                 .try_into_jwk()
                 .unwrap(),
@@ -100,10 +100,10 @@ impl JwtKey {
 impl From<(JwsAlgorithm, Pem)> for JwtKey {
     fn from((alg, kp): (JwsAlgorithm, Pem)) -> Self {
         match alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
                 JwtEcKey::from((alg.try_into().unwrap(), kp)).into()
             }
-            JwsAlgorithm::Ed25519 => JwtEdKey::from((alg.try_into().unwrap(), kp)).into(),
+            JwsAlgorithm::EdDSA => JwtEdKey::from((alg.try_into().unwrap(), kp)).into(),
         }
     }
 }
@@ -329,10 +329,10 @@ impl From<(JwsEdAlgorithm, Pem)> for JwtEdKey {
 #[export]
 #[rstest(
 ciphersuite,
-case::Cipher1($crate::test_utils::Ciphersuite::new(JwsAlgorithm::Ed25519, HashAlgorithm::SHA256)),
-case::Cipher2($crate::test_utils::Ciphersuite::new(JwsAlgorithm::P256, HashAlgorithm::SHA256)),
-case::Cipher7($crate::test_utils::Ciphersuite::new(JwsAlgorithm::P384, HashAlgorithm::SHA384)),
-case::Cipher5($crate::test_utils::Ciphersuite::new(JwsAlgorithm::P521, HashAlgorithm::SHA512)),
+case::Cipher1($crate::test_utils::Ciphersuite::new(JwsAlgorithm::EdDSA, HashAlgorithm::SHA256)),
+case::Cipher2($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES256, HashAlgorithm::SHA256)),
+case::Cipher7($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES384, HashAlgorithm::SHA384)),
+case::Cipher5($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES512, HashAlgorithm::SHA512)),
 )]
 #[allow(non_snake_case)]
 pub fn all_ciphersuites(key: JwtKey, hash: HashAlgorithm) {}
@@ -359,7 +359,7 @@ impl Ciphersuite {
 /// Very useful for debugging a specific test ()
 impl Default for Ciphersuite {
     fn default() -> Self {
-        Self::new(JwsAlgorithm::Ed25519, HashAlgorithm::SHA256)
+        Self::new(JwsAlgorithm::EdDSA, HashAlgorithm::SHA256)
     }
 }
 

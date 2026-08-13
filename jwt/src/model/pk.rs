@@ -11,10 +11,10 @@ impl AnyPublicKey<'_> {
     fn try_into_pem(&self) -> RustyJwtResult<Pem> {
         if let Some(jwk) = self.1 {
             let pem = match self.0 {
-                JwsAlgorithm::P256 => ES256PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
-                JwsAlgorithm::P384 => ES384PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
-                JwsAlgorithm::P521 => ES512PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
-                JwsAlgorithm::Ed25519 => Ed25519PublicKey::try_from_jwk(jwk)?.to_pem().into(),
+                JwsAlgorithm::ES256 => ES256PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
+                JwsAlgorithm::ES384 => ES384PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
+                JwsAlgorithm::ES512 => ES512PublicKey::try_from_jwk(jwk)?.to_pem()?.into(),
+                JwsAlgorithm::EdDSA => Ed25519PublicKey::try_from_jwk(jwk)?.to_pem().into(),
             };
             return Ok(pem);
         }
@@ -56,17 +56,17 @@ impl AnyPublicKey<'_> {
         let Self(alg, jwk, pk) = self;
         if let Some(jwk) = jwk {
             match alg {
-                JwsAlgorithm::P256 => ES256PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
-                JwsAlgorithm::P384 => ES384PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
-                JwsAlgorithm::P521 => ES512PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
-                JwsAlgorithm::Ed25519 => Ed25519PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
+                JwsAlgorithm::ES256 => ES256PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
+                JwsAlgorithm::ES384 => ES384PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
+                JwsAlgorithm::ES512 => ES512PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
+                JwsAlgorithm::EdDSA => Ed25519PublicKey::try_from_jwk(jwk)?.verify_token::<T>(token, options),
             }
         } else if let Some(pk) = pk {
             match alg {
-                JwsAlgorithm::P256 => ES256PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
-                JwsAlgorithm::P384 => ES384PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
-                JwsAlgorithm::P521 => ES512PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
-                JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
+                JwsAlgorithm::ES256 => ES256PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
+                JwsAlgorithm::ES384 => ES384PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
+                JwsAlgorithm::ES512 => ES512PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
+                JwsAlgorithm::EdDSA => Ed25519PublicKey::from_pem(pk)?.verify_token::<T>(token, options),
             }
         } else {
             Err(jwt_simple::Error::msg("Implementation error"))
