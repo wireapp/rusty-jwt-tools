@@ -7,9 +7,9 @@ pub enum RustyJwtError {
     /// Invalid curve coordinate size
     #[error("Invalid curve coordinate size")]
     InvalidCoordinateSize,
-    /// JWT error from `jwt-simple` crate
+    /// JWT error from `jsonwebtoken` crate
     #[error(transparent)]
-    JwtSimpleError(#[from] jwt_simple::Error),
+    JsonWebTokenError(#[from] jsonwebtoken::errors::Error),
     /// Elliptic curve error
     #[error(transparent)]
     Sec1Error(#[from] sec1::Error),
