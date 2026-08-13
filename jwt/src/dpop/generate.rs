@@ -1,4 +1,4 @@
-use jwt_simple::prelude::*;
+use jsonwebtoken::Header;
 
 use crate::{dpop::Dpop, prelude::*};
 
@@ -26,13 +26,13 @@ impl RustyJwtTools {
         // TODO: is it up to us to validate the 'client_id' format or is it opaque to us ?
         let header = Self::new_dpop_header(alg);
         let claims = dpop.into_jwt_claims(nonce, client_id, expiry, audience);
-        Self::generate_jwt(alg, header, Some(claims), kp, true)
+        Self::generate_jwt(alg, header, claims, kp, true)
     }
 
-    fn new_dpop_header(alg: JwsAlgorithm) -> JWTHeader {
-        JWTHeader {
-            algorithm: alg.to_string(),
-            signature_type: Some(Dpop::TYP.to_string()),
+    fn new_dpop_header(alg: JwsAlgorithm) -> Header {
+        Header {
+            alg: alg.into(),
+            typ: Some(Dpop::TYP.to_string()),
             ..Default::default()
         }
     }
