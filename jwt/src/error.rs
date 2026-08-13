@@ -7,6 +7,9 @@ pub enum RustyJwtError {
     /// JWT error from `jwt-simple` crate
     #[error(transparent)]
     JwtSimpleError(#[from] jwt_simple::Error),
+    /// JWT error from `jsonwebtoken` crate
+    #[error(transparent)]
+    JsonWebTokenError(#[from] jsonwebtoken::errors::Error),
     /// Elliptic curve error
     #[error(transparent)]
     Sec1Error(#[from] sec1::Error),
