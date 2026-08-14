@@ -1,7 +1,14 @@
 //! Generic Jwt utilities
 
-use jwt_simple::prelude::*;
-use serde::de::DeserializeOwned;
+use jsonwebtoken::{
+    DecodingKey, Validation, decode,
+    errors::{Error, ErrorKind},
+};
+use jwt_simple::{
+    claims::JWTClaims,
+    reexports::coarsetime::{Clock, Duration},
+};
+use serde::{Serialize, de::DeserializeOwned};
 
 use crate::prelude::*;
 
@@ -58,7 +65,8 @@ pub trait VerifyJwt {
     /// * `leeway` - The maximum number of seconds of clock skew the implementation will allow
     fn verify_jwt<T>(
         &self,
-        key: &AnyPublicKey,
+        alg: JwsAlgorithm,
+        key: &DecodingKey,
         max_expiration: u64,
         // expected_cnf: Option<&JwkThumbprint>,
         // actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
@@ -72,7 +80,8 @@ pub trait VerifyJwt {
 impl VerifyJwt for &str {
     fn verify_jwt<T>(
         &self,
-        key: &AnyPublicKey<'_>,
+        alg: JwsAlgorithm,
+        key: &DecodingKey,
         max_expiration: u64,
         // expected_cnf: Option<&JwkThumbprint>,
         // actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
@@ -82,49 +91,107 @@ impl VerifyJwt for &str {
     where
         T: Serialize + DeserializeOwned,
     {
-        let verifications = Some(VerificationOptions::from(&verify));
-        let claims = key.verify_token::<T>(self, verifications).map_err(jwt_error_mapping)?;
+        // Setup the validation
+        let mut validation = Validation::new(alg.into());
+        if let Some(issuer) = verify.issuer {
+            validation.set_required_spec_claims(&["exp", "sub", "nbf", "iss"]);
+            validation.set_issuer(&[issuer]);
+        } else {
+            validation.set_required_spec_claims(&["exp", "sub", "nbf"]);
+        }
+        validation.validate_aud = false;
+        validation.validate_exp = true;
+        validation.validate_nbf = true;
+        validation.leeway = verify.leeway.into();
+        validation.sub = Some(verify.client_id.to_uri());
 
+        // Get the token claims, validating the above via jsonwebtoken
+        let token = decode::<JWTClaims<T>>(self, key, &validation).map_err(jwt_error_mapping)?;
+        let claims = token.claims;
+
+        // custom validations
         claims.jwt_id.as_ref().ok_or(RustyJwtError::MissingTokenClaim("jti"))?;
+        let issued_at = claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim("iat"))?;
+        // TODO: This validation used to happen in simple_jwt
+        // This assumes that iat is only part of dpop validation
+        let now = Clock::now_since_epoch();
+        if issued_at > now + Duration::from_secs(verify.leeway as u64) {
+            return Err(RustyJwtError::InvalidDpopIat);
+        }
         let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim("exp"))?;
-        claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim("iat"))?;
-        claims.invalid_before.ok_or(RustyJwtError::MissingTokenClaim("nbf"))?;
         if exp > Duration::from_secs(max_expiration) {
             return Err(RustyJwtError::TokenLivesTooLong);
+        }
+
+        if let Some(backend_nonce) = verify.backend_nonce {
+            let nonce = claims
+                .nonce
+                .as_deref()
+                .ok_or(RustyJwtError::MissingTokenClaim("nonce"))?;
+
+            if nonce != backend_nonce.as_str() {
+                return Err(RustyJwtError::DpopNonceMismatch);
+            }
         }
 
         Ok(claims)
     }
 }
 
-/// Tries mapping 'jwt-simple' errors
-pub fn jwt_error_mapping(e: jwt_simple::Error) -> RustyJwtError {
-    let reason = e.to_string();
-    // since `jwt_simple` returns [anyhow::Error] which we can't pattern match against
-    // we have to parse the reason to "guess" the root cause
-    match reason.as_str() {
-        // standard claims failing because of [VerificationOptions]
-        "Required subject missing" => RustyJwtError::MissingTokenClaim("sub"),
-        "Required nonce missing" => RustyJwtError::MissingTokenClaim("nonce"),
-        "Required subject mismatch" => RustyJwtError::TokenSubMismatch,
-        "Required nonce mismatch" => RustyJwtError::DpopNonceMismatch,
-        "Required issuer mismatch" => RustyJwtError::DpopHtuMismatch,
-        "Clock drift detected" => RustyJwtError::InvalidDpopIat,
-        "Token not valid yet" => RustyJwtError::DpopNotYetValid,
-        "Token has expired" => RustyJwtError::TokenExpired,
-        "Invalid JWK in DPoP token" => RustyJwtError::InvalidDpopJwk,
-        "Required issuer missing" => RustyJwtError::MissingIssuer,
+/// Claims which can be reported as [RustyJwtError::MissingTokenClaim]
+const KNOWN_CLAIMS: &[&str] = &[
+    // spec claims, reported by jsonwebtoken
+    "exp",
+    "nbf",
+    "aud",
+    "iss",
+    "sub",
+    // DPoP claims, reported by serde
+    "chal",
+    "htm",
+    "htu",
+    "cnf",
+    "proof",
+    "api_version",
+    "client_id",
+    "scope",
+    "handle",
+    "name",
+];
+
+/// Returns the `'static` name of a known claim
+fn known_claim(name: &str) -> Option<&'static str> {
+    KNOWN_CLAIMS.iter().copied().find(|&claim| claim == name)
+}
+
+/// Maps jsonwebtoken::errors::Error to RustyJwtError
+pub fn jwt_error_mapping(e: Error) -> RustyJwtError {
+    match e.into_kind() {
+        ErrorKind::MissingRequiredClaim(claim) => known_claim(&claim)
+            .map(RustyJwtError::MissingTokenClaim)
+            .unwrap_or_else(|| RustyJwtError::InvalidToken(format!("missing required claim '{claim}'"))),
+
+        ErrorKind::InvalidSubject => RustyJwtError::TokenSubMismatch,
+
+        ErrorKind::ExpiredSignature => RustyJwtError::TokenExpired,
+
+        // TODO:This mapping assumes that if an nbf is in the future it is a dpop validation error
+        ErrorKind::ImmatureSignature => RustyJwtError::DpopNotYetValid,
+
+        // TODO: This mapping assumes that if an invalid issuer occurs,
+        // that this happens in dpop htu verification
+        ErrorKind::InvalidIssuer => RustyJwtError::DpopHtuMismatch,
+
         // DPoP claims failing because of serde
-        r if r.starts_with("missing field `chal`") => RustyJwtError::MissingTokenClaim("chal"),
-        r if r.starts_with("missing field `htm`") => RustyJwtError::MissingTokenClaim("htm"),
-        r if r.starts_with("missing field `htu`") => RustyJwtError::MissingTokenClaim("htu"),
-        r if r.starts_with("missing field `cnf`") => RustyJwtError::MissingTokenClaim("cnf"),
-        r if r.starts_with("missing field `proof`") => RustyJwtError::MissingTokenClaim("proof"),
-        r if r.starts_with("missing field `api_version`") => RustyJwtError::MissingTokenClaim("api_version"),
-        r if r.starts_with("missing field `client_id`") => RustyJwtError::MissingTokenClaim("client_id"),
-        r if r.starts_with("missing field `scope`") => RustyJwtError::MissingTokenClaim("scope"),
-        r if r.starts_with("missing field `handle`") => RustyJwtError::MissingTokenClaim("handle"),
-        r if r.starts_with("missing field `name`") => RustyJwtError::MissingTokenClaim("name"),
-        _ => RustyJwtError::InvalidToken(reason),
+        ErrorKind::Json(error) => {
+            let msg = error.to_string();
+
+            msg.strip_prefix("missing field `")
+                .and_then(|rest| rest.split_once('`'))
+                .and_then(|(field, _)| known_claim(field))
+                .map(RustyJwtError::MissingTokenClaim)
+                .unwrap_or(RustyJwtError::InvalidToken(msg))
+        }
+        other => RustyJwtError::InvalidToken(format!("{other:?}")),
     }
 }
