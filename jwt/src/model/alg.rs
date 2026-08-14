@@ -1,6 +1,7 @@
 use std::{fmt::Formatter, str::FromStr};
 
 use jsonwebtoken::Algorithm;
+use jsonwebtoken::jwk::ThumbprintHash;
 
 use crate::prelude::*;
 
@@ -104,6 +105,16 @@ pub enum HashAlgorithm {
     SHA384,
     /// SHA-512
     SHA512,
+}
+
+impl From<HashAlgorithm> for ThumbprintHash {
+    fn from(value: HashAlgorithm) -> Self {
+        match value {
+            HashAlgorithm::SHA256 => ThumbprintHash::SHA256,
+            HashAlgorithm::SHA384 => ThumbprintHash::SHA384,
+            HashAlgorithm::SHA512 => ThumbprintHash::SHA512,
+        }
+    }
 }
 
 #[cfg(test)]
