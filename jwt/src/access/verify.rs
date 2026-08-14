@@ -1,9 +1,9 @@
-use jwt_simple::prelude::*;
+use jsonwebtoken::{DecodingKey, Header, decode_header, jwk::Jwk};
 
 use crate::{
     access::Access,
     jwk_thumbprint::JwkThumbprint,
-    jwt::{Verify, VerifyJwt, VerifyJwtHeader},
+    jwt::{Verify, VerifyJwt},
     prelude::*,
 };
 
@@ -56,8 +56,8 @@ impl RustyJwtTools {
         hash: HashAlgorithm,
         api_version: u32,
     ) -> RustyJwtResult<()> {
-        let header = Token::decode_metadata(access_token)?;
-        let (alg, jwk) = Self::verify_access_token_header(&header)?;
+        let header = decode_header(access_token)?;
+        let (alg, jwk) = Self::verify_access_token_header(header)?;
         Self::verify_access_token_claims(
             access_token,
             alg,
@@ -71,20 +71,20 @@ impl RustyJwtTools {
             max_expiration,
             issuer,
             max_skew_secs,
-            jwk,
+            &jwk,
             hash,
             api_version,
         )
     }
 
     /// Verifies access token specific header
-    fn verify_access_token_header(header: &TokenMetadata) -> RustyJwtResult<(JwsAlgorithm, &Jwk)> {
-        let typ = header.signature_type().ok_or(RustyJwtError::MissingDpopHeader("typ"))?;
+    fn verify_access_token_header(header: Header) -> RustyJwtResult<(JwsAlgorithm, Jwk)> {
+        let typ = header.typ.ok_or(RustyJwtError::MissingDpopHeader("typ"))?;
         if typ != Access::TYP {
             return Err(RustyJwtError::InvalidDpopTyp);
         }
-        let alg = header.verify_jwt_header()?;
-        let jwk = header.public_key().ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
+        let alg = JwsAlgorithm::try_from(header.alg)?;
+        let jwk = header.jwk.ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
         Ok((alg, jwk))
     }
 
@@ -106,7 +106,12 @@ impl RustyJwtTools {
         hash: HashAlgorithm,
         api_version: u32,
     ) -> RustyJwtResult<()> {
-        let pk = AnyPublicKey::from((alg, backend_pk));
+        let pk = match alg {
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                DecodingKey::from_ec_pem(backend_pk.as_ref())?
+            }
+            JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(backend_pk.as_ref())?,
+        };
         let verify = Verify {
             leeway,
             client_id,
@@ -114,10 +119,11 @@ impl RustyJwtTools {
             issuer: Some(issuer),
         };
 
-        let claims = access_token.verify_jwt::<Access>(&pk, max_expiration, verify)?;
+        let claims = access_token.verify_jwt::<Access>(alg, &pk, max_expiration, verify)?;
 
         // verify the JWK in access token represents the same key as the one supplied
-        if pk != AnyPublicKey::from((alg, jwk)) {
+        let backend_jwk = Jwk::from_decoding_key(&pk, Some(alg.into()))?;
+        if backend_jwk.thumbprint(hash.into()) != jwk.thumbprint(hash.into()) {
             return Err(RustyJwtError::InvalidDpopJwk);
         }
 
@@ -137,17 +143,17 @@ impl RustyJwtTools {
 
         // Dpop proof verification
         use crate::dpop::{VerifyDpop as _, VerifyDpopTokenHeader as _};
-        let proof = claims.custom.proof.as_str();
-        let header = Token::decode_metadata(proof)?;
+        let dpop_proof = claims.custom.proof.as_str();
+        let header = decode_header(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
         let dpop_issuer: Htu = claims
             .issuer
             .ok_or(RustyJwtError::MissingTokenClaim("htu"))
             .and_then(|i| i.as_str().try_into())?;
 
-        proof.verify_client_dpop(
+        dpop_proof.verify_client_dpop(
             alg,
-            jwk,
+            &jwk,
             client_id,
             handle,
             display_name,
@@ -160,7 +166,7 @@ impl RustyJwtTools {
             leeway,
         )?;
 
-        let proof_thumbprint = JwkThumbprint::generate(jwk, hash)?;
+        let proof_thumbprint = JwkThumbprint::generate(&jwk, hash)?;
 
         if proof_thumbprint.kid != client_kid {
             // this would mean the acme server messed up either by miscomputing the JWK thumbprint
@@ -180,6 +186,7 @@ impl RustyJwtTools {
 pub mod tests {
     use super::*;
     use crate::test_utils::*;
+    use jwt_simple::reexports::coarsetime::Duration;
 
     mod access {
         use super::*;
