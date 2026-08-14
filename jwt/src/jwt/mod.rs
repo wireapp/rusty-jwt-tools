@@ -1,6 +1,6 @@
 //! Generic crate for everything related to Jwt without any adherence to Dpop
 
-pub use verify::{Verify, VerifyJwt, VerifyJwtHeader};
+pub use verify::{Verify, VerifyJwt};
 
 pub(crate) mod generate;
 pub mod verify;

@@ -22,34 +22,6 @@ pub struct Verify<'a> {
     pub issuer: Option<Htu>,
 }
 
-impl From<&Verify<'_>> for VerificationOptions {
-    fn from(v: &Verify<'_>) -> Self {
-        Self {
-            accept_future: false,
-            required_key_id: None, // we don't verify 'jti', just enforce its presence
-            required_subject: Some(v.client_id.to_uri()),
-            required_nonce: v.backend_nonce.map(|n| n.to_string()),
-            time_tolerance: Some(UnixTimeStamp::from_secs(v.leeway as u64)),
-            allowed_issuers: v.issuer.as_ref().map(|i| HashSet::from([i.to_string()])),
-            ..Default::default()
-        }
-    }
-}
-
-/// Verifies JWT token standard headers
-pub trait VerifyJwtHeader {
-    /// Verifies a Jwt token header
-    fn verify_jwt_header(&self) -> RustyJwtResult<JwsAlgorithm>;
-}
-
-impl VerifyJwtHeader for TokenMetadata {
-    fn verify_jwt_header(&self) -> RustyJwtResult<JwsAlgorithm> {
-        // fails when the algorithm is not supported
-        let alg = JwsAlgorithm::try_from(self.algorithm())?;
-        Ok(alg)
-    }
-}
-
 /// Verifies a Jwt token
 pub trait VerifyJwt {
     /// Verifies the JWT token given a JWK
