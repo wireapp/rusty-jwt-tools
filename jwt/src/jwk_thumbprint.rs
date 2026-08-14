@@ -1,9 +1,7 @@
 //! JWK thumbprint
 
-use base64::Engine;
-use jwt_simple::prelude::*;
-use serde_json::{Value, json};
-use sha2::Digest;
+use jsonwebtoken::jwk::Jwk;
+use serde::{Deserialize, Serialize};
 
 use crate::prelude::*;
 
@@ -22,54 +20,8 @@ pub struct JwkThumbprint {
 impl JwkThumbprint {
     /// generates a base64 encoded hash of a JWK
     pub fn generate(jwk: &Jwk, alg: HashAlgorithm) -> RustyJwtResult<Self> {
-        let json = Self::compute_json(jwk);
-        let json = serde_json::to_vec(&json)?;
-        let kid = match alg {
-            HashAlgorithm::SHA256 => {
-                let mut hasher = sha2::Sha256::new();
-                hasher.update(json);
-                let hash = &hasher.finalize()[..];
-                base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(hash)
-            }
-            HashAlgorithm::SHA384 => {
-                let mut hasher = sha2::Sha384::new();
-                hasher.update(json);
-                let hash = &hasher.finalize()[..];
-                base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(hash)
-            }
-            HashAlgorithm::SHA512 => {
-                let mut hasher = sha2::Sha512::new();
-                hasher.update(json);
-                let hash = &hasher.finalize()[..];
-                base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(hash)
-            }
-        };
+        let kid = jwk.thumbprint(alg.into())?;
         Ok(Self { kid })
-    }
-
-    /// Filters out some JWK fields and lexicographically order them as per [RFC 7638 Section 3.2][1]
-    ///
-    /// [1]: https://www.rfc-editor.org/rfc/rfc7638.html#section-3.2
-    fn compute_json(jwk: &Jwk) -> Value {
-        match jwk.algorithm.clone() {
-            AlgorithmParameters::RSA(RSAKeyParameters { key_type, n, e }) => json!({
-                "e": e,
-                "kty": key_type,
-                "n": n,
-            }),
-            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters { key_type, curve, x, y }) => json!({
-                "crv": curve,
-                "kty": key_type,
-                "x": x,
-                "y": y,
-            }),
-            AlgorithmParameters::OctetKeyPair(OctetKeyPairParameters { key_type, curve, x }) => json!({
-                "crv": curve,
-                "kty": key_type,
-                "x": x,
-            }),
-            _ => unimplemented!(),
-        }
     }
 }
 
