@@ -98,8 +98,8 @@ pub enum RustyJwtError {
     #[error("Unsupported algorithm")]
     UnsupportedAlgorithm,
     /// Supplied backend keys have an invalid format
-    #[error("Supplied backend keys have an invalid format because {0}")]
-    InvalidBackendKeys(&'static str),
+    #[error("Supplied backend keys have an invalid format")]
+    InvalidBackendKeys(#[source] jsonwebtoken::errors::Error),
     /// see [crate::prelude::ClientId]
     #[error("Supplied client identifier is invalid")]
     InvalidClientId,
