@@ -1,9 +1,9 @@
-use jwt_simple::{prelude::*, token::Token};
+use jsonwebtoken::{EncodingKey, Header, decode_header, jwk::Jwk};
+use jwt_simple::claims::JWTClaims;
 
 use crate::{
     access::Access,
     dpop::{VerifyDpop, VerifyDpopTokenHeader},
-    jwk::TryIntoJwk,
     jwk_thumbprint::JwkThumbprint,
     prelude::*,
 };
@@ -61,11 +61,11 @@ impl RustyJwtTools {
         api_version: u32,
         expiry: core::time::Duration,
     ) -> RustyJwtResult<String> {
-        let header = Token::decode_metadata(dpop_proof)?;
+        let header = decode_header(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
         let proof_claims = dpop_proof.verify_client_dpop(
             alg,
-            jwk,
+            &jwk,
             client_id,
             &handle,
             display_name,
@@ -79,7 +79,7 @@ impl RustyJwtTools {
         )?;
         Self::access_token(
             alg,
-            jwk,
+            &jwk,
             dpop_proof,
             proof_claims,
             backend_keys,
@@ -104,9 +104,8 @@ impl RustyJwtTools {
         api_version: u32,
         expiry: core::time::Duration,
     ) -> RustyJwtResult<String> {
-        let header = Self::new_access_header(alg);
+        let mut header = Self::new_access_header(alg);
 
-        let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
         let claims = {
             let audience = proof_claims
                 .audiences
@@ -127,43 +126,22 @@ impl RustyJwtTools {
             }
             .into_jwt_claims(client_id, nonce, proof_claims.custom.htu, audience, expiry)
         };
-        let access_token = match alg {
-            JwsAlgorithm::ES256 => {
-                let mut kp = ES256KeyPair::from_pem(backend_keys.as_str())
-                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES256 key pair"))?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims), header)?
-            }
-            JwsAlgorithm::ES384 => {
-                let mut kp = ES384KeyPair::from_pem(backend_keys.as_str())
-                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES384 key pair"))?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims), header)?
-            }
-            JwsAlgorithm::EdDSA => {
-                let mut kp = Ed25519KeyPair::from_pem(backend_keys.as_str())
-                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ED25519 key pair"))?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims), header)?
-            }
-            JwsAlgorithm::ES512 => {
-                let mut kp = ES512KeyPair::from_pem(backend_keys.as_str())
-                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES512 key pair"))?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims), header)?
+        let key = match alg {
+            JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(backend_keys.as_ref())?,
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                EncodingKey::from_ec_pem(backend_keys.as_ref())?
             }
         };
-        Ok(access_token)
+        let jwk = Jwk::from_encoding_key(&key, alg.into())?;
+        header.jwk = Some(jwk);
+
+        Ok(jsonwebtoken::encode(&header, &claims, &key)?)
     }
 
-    fn new_access_header(alg: JwsAlgorithm) -> JWTHeader {
-        JWTHeader {
-            algorithm: alg.to_string(),
-            signature_type: Some(Access::TYP.to_string()),
+    fn new_access_header(alg: JwsAlgorithm) -> Header {
+        Header {
+            alg: alg.into(),
+            typ: Some(Access::TYP.to_string()),
             ..Default::default()
         }
     }
@@ -175,7 +153,7 @@ pub mod tests {
     use serde_json::{Value, json};
 
     use super::*;
-    use crate::{dpop::Dpop, jwk::TryFromJwk, test_utils::*};
+    use crate::{dpop::Dpop, test_utils::*};
 
     mod generated_access_token {
         use super::*;
