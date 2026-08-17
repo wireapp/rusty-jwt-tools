@@ -150,6 +150,7 @@ impl RustyJwtTools {
 #[cfg(test)]
 pub mod tests {
     use base64::Engine;
+    use jwt_simple::reexports::coarsetime::Duration;
     use serde_json::{Value, json};
 
     use super::*;
@@ -165,16 +166,16 @@ pub mod tests {
             #[test]
             fn header_should_have_jwt_typ(ciphersuite: Ciphersuite) {
                 let token = access_token(ciphersuite.into()).unwrap();
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                assert_eq!(header.signature_type(), Some(Access::TYP))
+                let header = decode_header(&token).expect("decoding header");
+                assert_eq!(header.typ, Some(Access::TYP.to_string()))
             }
 
             #[apply(all_ciphersuites)]
             #[test]
             fn header_should_have_alg(ciphersuite: Ciphersuite) {
                 let token = access_token(ciphersuite.clone().into()).unwrap();
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                assert_eq!(header.algorithm(), ciphersuite.key.alg.to_string())
+                let header = decode_header(&token).expect("decoding header");
+                assert_eq!(header.alg, ciphersuite.key.alg.into())
             }
 
             #[apply(all_ciphersuites)]
@@ -239,9 +240,9 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop, params).unwrap();
 
-                let client_header = Token::decode_metadata(&dpop).unwrap();
-                let client_jwk = client_header.public_key().unwrap();
-                let expected_cnf = JwkThumbprint::generate(client_jwk, ciphersuite.hash).unwrap();
+                let client_header = decode_header(&dpop).expect("decoding header");
+                let client_jwk = client_header.jwk.unwrap();
+                let expected_cnf = JwkThumbprint::generate(&client_jwk, ciphersuite.hash).unwrap();
 
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.cnf, expected_cnf);
@@ -456,6 +457,8 @@ pub mod tests {
 
     mod backend_keys {
         use super::*;
+        use jsonwebtoken::{DecodingKey, Validation, decode};
+        use jwt_simple::claims::NoCustomClaims;
 
         #[apply(all_ciphersuites)]
         #[test]
@@ -463,25 +466,15 @@ pub mod tests {
             let params = Params::from(ciphersuite.clone());
             let backend_keys = params.backend_keys.clone();
             let access_token = access_token(params).unwrap();
-            let verify = match ciphersuite.key.alg {
-                JwsAlgorithm::ES256 => ES256KeyPair::from_pem(backend_keys.as_str())
-                    .unwrap()
-                    .public_key()
-                    .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::ES384 => ES384KeyPair::from_pem(backend_keys.as_str())
-                    .unwrap()
-                    .public_key()
-                    .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::ES512 => ES512KeyPair::from_pem(backend_keys.as_str())
-                    .unwrap()
-                    .public_key()
-                    .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::EdDSA => Ed25519KeyPair::from_pem(backend_keys.as_str())
-                    .unwrap()
-                    .public_key()
-                    .verify_token::<NoCustomClaims>(&access_token, None),
+            let key = match ciphersuite.key.alg {
+                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                    DecodingKey::from_ec_pem(backend_keys.pk.as_ref()).expect("key from ec pem")
+                }
+                JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(backend_keys.pk.as_ref()).expect("key from ed pem"),
             };
-            assert!(verify.is_ok());
+            let mut validation = Validation::new(ciphersuite.key.alg.into());
+            validation.validate_aud = false;
+            decode::<NoCustomClaims>(access_token, &key, &validation).unwrap();
         }
 
         #[apply(all_ciphersuites)]
