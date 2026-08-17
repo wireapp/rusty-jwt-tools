@@ -28,7 +28,6 @@ pub mod prelude {
         handle::{Handle, QualifiedHandle},
         nonce::{AcmeNonce, BackendNonce},
         pem::Pem,
-        pk::AnyPublicKey,
         team::Team,
     };
 
