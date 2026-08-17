@@ -202,88 +202,32 @@ pub mod tests {
         mod jwk {
             use super::*;
 
-            #[apply(all_ec_keys)]
+            use jsonwebtoken::jwk::ThumbprintHash;
+            #[apply(all_keys)]
             #[test]
-            fn should_have_ec_jwk(key: JwtEcKey) {
+            fn should_have_jwk(key: JwtKey) {
                 let params = Params::from(Ciphersuite {
-                    key: JwtKey::from(key.clone()),
+                    key: key.clone(),
                     hash: HashAlgorithm::SHA256,
                 });
                 let backend_kp = params.backend_keys.clone();
                 let token = access_token(params).unwrap();
 
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                let jwk = header.public_key().unwrap();
-                let is_valid = |p: &EllipticCurveKeyParameters| {
-                    let (kty, curve, jwk_pk, signing_pk) = match key.alg {
-                        JwsEcAlgorithm::P256 => {
-                            let kty = EllipticCurveKeyType::EC;
-                            let curve = EllipticCurve::P256;
-                            let pk_pem = ES256PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                            let signing_key_pem = ES256KeyPair::from_pem(backend_kp.as_str())
-                                .unwrap()
-                                .public_key()
-                                .to_pem()
-                                .unwrap();
-                            (kty, curve, pk_pem, signing_key_pem)
-                        }
-                        JwsEcAlgorithm::P384 => {
-                            let kty = EllipticCurveKeyType::EC;
-                            let curve = EllipticCurve::P384;
-                            let pk_pem = ES384PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                            let signing_key_pem = ES384KeyPair::from_pem(backend_kp.as_str())
-                                .unwrap()
-                                .public_key()
-                                .to_pem()
-                                .unwrap();
-                            (kty, curve, pk_pem, signing_key_pem)
-                        }
-                        JwsEcAlgorithm::P521 => {
-                            let kty = EllipticCurveKeyType::EC;
-                            let curve = EllipticCurve::P521;
-                            let pk_pem = ES512PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                            let signing_key_pem = ES512KeyPair::from_pem(backend_kp.as_str())
-                                .unwrap()
-                                .public_key()
-                                .to_pem()
-                                .unwrap();
-                            (kty, curve, pk_pem, signing_key_pem)
-                        }
-                    };
-                    p.key_type == kty && p.curve == curve && jwk_pk == signing_pk
-                };
-                assert!(matches!(&jwk.algorithm, AlgorithmParameters::EllipticCurve(p) if is_valid(p)));
-            }
+                let header = decode_header(&token).unwrap();
+                let jwk = header.jwk.as_ref().unwrap();
 
-            #[apply(all_ed_keys)]
-            #[test]
-            fn should_have_ed25519_jwk(key: JwtEdKey) {
-                #[allow(clippy::redundant_clone)]
-                let params = Params::from(Ciphersuite {
-                    key: key.clone().into(),
-                    hash: HashAlgorithm::SHA256,
-                });
-                let backend_kp = params.backend_keys.clone();
-                let token = access_token(params).unwrap();
-
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                let jwk = header.public_key().unwrap();
-                let is_valid = |p: &OctetKeyPairParameters| {
-                    let (kty, curve, jwk_pk, signing_pk) = match key.alg {
-                        JwsEdAlgorithm::Ed25519 => {
-                            let kty = OctetKeyPairType::OctetKeyPair;
-                            let curve = EdwardCurve::Ed25519;
-                            let pk_pem = Ed25519PublicKey::try_from_jwk(jwk).unwrap().to_pem();
-                            let signing_key_pem = Ed25519KeyPair::from_pem(backend_kp.as_str())
-                                .unwrap()
-                                .public_key()
-                                .to_pem();
-                            (kty, curve, pk_pem, signing_key_pem)
-                        }
-                    };
-                    p.key_type == kty && p.curve == curve && signing_pk == jwk_pk
+                let backend_key = match key.alg {
+                    JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                        EncodingKey::from_ec_pem(backend_kp.as_bytes()).unwrap()
+                    }
+                    JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(backend_kp.as_bytes()).unwrap(),
                 };
-                assert!(matches!(&jwk.algorithm, AlgorithmParameters::OctetKeyPair(p) if is_valid(p)));
+                let backend_jwk = Jwk::from_encoding_key(&backend_key, key.alg.into()).unwrap();
+
+                assert_eq!(
+                    jwk.thumbprint(ThumbprintHash::SHA256).unwrap(),
+                    backend_jwk.thumbprint(ThumbprintHash::SHA256).unwrap(),
+                );
             }
 
             #[apply(all_ciphersuites)]
