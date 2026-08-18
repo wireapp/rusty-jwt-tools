@@ -1,10 +1,12 @@
 pub use access::*;
 pub use dpop::*;
+use jsonwebtoken::{DecodingKey, Validation, decode, jwk::Jwk};
+use jwt_simple::claims::JWTClaims;
 #[allow(unused_imports)]
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
 use sec1::pkcs8::{DecodePrivateKey, EncodePrivateKey, EncodePublicKey};
-use serde::de::DeserializeOwned;
+use serde::{Serialize, de::DeserializeOwned};
 pub use utils::*;
 
 use crate::{dpop::Dpop, jwk_thumbprint::JwkThumbprint, prelude::*};
@@ -51,10 +53,17 @@ impl JwtKey {
     where
         T: Serialize + DeserializeOwned,
     {
-        match self.alg {
-            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => JwtEcKey::from(self).claims::<T>(token),
-            JwsAlgorithm::EdDSA => JwtEdKey::from(self).claims::<T>(token),
-        }
+        let key = match self.alg {
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                DecodingKey::from_ec_pem(self.pk.as_ref()).expect("Decoding key from pem")
+            }
+            JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(self.pk.as_ref()).expect("Decoding key from pem"),
+        };
+        let mut validation = Validation::new(self.alg.into());
+        validation.validate_aud = false;
+        decode::<JWTClaims<T>>(token, &key, &validation)
+            .expect("decoding token")
+            .claims
     }
 
     /// Just creates a new fresh key with same algorithm
@@ -73,24 +82,13 @@ impl JwtKey {
     }
 
     pub fn to_jwk(&self) -> Jwk {
-        match self.alg {
-            JwsAlgorithm::ES256 => ES256PublicKey::from_pem(self.pk.as_str())
-                .unwrap()
-                .try_into_jwk()
-                .unwrap(),
-            JwsAlgorithm::ES384 => ES384PublicKey::from_pem(self.pk.as_str())
-                .unwrap()
-                .try_into_jwk()
-                .unwrap(),
-            JwsAlgorithm::ES512 => ES512PublicKey::from_pem(self.pk.as_str())
-                .unwrap()
-                .try_into_jwk()
-                .unwrap(),
-            JwsAlgorithm::EdDSA => Ed25519PublicKey::from_pem(self.pk.as_str())
-                .unwrap()
-                .try_into_jwk()
-                .unwrap(),
-        }
+        let key = match self.alg {
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                DecodingKey::from_ec_pem(self.pk.as_ref()).unwrap()
+            }
+            JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(self.pk.as_ref()).unwrap(),
+        };
+        Jwk::from_decoding_key(&key, Some(self.alg.into())).expect("jwk from decoding key")
     }
 }
 
@@ -156,26 +154,6 @@ impl JwtEcKey {
             JwsEcAlgorithm::P256 => (alg, ES256KeyPair::generate().to_pem().unwrap().into()).into(),
             JwsEcAlgorithm::P384 => (alg, ES384KeyPair::generate().to_pem().unwrap().into()).into(),
             JwsEcAlgorithm::P521 => (alg, ES512KeyPair::generate().to_pem().unwrap().into()).into(),
-        }
-    }
-
-    pub fn claims<T>(&self, token: &str) -> JWTClaims<T>
-    where
-        T: Serialize + DeserializeOwned,
-    {
-        match self.alg {
-            JwsEcAlgorithm::P256 => ES256PublicKey::from_pem(&self.pk)
-                .unwrap()
-                .verify_token::<T>(token, None)
-                .unwrap(),
-            JwsEcAlgorithm::P384 => ES384PublicKey::from_pem(&self.pk)
-                .unwrap()
-                .verify_token::<T>(token, None)
-                .unwrap(),
-            JwsEcAlgorithm::P521 => ES512PublicKey::from_pem(&self.pk)
-                .unwrap()
-                .verify_token::<T>(token, None)
-                .unwrap(),
         }
     }
 }
@@ -278,18 +256,6 @@ impl JwtEdKey {
                 .into(),
             )
                 .into(),
-        }
-    }
-
-    pub fn claims<T>(&self, token: &str) -> JWTClaims<T>
-    where
-        T: Serialize + DeserializeOwned,
-    {
-        match self.alg {
-            JwsEdAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(&self.pk)
-                .unwrap()
-                .verify_token::<T>(token, None)
-                .unwrap(),
         }
     }
 }
