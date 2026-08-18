@@ -40,7 +40,10 @@ impl RustyJwtTools {
 #[cfg(test)]
 pub mod tests {
     use base64::Engine;
-    use jsonwebtoken::{DecodingKey, Validation, decode};
+    use jsonwebtoken::{
+        DecodingKey, EncodingKey, Validation, decode, decode_header,
+        jwk::{Jwk, ThumbprintHash},
+    };
     use serde_json::{Value, json};
     use wasm_bindgen_test::*;
     use web_time::{SystemTime, UNIX_EPOCH};
@@ -120,74 +123,37 @@ pub mod tests {
     pub mod jwk {
         use super::*;
 
-        #[apply(all_ec_keys)]
+        #[apply(all_keys)]
         #[wasm_bindgen_test]
-        fn should_have_ec_jwk(key: JwtEcKey) {
+        fn should_have_jwk(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
                 Duration::from_days(1).into(),
-                key.alg.into(),
+                key.alg,
                 &key.kp,
             )
             .unwrap();
-            let header = Token::decode_metadata(token.as_str()).unwrap();
-            let jwk = header.public_key().unwrap();
-            let is_valid = |p: &EllipticCurveKeyParameters| {
-                let (kty, curve, jwk_pk) = match key.alg {
-                    JwsEcAlgorithm::P256 => {
-                        let kty = EllipticCurveKeyType::EC;
-                        let curve = EllipticCurve::P256;
-                        let pk_pem = ES256PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                        (kty, curve, pk_pem)
-                    }
-                    JwsEcAlgorithm::P384 => {
-                        let kty = EllipticCurveKeyType::EC;
-                        let curve = EllipticCurve::P384;
-                        let pk_pem = ES384PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                        (kty, curve, pk_pem)
-                    }
-                    JwsEcAlgorithm::P521 => {
-                        let kty = EllipticCurveKeyType::EC;
-                        let curve = EllipticCurve::P521;
-                        let pk_pem = ES512PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                        (kty, curve, pk_pem)
-                    }
-                };
-                p.key_type == kty && p.curve == curve && key.pk == jwk_pk.into()
-            };
-            assert!(matches!(&jwk.algorithm, AlgorithmParameters::EllipticCurve(p) if is_valid(p)));
-        }
+            let header = decode_header(&token).unwrap();
+            let jwk = header.jwk.as_ref().unwrap();
 
-        #[apply(all_ed_keys)]
-        #[wasm_bindgen_test]
-        pub fn should_have_ed25519_jwk(key: JwtEdKey) {
-            let token = RustyJwtTools::generate_dpop_token(
-                Dpop::default(),
-                &ClientId::default(),
-                BackendNonce::default(),
-                "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
-                key.alg.into(),
-                &key.kp,
-            )
-            .unwrap();
-            let header = Token::decode_metadata(token.as_str()).unwrap();
-            let jwk = header.public_key().unwrap();
-            let is_valid = |p: &OctetKeyPairParameters| {
-                let (kty, curve, jwk_pk) = match key.alg {
-                    JwsEdAlgorithm::Ed25519 => {
-                        let kty = OctetKeyPairType::OctetKeyPair;
-                        let curve = EdwardCurve::Ed25519;
-                        let pk_pem = Ed25519PublicKey::try_from_jwk(jwk).unwrap().to_pem();
-                        (kty, curve, pk_pem)
-                    }
-                };
-                p.key_type == kty && p.curve == curve && key.pk == jwk_pk.into()
+            // Build the expected JWK from the key that was used to sign the token.
+            let encoding_key = match key.alg {
+                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                    EncodingKey::from_ec_pem(key.sk.as_bytes()).unwrap()
+                }
+                JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(key.sk.as_bytes()).unwrap(),
             };
-            assert!(matches!(&jwk.algorithm, AlgorithmParameters::OctetKeyPair(p) if is_valid(p)));
+
+            let expected_jwk = Jwk::from_encoding_key(&encoding_key, key.alg.into()).unwrap();
+
+            // The thumbprint identifies the public key represented by the JWK.
+            assert_eq!(
+                jwk.thumbprint(ThumbprintHash::SHA256).unwrap(),
+                expected_jwk.thumbprint(ThumbprintHash::SHA256).unwrap(),
+            );
         }
     }
 
