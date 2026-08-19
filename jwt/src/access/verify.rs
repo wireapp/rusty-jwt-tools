@@ -185,6 +185,7 @@ impl RustyJwtTools {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use crate::jwt_key::JwtKey;
     use crate::test_utils::*;
     use jwt_simple::reexports::coarsetime::Duration;
 

@@ -149,6 +149,7 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use crate::jwt_key::JwtKey;
     use base64::Engine;
     use jwt_simple::reexports::coarsetime::Duration;
     use serde_json::{Value, json};

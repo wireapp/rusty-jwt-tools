@@ -5,7 +5,7 @@ use jwt_simple::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::test_utils::*;
+use crate::{jwt_key::JwtKey, test_utils::*};
 
 /// Same as [Dpop] but all fields are optional to simulate missing fields
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]

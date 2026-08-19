@@ -39,6 +39,7 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use crate::jwt_key::JwtKey;
     use base64::Engine;
     use jsonwebtoken::{
         DecodingKey, EncodingKey, Validation, decode, decode_header,
