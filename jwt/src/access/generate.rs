@@ -154,7 +154,7 @@ pub mod tests {
     use serde_json::{Value, json};
 
     use super::*;
-    use crate::{dpop::Dpop, test_utils::*};
+    use crate::{dpop::Dpop, jwt_key::JwtKey, test_utils::*};
 
     mod generated_access_token {
         use super::*;
