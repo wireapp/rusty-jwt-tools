@@ -27,6 +27,12 @@ jsonwebtoken = { git = "https://github.com/Keats/jsonwebtoken", rev = "61c12ee61
 p256 = { version = "0.14", default-features = false }
 p384 = { version = "0.14", default-features = false }
 p521 = { version = "0.14", default-features = false }
+ed25519-dalek = { version = "3", features = [
+  "alloc",
+  "pkcs8",
+  "pem",
+  "rand_core",
+] }
 percent-encoding = { version = "2.3", default-features = false }
 sec1 = { version = "0.8", default-features = false }
 serde = { version = "1.0", default-features = false }
@@ -37,19 +43,13 @@ url = { version = "2.5", features = ["serde"] }
 uuid = { workspace = true, features = ["std", "v4"] }
 zeroize = { version = "1.8", features = ["derive"] }
 getrandom = { version = "0.4", features = ["wasm_js"] }
+rand = "0.10"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 rstest = { version = "0.27", default-features = false }
 rstest_reuse = { version = "0.7", default-features = false }
-ed25519-dalek = { version = "3", features = [
-  "alloc",
-  "pkcs8",
-  "pem",
-  "rand_core",
-] }
 web-time = { version = "1.1.0", default-features = false }
-rand = "0.10"
 
 [target.'cfg(target_family = "wasm")'.dependencies.uuid]
 workspace = true
