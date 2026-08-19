@@ -27,6 +27,12 @@ jsonwebtoken = { git = "https://github.com/wireapp/jsonwebtoken", rev = "99fbbda
 p256 = { version = "0.14", default-features = false }
 p384 = { version = "0.14", default-features = false }
 p521 = { version = "0.14", default-features = false }
+ed25519-dalek = { version = "3", optional = true, features = [
+  "alloc",
+  "pkcs8",
+  "pem",
+  "rand_core",
+] }
 percent-encoding = { version = "2.3", default-features = false }
 sec1 = { version = "0.8", default-features = false }
 serde = { version = "1.0", default-features = false }
@@ -37,17 +43,14 @@ url = { version = "2.5", features = ["serde"] }
 uuid = { workspace = true, features = ["std", "v4"] }
 zeroize = { version = "1.8", features = ["derive"] }
 getrandom = { version = "0.4", features = ["wasm_js"] }
+rand = { version = "0.10", optional = true }
 
 [dev-dependencies]
+# enables `test-utils` for all tests of this crate
+rusty-jwt-tools = { path = ".", features = ["test-utils"] }
 wasm-bindgen-test = "0.3"
 rstest = { version = "0.27", default-features = false }
 rstest_reuse = { version = "0.7", default-features = false }
-ed25519-dalek = { version = "3", features = [
-  "alloc",
-  "pkcs8",
-  "pem",
-  "rand_core",
-] }
 web-time = { version = "1.1.0", default-features = false }
 rand = "0.10"
 
@@ -56,5 +59,5 @@ workspace = true
 features = ["std", "js", "v4"]
 
 [features]
-test-utils = []
+test-utils = ["dep:ed25519-dalek", "dep:rand"]
 rsa = ["jwt-simple/rsa"]
