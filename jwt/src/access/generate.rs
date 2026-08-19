@@ -212,7 +212,7 @@ pub mod tests {
                     key: key.clone(),
                     hash: HashAlgorithm::SHA256,
                 });
-                let backend_kp = params.backend_keys.clone();
+                let backend_kp = params.backend_keys.sk.clone();
                 let token = access_token(params).unwrap();
 
                 let header = decode_header(&token).unwrap();
@@ -245,7 +245,6 @@ pub mod tests {
                 let client_jwk = client_header.public_key().unwrap();
                 let expected_cnf = JwkThumbprint::generate(client_jwk, ciphersuite.hash).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.cnf, expected_cnf);
             }
@@ -263,7 +262,6 @@ pub mod tests {
 
                 let token = access_token_with_dpop(&dpop, params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.proof, dpop);
             }
@@ -289,7 +287,6 @@ pub mod tests {
 
                 let token = access_token_with_dpop(&dpop, params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.issuer.unwrap().as_str(), issuer);
             }
@@ -309,7 +306,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.challenge, challenge);
             }
@@ -329,7 +325,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.subject, Some(sub.to_uri()));
                 assert_eq!(claims.custom.client_id, sub.to_uri());
@@ -342,7 +337,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token(params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert!(claims.jwt_id.is_some());
                 assert!(uuid::Uuid::try_parse(&claims.jwt_id.unwrap()).is_ok());
@@ -355,7 +349,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token(params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.api_version, Access::DEFAULT_WIRE_SERVER_API_VERSION);
             }
@@ -367,7 +360,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token(params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.scope, Access::DEFAULT_SCOPE);
             }
@@ -387,7 +379,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.nonce, Some(nonce.to_string()));
             }
@@ -404,7 +395,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 let nbf = claims.invalid_before.unwrap().as_secs();
 
@@ -499,8 +489,14 @@ pub mod tests {
         #[apply(all_ciphersuites)]
         #[test]
         fn should_fail_when_invalid(ciphersuite: Ciphersuite) {
+            let random_str: Pem = rand_base64_str(30).into();
             let params = Params {
-                backend_keys: rand_base64_str(30).into(),
+                backend_keys: JwtKey {
+                    sk: random_str.clone(),
+                    pk: random_str.clone(),
+                    kp: random_str,
+                    alg: ciphersuite.key.alg,
+                },
                 ..ciphersuite.clone().into()
             };
             let result = access_token(params);
@@ -1212,7 +1208,7 @@ pub mod tests {
         pub method: Htm,
         pub leeway: u16,
         pub max_expiration: u64,
-        pub backend_keys: Pem,
+        pub backend_keys: JwtKey,
         pub hash_alg: HashAlgorithm,
         pub api_version: u32,
         pub expiry: core::time::Duration,
@@ -1221,7 +1217,7 @@ pub mod tests {
 
     impl From<Ciphersuite> for Params {
         fn from(ciphersuite: Ciphersuite) -> Self {
-            let backend_keys = ciphersuite.key.create_another().kp;
+            let backend_keys = ciphersuite.key.create_another();
             Self {
                 dpop_alg: ciphersuite.key.alg,
                 key: ciphersuite.key,
@@ -1289,7 +1285,7 @@ pub mod tests {
             method,
             leeway,
             max_expiration,
-            backend_keys,
+            backend_keys.sk,
             hash_alg,
             api_version,
             expiry,
