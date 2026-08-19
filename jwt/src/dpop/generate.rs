@@ -49,7 +49,7 @@ pub mod tests {
     use wasm_bindgen_test::*;
     use web_time::{SystemTime, UNIX_EPOCH};
 
-    use crate::{dpop::*, test_utils::*};
+    use crate::{dpop::*, jwt_key::JwtKey, test_utils::*};
 
     wasm_bindgen_test_configure!(run_in_browser);
 
