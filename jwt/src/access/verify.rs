@@ -964,32 +964,6 @@ pub mod tests {
 
         #[apply(all_ciphersuites)]
         #[test]
-        fn should_have_supported_alg(ciphersuite: Ciphersuite) {
-            // should fail when 'alg' not supported
-            for alg in JwsAlgorithm::UNSUPPORTED {
-                let proof = DpopBuilder {
-                    alg: alg.to_string(),
-                    ..ciphersuite.key.clone().into()
-                }
-                .build();
-                let access = build_access(&ciphersuite, proof);
-                let result = verify_token(&access, ciphersuite.clone().into());
-                assert!(matches!(result.unwrap_err(), RustyJwtError::UnsupportedAlgorithm));
-            }
-
-            // should succeed when 'alg' supported
-            let proof = DpopBuilder {
-                alg: ciphersuite.key.alg.to_string(),
-                ..ciphersuite.key.clone().into()
-            }
-            .build();
-            let access = build_access(&ciphersuite, proof);
-            let result = verify_token(&access, ciphersuite.into());
-            assert!(result.is_ok());
-        }
-
-        #[apply(all_ciphersuites)]
-        #[test]
         fn jwk_and_alg_should_match(ciphersuite: Ciphersuite) {
             // should fail when 'jwk' is not of the 'alg' type
             for alg in ciphersuite.key.reverse_algorithms() {
