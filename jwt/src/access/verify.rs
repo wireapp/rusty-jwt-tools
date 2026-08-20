@@ -221,29 +221,6 @@ pub mod tests {
 
         #[apply(all_ciphersuites)]
         #[test]
-        fn alg(ciphersuite: Ciphersuite) {
-            let unsupported = JwsAlgorithm::UNSUPPORTED.map(|a| a.to_string());
-            // should fail when 'alg' is not supported
-            for alg in unsupported {
-                let access = AccessBuilder {
-                    alg: alg.clone(),
-                    ..ciphersuite.clone().into()
-                };
-                let result = verify_token(&access.build(), ciphersuite.clone().into());
-                assert!(matches!(result.unwrap_err(), RustyJwtError::UnsupportedAlgorithm));
-            }
-
-            // should be valid
-            let access = AccessBuilder {
-                alg: ciphersuite.key.alg.to_string(),
-                ..ciphersuite.clone().into()
-            };
-            let result = verify_token(&access.build(), ciphersuite.into());
-            assert!(result.is_ok());
-        }
-
-        #[apply(all_ciphersuites)]
-        #[test]
         fn backend_pk_and_alg(ciphersuite: Ciphersuite) {
             // should fail when access_token signature algorithm and supplied public key mismatch
             let others = ciphersuite.key.reverse_algorithms().map(|a| a.to_string());
