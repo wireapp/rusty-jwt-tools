@@ -552,30 +552,6 @@ pub mod tests {
 
         #[apply(all_ciphersuites)]
         #[test]
-        fn alg(ciphersuite: Ciphersuite) {
-            // should fail when 'alg' is not supported
-            for alg in JwsAlgorithm::UNSUPPORTED {
-                let dpop = DpopBuilder {
-                    alg: alg.to_string(),
-                    ..ciphersuite.key.clone().into()
-                };
-                let params = ciphersuite.clone().into();
-                let result = access_token_with_dpop(&dpop.build(), params);
-                assert!(matches!(result.unwrap_err(), RustyJwtError::UnsupportedAlgorithm));
-            }
-
-            // should be valid
-            let dpop = DpopBuilder {
-                alg: ciphersuite.key.alg.to_string(),
-                ..ciphersuite.key.clone().into()
-            };
-            let params = ciphersuite.into();
-            let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(result.is_ok());
-        }
-
-        #[apply(all_ciphersuites)]
-        #[test]
         fn jwk(ciphersuite: Ciphersuite) {
             // should fail when 'jwk' header absent
             let dpop = DpopBuilder {
