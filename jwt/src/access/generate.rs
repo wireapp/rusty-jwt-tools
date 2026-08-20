@@ -457,7 +457,7 @@ pub mod tests {
 
     mod backend_keys {
         use super::*;
-        use jsonwebtoken::{DecodingKey, Validation, decode};
+        use jsonwebtoken::{DecodingKey, Validation, decode, errors::ErrorKind};
         use jwt_simple::claims::NoCustomClaims;
 
         #[apply(all_ciphersuites)]
@@ -491,13 +491,11 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = access_token(params);
-            let reason = match ciphersuite.key.alg {
-                JwsAlgorithm::ES256 => "Invalid ES256 key pair",
-                JwsAlgorithm::ES384 => "Invalid ES384 key pair",
-                JwsAlgorithm::ES512 => "Invalid ES512 key pair",
-                JwsAlgorithm::EdDSA => "Invalid ED25519 key pair",
-            };
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidBackendKeys(r) if r == reason));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::JsonWebTokenError(e)
+                    if matches!(e.kind(), ErrorKind::InvalidKeyFormat)
+            ));
         }
 
         #[apply(all_ciphersuites)]
