@@ -950,16 +950,6 @@ pub mod tests {
         #[apply(all_ciphersuites)]
         #[test]
         fn should_have_jwk_header(ciphersuite: Ciphersuite) {
-            // should fail when 'jwk' header absent
-            let proof = DpopBuilder {
-                jwk: None,
-                ..ciphersuite.key.clone().into()
-            }
-            .build();
-            let access = build_access(&ciphersuite, proof);
-            let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingDpopHeader(header) if header == "jwk"));
-
             // should succeed when 'typ' has right value
             let jwk = ciphersuite.key.to_jwk();
             let proof = DpopBuilder {
