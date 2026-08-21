@@ -329,9 +329,9 @@ pub mod tests {
         fn jwk_thumbprint(ciphersuite: Ciphersuite) {
             // should succeed when JWK thumbprint matches JWK in dpop proof
             let proof = DpopBuilder::from(ciphersuite.key.clone()).build();
-            let proof_header = Token::decode_metadata(&proof).unwrap();
-            let proof_jwk = proof_header.public_key().unwrap();
-            let cnf = JwkThumbprint::generate(proof_jwk, ciphersuite.hash).unwrap();
+            let proof_header = decode_header(&proof).unwrap();
+            let proof_jwk = proof_header.jwk.expect("jwk from proof header");
+            let cnf = JwkThumbprint::generate(&proof_jwk, ciphersuite.hash).unwrap();
 
             let access = AccessBuilder {
                 access: TestAccess {
