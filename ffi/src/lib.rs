@@ -325,7 +325,7 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::JsonError(_) => Self::JsonError,
             RustyJwtError::InvalidJwkThumbprint => Self::InvalidJwkThumbprint,
             RustyJwtError::MissingDpopHeader(_) => Self::MissingDpopHeader,
-            RustyJwtError::MissingIssuer => Self::MissingIssuer,
+            RustyJwtError::MissingTokenClaim("iss") => Self::MissingIssuer,
             RustyJwtError::DpopChallengeMismatch => Self::DpopChallengeMismatch,
             RustyJwtError::DpopHtuMismatch => Self::DpopHtuMismatch,
             RustyJwtError::DpopHtmMismatch => Self::DpopHtmMismatch,
