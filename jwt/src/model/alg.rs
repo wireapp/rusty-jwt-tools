@@ -1,7 +1,6 @@
 use std::{fmt::Formatter, str::FromStr};
 
 use jsonwebtoken::Algorithm;
-use jwt_simple::prelude::*;
 
 use crate::prelude::*;
 
@@ -94,96 +93,6 @@ impl JwsAlgorithm {
     pub const UNSUPPORTED: [&'static str; 9] = [
         "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512",
     ];
-}
-
-/// Supported elliptic curve algorithms
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum JwsEcAlgorithm {
-    /// P-256
-    P256,
-    /// P-384
-    P384,
-    /// P-521
-    P521,
-}
-
-impl JwsEcAlgorithm {
-    /// For JWK 'crv' field
-    pub fn curve(&self) -> EllipticCurve {
-        match self {
-            JwsEcAlgorithm::P256 => EllipticCurve::P256,
-            JwsEcAlgorithm::P384 => EllipticCurve::P384,
-            JwsEcAlgorithm::P521 => EllipticCurve::P521,
-        }
-    }
-
-    /// For JWK 'crv' field
-    pub fn kty(&self) -> EllipticCurveKeyType {
-        EllipticCurveKeyType::EC
-    }
-}
-
-impl TryFrom<JwsAlgorithm> for JwsEcAlgorithm {
-    type Error = RustyJwtError;
-
-    fn try_from(alg: JwsAlgorithm) -> RustyJwtResult<Self> {
-        match alg {
-            JwsAlgorithm::ES256 => Ok(Self::P256),
-            JwsAlgorithm::ES384 => Ok(Self::P384),
-            JwsAlgorithm::ES512 => Ok(Self::P521),
-            JwsAlgorithm::EdDSA => Err(RustyJwtError::ImplementationError),
-        }
-    }
-}
-
-impl From<JwsEcAlgorithm> for JwsAlgorithm {
-    fn from(alg: JwsEcAlgorithm) -> Self {
-        match alg {
-            JwsEcAlgorithm::P256 => Self::ES256,
-            JwsEcAlgorithm::P384 => Self::ES384,
-            JwsEcAlgorithm::P521 => Self::ES512,
-        }
-    }
-}
-
-/// Supported edward curve algorithms
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum JwsEdAlgorithm {
-    /// Ed25519
-    Ed25519,
-}
-
-impl JwsEdAlgorithm {
-    /// For JWK 'crv' field
-    pub fn curve(&self) -> EdwardCurve {
-        match self {
-            JwsEdAlgorithm::Ed25519 => EdwardCurve::Ed25519,
-        }
-    }
-
-    /// For JWK 'crv' field
-    pub fn kty(&self) -> OctetKeyPairType {
-        OctetKeyPairType::OctetKeyPair
-    }
-}
-
-impl TryFrom<JwsAlgorithm> for JwsEdAlgorithm {
-    type Error = RustyJwtError;
-
-    fn try_from(alg: JwsAlgorithm) -> RustyJwtResult<Self> {
-        match alg {
-            JwsAlgorithm::EdDSA => Ok(Self::Ed25519),
-            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => Err(RustyJwtError::ImplementationError),
-        }
-    }
-}
-
-impl From<JwsEdAlgorithm> for JwsAlgorithm {
-    fn from(alg: JwsEdAlgorithm) -> Self {
-        match alg {
-            JwsEdAlgorithm::Ed25519 => Self::EdDSA,
-        }
-    }
 }
 
 /// Narrows the supported hashing algorithms to the ones we define
