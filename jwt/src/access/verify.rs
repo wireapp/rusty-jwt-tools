@@ -679,7 +679,7 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingIssuer));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim("iss")));
 
             // should fail when 'iss' and issuer argument mismatch
             let proof = DpopBuilder {
