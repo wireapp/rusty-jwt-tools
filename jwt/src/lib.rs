@@ -23,7 +23,7 @@ pub mod prelude {
     #[cfg(feature = "test-utils")]
     pub use jwk_thumbprint::JwkThumbprint;
     pub use model::{
-        alg::{HashAlgorithm, JwsAlgorithm, JwsEcAlgorithm, JwsEdAlgorithm},
+        alg::{HashAlgorithm, JwsAlgorithm},
         client_id::ClientId,
         handle::{Handle, QualifiedHandle},
         nonce::{AcmeNonce, BackendNonce},
