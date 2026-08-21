@@ -172,7 +172,6 @@ impl RustyJwtTools {
 #[cfg(test)]
 pub mod tests {
     use base64::Engine;
-    use jwt_simple::prelude::*;
     use serde_json::{Value, json};
 
     use super::*;

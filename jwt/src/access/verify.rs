@@ -178,8 +178,6 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
-    use jwt_simple::prelude::*;
-
     use super::*;
     use crate::test_utils::*;
 

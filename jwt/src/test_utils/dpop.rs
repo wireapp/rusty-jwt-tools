@@ -1,5 +1,3 @@
-use jwt_simple::prelude::*;
-
 use crate::test_utils::*;
 
 /// Same as [Dpop] but all fields are optional to simulate missing fields

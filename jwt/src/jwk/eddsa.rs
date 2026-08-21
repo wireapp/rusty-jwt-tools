@@ -1,5 +1,3 @@
-use jwt_simple::prelude::*;
-
 use super::*;
 
 impl TryIntoJwk for Ed25519PublicKey {
@@ -31,7 +29,6 @@ impl TryFromJwk for Ed25519PublicKey {
 
 #[cfg(test)]
 pub mod tests {
-    use jwt_simple::prelude::*;
     use wasm_bindgen_test::*;
 
     use super::*;

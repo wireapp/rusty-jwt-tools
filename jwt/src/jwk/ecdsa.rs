@@ -1,5 +1,3 @@
-use jwt_simple::prelude::*;
-
 use super::*;
 
 impl TryIntoJwk for ES256PublicKey {
@@ -120,7 +118,6 @@ impl TryIntoJwk for AnyEcPublicKey {
 
 #[cfg(test)]
 pub mod tests {
-    use jwt_simple::prelude::*;
     use wasm_bindgen_test::*;
 
     use super::*;
