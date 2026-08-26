@@ -5,7 +5,6 @@ pub(crate) mod client_id;
 pub(crate) mod handle;
 pub(crate) mod nonce;
 pub(crate) mod pem;
-pub(crate) mod pk;
 pub(crate) mod team;
 
 // Only way to have something resembling a url builder

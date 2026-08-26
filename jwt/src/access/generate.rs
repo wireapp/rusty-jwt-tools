@@ -1,9 +1,9 @@
-use jwt_simple::{prelude::*, token::Token};
+use jsonwebtoken::{EncodingKey, Header, decode_header, jwk::Jwk};
+use jwt_simple::claims::JWTClaims;
 
 use crate::{
     access::Access,
     dpop::{VerifyDpop, VerifyDpopTokenHeader},
-    jwk::TryIntoJwk,
     jwk_thumbprint::JwkThumbprint,
     prelude::*,
 };
@@ -61,11 +61,11 @@ impl RustyJwtTools {
         api_version: u32,
         expiry: core::time::Duration,
     ) -> RustyJwtResult<String> {
-        let header = Token::decode_metadata(dpop_proof)?;
+        let header = decode_header(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
         let proof_claims = dpop_proof.verify_client_dpop(
             alg,
-            jwk,
+            &jwk,
             client_id,
             &handle,
             display_name,
@@ -79,7 +79,7 @@ impl RustyJwtTools {
         )?;
         Self::access_token(
             alg,
-            jwk,
+            &jwk,
             dpop_proof,
             proof_claims,
             backend_keys,
@@ -104,9 +104,8 @@ impl RustyJwtTools {
         api_version: u32,
         expiry: core::time::Duration,
     ) -> RustyJwtResult<String> {
-        let header = Self::new_access_header(alg);
+        let mut header = Self::new_access_header(alg);
 
-        let with_jwk = |jwk: Jwk| KeyMetadata::default().with_public_key(jwk);
         let claims = {
             let audience = proof_claims
                 .audiences
@@ -127,43 +126,22 @@ impl RustyJwtTools {
             }
             .into_jwt_claims(client_id, nonce, proof_claims.custom.htu, audience, expiry)
         };
-        let access_token = match alg {
-            JwsAlgorithm::P256 => {
-                let mut kp = ES256KeyPair::from_pem(backend_keys.as_str())
-                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES256 key pair"))?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims), header)?
-            }
-            JwsAlgorithm::P384 => {
-                let mut kp = ES384KeyPair::from_pem(backend_keys.as_str())
-                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES384 key pair"))?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims), header)?
-            }
-            JwsAlgorithm::Ed25519 => {
-                let mut kp = Ed25519KeyPair::from_pem(backend_keys.as_str())
-                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ED25519 key pair"))?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims), header)?
-            }
-            JwsAlgorithm::P521 => {
-                let mut kp = ES512KeyPair::from_pem(backend_keys.as_str())
-                    .map_err(|_| RustyJwtError::InvalidBackendKeys("Invalid ES512 key pair"))?;
-                let jwk = kp.public_key().try_into_jwk()?;
-                kp.attach_metadata(with_jwk(jwk))?;
-                kp.sign_with_header(Some(claims), header)?
+        let key = match alg {
+            JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(backend_keys.as_ref())?,
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                EncodingKey::from_ec_pem(backend_keys.as_ref())?
             }
         };
-        Ok(access_token)
+        let jwk = Jwk::from_encoding_key(&key, alg.into())?;
+        header.jwk = Some(jwk);
+
+        Ok(jsonwebtoken::encode(&header, &claims, &key)?)
     }
 
-    fn new_access_header(alg: JwsAlgorithm) -> JWTHeader {
-        JWTHeader {
-            algorithm: alg.to_string(),
-            signature_type: Some(Access::TYP.to_string()),
+    fn new_access_header(alg: JwsAlgorithm) -> Header {
+        Header {
+            alg: alg.into(),
+            typ: Some(Access::TYP.to_string()),
             ..Default::default()
         }
     }
@@ -171,11 +149,13 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use crate::jwt_key::JwtKey;
     use base64::Engine;
+    use jwt_simple::reexports::coarsetime::Duration;
     use serde_json::{Value, json};
 
     use super::*;
-    use crate::{dpop::Dpop, jwk::TryFromJwk, test_utils::*};
+    use crate::{dpop::Dpop, test_utils::*};
 
     mod generated_access_token {
         use super::*;
@@ -187,16 +167,16 @@ pub mod tests {
             #[test]
             fn header_should_have_jwt_typ(ciphersuite: Ciphersuite) {
                 let token = access_token(ciphersuite.into()).unwrap();
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                assert_eq!(header.signature_type(), Some(Access::TYP))
+                let header = decode_header(&token).expect("decoding header");
+                assert_eq!(header.typ, Some(Access::TYP.to_string()))
             }
 
             #[apply(all_ciphersuites)]
             #[test]
             fn header_should_have_alg(ciphersuite: Ciphersuite) {
                 let token = access_token(ciphersuite.clone().into()).unwrap();
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                assert_eq!(header.algorithm(), ciphersuite.key.alg.to_string())
+                let header = decode_header(&token).expect("decoding header");
+                assert_eq!(header.alg, ciphersuite.key.alg.into())
             }
 
             #[apply(all_ciphersuites)]
@@ -211,7 +191,7 @@ pub mod tests {
                 assert!(jwk.get("crv").unwrap().as_str().is_some());
                 assert!(jwk.get("x").unwrap().as_str().is_some());
                 match ciphersuite.key.alg {
-                    JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+                    JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
                         assert!(jwk.get("y").unwrap().as_str().is_some());
                     }
                     _ => {
@@ -224,88 +204,32 @@ pub mod tests {
         mod jwk {
             use super::*;
 
-            #[apply(all_ec_keys)]
+            use jsonwebtoken::jwk::ThumbprintHash;
+            #[apply(all_keys)]
             #[test]
-            fn should_have_ec_jwk(key: JwtEcKey) {
+            fn should_have_jwk(key: JwtKey) {
                 let params = Params::from(Ciphersuite {
-                    key: JwtKey::from(key.clone()),
+                    key: key.clone(),
                     hash: HashAlgorithm::SHA256,
                 });
-                let backend_kp = params.backend_keys.clone();
+                let backend_kp = params.backend_keys.sk.clone();
                 let token = access_token(params).unwrap();
 
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                let jwk = header.public_key().unwrap();
-                let is_valid = |p: &EllipticCurveKeyParameters| {
-                    let (kty, curve, jwk_pk, signing_pk) = match key.alg {
-                        JwsEcAlgorithm::P256 => {
-                            let kty = EllipticCurveKeyType::EC;
-                            let curve = EllipticCurve::P256;
-                            let pk_pem = ES256PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                            let signing_key_pem = ES256KeyPair::from_pem(backend_kp.as_str())
-                                .unwrap()
-                                .public_key()
-                                .to_pem()
-                                .unwrap();
-                            (kty, curve, pk_pem, signing_key_pem)
-                        }
-                        JwsEcAlgorithm::P384 => {
-                            let kty = EllipticCurveKeyType::EC;
-                            let curve = EllipticCurve::P384;
-                            let pk_pem = ES384PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                            let signing_key_pem = ES384KeyPair::from_pem(backend_kp.as_str())
-                                .unwrap()
-                                .public_key()
-                                .to_pem()
-                                .unwrap();
-                            (kty, curve, pk_pem, signing_key_pem)
-                        }
-                        JwsEcAlgorithm::P521 => {
-                            let kty = EllipticCurveKeyType::EC;
-                            let curve = EllipticCurve::P521;
-                            let pk_pem = ES512PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                            let signing_key_pem = ES512KeyPair::from_pem(backend_kp.as_str())
-                                .unwrap()
-                                .public_key()
-                                .to_pem()
-                                .unwrap();
-                            (kty, curve, pk_pem, signing_key_pem)
-                        }
-                    };
-                    p.key_type == kty && p.curve == curve && jwk_pk == signing_pk
-                };
-                assert!(matches!(&jwk.algorithm, AlgorithmParameters::EllipticCurve(p) if is_valid(p)));
-            }
+                let header = decode_header(&token).unwrap();
+                let jwk = header.jwk.as_ref().unwrap();
 
-            #[apply(all_ed_keys)]
-            #[test]
-            fn should_have_ed25519_jwk(key: JwtEdKey) {
-                #[allow(clippy::redundant_clone)]
-                let params = Params::from(Ciphersuite {
-                    key: key.clone().into(),
-                    hash: HashAlgorithm::SHA256,
-                });
-                let backend_kp = params.backend_keys.clone();
-                let token = access_token(params).unwrap();
-
-                let header = Token::decode_metadata(token.as_str()).unwrap();
-                let jwk = header.public_key().unwrap();
-                let is_valid = |p: &OctetKeyPairParameters| {
-                    let (kty, curve, jwk_pk, signing_pk) = match key.alg {
-                        JwsEdAlgorithm::Ed25519 => {
-                            let kty = OctetKeyPairType::OctetKeyPair;
-                            let curve = EdwardCurve::Ed25519;
-                            let pk_pem = Ed25519PublicKey::try_from_jwk(jwk).unwrap().to_pem();
-                            let signing_key_pem = Ed25519KeyPair::from_pem(backend_kp.as_str())
-                                .unwrap()
-                                .public_key()
-                                .to_pem();
-                            (kty, curve, pk_pem, signing_key_pem)
-                        }
-                    };
-                    p.key_type == kty && p.curve == curve && signing_pk == jwk_pk
+                let backend_key = match key.alg {
+                    JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                        EncodingKey::from_ec_pem(backend_kp.as_bytes()).unwrap()
+                    }
+                    JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(backend_kp.as_bytes()).unwrap(),
                 };
-                assert!(matches!(&jwk.algorithm, AlgorithmParameters::OctetKeyPair(p) if is_valid(p)));
+                let backend_jwk = Jwk::from_encoding_key(&backend_key, key.alg.into()).unwrap();
+
+                assert_eq!(
+                    jwk.thumbprint(ThumbprintHash::SHA256).unwrap(),
+                    backend_jwk.thumbprint(ThumbprintHash::SHA256).unwrap(),
+                );
             }
 
             #[apply(all_ciphersuites)]
@@ -317,11 +241,10 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop, params).unwrap();
 
-                let client_header = Token::decode_metadata(&dpop).unwrap();
-                let client_jwk = client_header.public_key().unwrap();
-                let expected_cnf = JwkThumbprint::generate(client_jwk, ciphersuite.hash).unwrap();
+                let client_header = decode_header(&dpop).expect("decoding header");
+                let client_jwk = client_header.jwk.unwrap();
+                let expected_cnf = JwkThumbprint::generate(&client_jwk, ciphersuite.hash).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.cnf, expected_cnf);
             }
@@ -339,7 +262,6 @@ pub mod tests {
 
                 let token = access_token_with_dpop(&dpop, params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.proof, dpop);
             }
@@ -365,7 +287,6 @@ pub mod tests {
 
                 let token = access_token_with_dpop(&dpop, params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.issuer.unwrap().as_str(), issuer);
             }
@@ -385,7 +306,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.challenge, challenge);
             }
@@ -405,7 +325,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.subject, Some(sub.to_uri()));
                 assert_eq!(claims.custom.client_id, sub.to_uri());
@@ -418,7 +337,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token(params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert!(claims.jwt_id.is_some());
                 assert!(uuid::Uuid::try_parse(&claims.jwt_id.unwrap()).is_ok());
@@ -431,7 +349,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token(params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.api_version, Access::DEFAULT_WIRE_SERVER_API_VERSION);
             }
@@ -443,7 +360,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token(params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.custom.scope, Access::DEFAULT_SCOPE);
             }
@@ -463,7 +379,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 assert_eq!(claims.nonce, Some(nonce.to_string()));
             }
@@ -480,7 +395,6 @@ pub mod tests {
                 let backend_key = params.backend_keys.clone();
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
-                let backend_key = JwtKey::from((ciphersuite.key.alg, backend_key));
                 let claims = backend_key.claims::<Access>(&token);
                 let nbf = claims.invalid_before.unwrap().as_secs();
 
@@ -544,6 +458,8 @@ pub mod tests {
 
     mod backend_keys {
         use super::*;
+        use jsonwebtoken::{DecodingKey, Validation, decode, errors::ErrorKind};
+        use jwt_simple::claims::NoCustomClaims;
 
         #[apply(all_ciphersuites)]
         #[test]
@@ -551,42 +467,36 @@ pub mod tests {
             let params = Params::from(ciphersuite.clone());
             let backend_keys = params.backend_keys.clone();
             let access_token = access_token(params).unwrap();
-            let verify = match ciphersuite.key.alg {
-                JwsAlgorithm::P256 => ES256KeyPair::from_pem(backend_keys.as_str())
-                    .unwrap()
-                    .public_key()
-                    .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::P384 => ES384KeyPair::from_pem(backend_keys.as_str())
-                    .unwrap()
-                    .public_key()
-                    .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::P521 => ES512KeyPair::from_pem(backend_keys.as_str())
-                    .unwrap()
-                    .public_key()
-                    .verify_token::<NoCustomClaims>(&access_token, None),
-                JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(backend_keys.as_str())
-                    .unwrap()
-                    .public_key()
-                    .verify_token::<NoCustomClaims>(&access_token, None),
+            let key = match ciphersuite.key.alg {
+                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                    DecodingKey::from_ec_pem(backend_keys.pk.as_ref()).expect("key from ec pem")
+                }
+                JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(backend_keys.pk.as_ref()).expect("key from ed pem"),
             };
-            assert!(verify.is_ok());
+            let mut validation = Validation::new(ciphersuite.key.alg.into());
+            validation.validate_aud = false;
+            decode::<NoCustomClaims>(access_token, &key, &validation).unwrap();
         }
 
         #[apply(all_ciphersuites)]
         #[test]
         fn should_fail_when_invalid(ciphersuite: Ciphersuite) {
+            let random_str: Pem = rand_base64_str(30).into();
             let params = Params {
-                backend_keys: rand_base64_str(30).into(),
+                backend_keys: JwtKey {
+                    sk: random_str.clone(),
+                    pk: random_str.clone(),
+                    kp: random_str,
+                    alg: ciphersuite.key.alg,
+                },
                 ..ciphersuite.clone().into()
             };
             let result = access_token(params);
-            let reason = match ciphersuite.key.alg {
-                JwsAlgorithm::P256 => "Invalid ES256 key pair",
-                JwsAlgorithm::P384 => "Invalid ES384 key pair",
-                JwsAlgorithm::P521 => "Invalid ES512 key pair",
-                JwsAlgorithm::Ed25519 => "Invalid ED25519 key pair",
-            };
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidBackendKeys(r) if r == reason));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::JsonWebTokenError(e)
+                    if matches!(e.kind(), ErrorKind::InvalidKeyFormat)
+            ));
         }
 
         #[apply(all_ciphersuites)]
@@ -632,30 +542,6 @@ pub mod tests {
             // should be valid
             let dpop = DpopBuilder {
                 typ: Some("dpop+jwt"),
-                ..ciphersuite.key.clone().into()
-            };
-            let params = ciphersuite.into();
-            let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(result.is_ok());
-        }
-
-        #[apply(all_ciphersuites)]
-        #[test]
-        fn alg(ciphersuite: Ciphersuite) {
-            // should fail when 'alg' is not supported
-            for alg in JwsAlgorithm::UNSUPPORTED {
-                let dpop = DpopBuilder {
-                    alg: alg.to_string(),
-                    ..ciphersuite.key.clone().into()
-                };
-                let params = ciphersuite.clone().into();
-                let result = access_token_with_dpop(&dpop.build(), params);
-                assert!(matches!(result.unwrap_err(), RustyJwtError::UnsupportedAlgorithm));
-            }
-
-            // should be valid
-            let dpop = DpopBuilder {
-                alg: ciphersuite.key.alg.to_string(),
                 ..ciphersuite.key.clone().into()
             };
             let params = ciphersuite.into();
@@ -1288,7 +1174,7 @@ pub mod tests {
         pub method: Htm,
         pub leeway: u16,
         pub max_expiration: u64,
-        pub backend_keys: Pem,
+        pub backend_keys: JwtKey,
         pub hash_alg: HashAlgorithm,
         pub api_version: u32,
         pub expiry: core::time::Duration,
@@ -1297,7 +1183,7 @@ pub mod tests {
 
     impl From<Ciphersuite> for Params {
         fn from(ciphersuite: Ciphersuite) -> Self {
-            let backend_keys = ciphersuite.key.create_another().kp;
+            let backend_keys = ciphersuite.key.create_another();
             Self {
                 dpop_alg: ciphersuite.key.alg,
                 key: ciphersuite.key,
@@ -1365,7 +1251,7 @@ pub mod tests {
             method,
             leeway,
             max_expiration,
-            backend_keys,
+            backend_keys.sk,
             hash_alg,
             api_version,
             expiry,

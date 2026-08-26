@@ -1,6 +1,5 @@
-use jwt_simple::prelude::*;
-
 use crate::{dpop::Dpop, prelude::*};
+use jsonwebtoken::Header;
 
 impl RustyJwtTools {
     /// Generates a DPoP JWT. Generally used on the client side.
@@ -26,13 +25,13 @@ impl RustyJwtTools {
         // TODO: is it up to us to validate the 'client_id' format or is it opaque to us ?
         let header = Self::new_dpop_header(alg);
         let claims = dpop.into_jwt_claims(nonce, client_id, expiry, audience);
-        Self::generate_jwt(alg, header, Some(claims), kp, true)
+        Self::generate_jwt(alg, header, claims, kp, true)
     }
 
-    fn new_dpop_header(alg: JwsAlgorithm) -> JWTHeader {
-        JWTHeader {
-            algorithm: alg.to_string(),
-            signature_type: Some(Dpop::TYP.to_string()),
+    fn new_dpop_header(alg: JwsAlgorithm) -> Header {
+        Header {
+            alg: alg.into(),
+            typ: Some(Dpop::TYP.to_string()),
             ..Default::default()
         }
     }
@@ -40,16 +39,17 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use crate::jwt_key::JwtKey;
     use base64::Engine;
+    use jsonwebtoken::{
+        DecodingKey, EncodingKey, Validation, decode, decode_header,
+        jwk::{Jwk, ThumbprintHash},
+    };
     use serde_json::{Value, json};
     use wasm_bindgen_test::*;
     use web_time::{SystemTime, UNIX_EPOCH};
 
-    use crate::{
-        dpop::*,
-        jwk::{RustyJwk, TryFromJwk},
-        test_utils::*,
-    };
+    use crate::{dpop::*, test_utils::*};
 
     wasm_bindgen_test_configure!(run_in_browser);
 
@@ -111,7 +111,7 @@ pub mod tests {
             assert!(jwk.get("crv").unwrap().as_str().is_some());
             assert!(jwk.get("x").unwrap().as_str().is_some());
             match key.alg {
-                JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
+                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
                     assert!(jwk.get("y").unwrap().as_str().is_some());
                 }
                 _ => {
@@ -124,187 +124,81 @@ pub mod tests {
     pub mod jwk {
         use super::*;
 
-        #[apply(all_ec_keys)]
+        #[apply(all_keys)]
         #[wasm_bindgen_test]
-        fn should_have_ec_jwk(key: JwtEcKey) {
+        fn should_have_jwk(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
                 Duration::from_days(1).into(),
-                key.alg.into(),
+                key.alg,
                 &key.kp,
             )
             .unwrap();
-            let header = Token::decode_metadata(token.as_str()).unwrap();
-            let jwk = header.public_key().unwrap();
-            let is_valid = |p: &EllipticCurveKeyParameters| {
-                let (kty, curve, jwk_pk) = match key.alg {
-                    JwsEcAlgorithm::P256 => {
-                        let kty = EllipticCurveKeyType::EC;
-                        let curve = EllipticCurve::P256;
-                        let pk_pem = ES256PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                        (kty, curve, pk_pem)
-                    }
-                    JwsEcAlgorithm::P384 => {
-                        let kty = EllipticCurveKeyType::EC;
-                        let curve = EllipticCurve::P384;
-                        let pk_pem = ES384PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                        (kty, curve, pk_pem)
-                    }
-                    JwsEcAlgorithm::P521 => {
-                        let kty = EllipticCurveKeyType::EC;
-                        let curve = EllipticCurve::P521;
-                        let pk_pem = ES512PublicKey::try_from_jwk(jwk).unwrap().to_pem().unwrap();
-                        (kty, curve, pk_pem)
-                    }
-                };
-                p.key_type == kty && p.curve == curve && key.pk == jwk_pk.into()
-            };
-            assert!(matches!(&jwk.algorithm, AlgorithmParameters::EllipticCurve(p) if is_valid(p)));
-        }
+            let header = decode_header(&token).unwrap();
+            let jwk = header.jwk.as_ref().unwrap();
 
-        #[apply(all_ed_keys)]
-        #[wasm_bindgen_test]
-        pub fn should_have_ed25519_jwk(key: JwtEdKey) {
-            let token = RustyJwtTools::generate_dpop_token(
-                Dpop::default(),
-                &ClientId::default(),
-                BackendNonce::default(),
-                "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
-                key.alg.into(),
-                &key.kp,
-            )
-            .unwrap();
-            let header = Token::decode_metadata(token.as_str()).unwrap();
-            let jwk = header.public_key().unwrap();
-            let is_valid = |p: &OctetKeyPairParameters| {
-                let (kty, curve, jwk_pk) = match key.alg {
-                    JwsEdAlgorithm::Ed25519 => {
-                        let kty = OctetKeyPairType::OctetKeyPair;
-                        let curve = EdwardCurve::Ed25519;
-                        let pk_pem = Ed25519PublicKey::try_from_jwk(jwk).unwrap().to_pem();
-                        (kty, curve, pk_pem)
-                    }
-                };
-                p.key_type == kty && p.curve == curve && key.pk == jwk_pk.into()
+            // Build the expected JWK from the key that was used to sign the token.
+            let encoding_key = match key.alg {
+                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                    EncodingKey::from_ec_pem(key.sk.as_bytes()).unwrap()
+                }
+                JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(key.sk.as_bytes()).unwrap(),
             };
-            assert!(matches!(&jwk.algorithm, AlgorithmParameters::OctetKeyPair(p) if is_valid(p)));
+
+            let expected_jwk = Jwk::from_encoding_key(&encoding_key, key.alg.into()).unwrap();
+
+            // The thumbprint identifies the public key represented by the JWK.
+            assert_eq!(
+                jwk.thumbprint(ThumbprintHash::SHA256).unwrap(),
+                expected_jwk.thumbprint(ThumbprintHash::SHA256).unwrap(),
+            );
         }
     }
 
     pub mod verify_signature {
         use super::*;
+        use jsonwebtoken::decode_header;
 
-        #[apply(all_ec_keys)]
+        #[apply(all_keys)]
         #[wasm_bindgen_test]
-        pub fn should_verify_ec(key: JwtEcKey) {
+        pub fn should_verify(key: JwtKey) {
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
                 Duration::from_days(1).into(),
-                key.alg.into(),
+                key.alg,
                 &key.kp,
             )
             .unwrap();
 
             // validate token given raw public key
-            let verify = match key.alg {
-                JwsEcAlgorithm::P256 => ES256PublicKey::from_pem(&key.pk)
-                    .unwrap()
-                    .verify_token::<Dpop>(&token, None),
-                JwsEcAlgorithm::P384 => ES384PublicKey::from_pem(&key.pk)
-                    .unwrap()
-                    .verify_token::<Dpop>(&token, None),
-                JwsEcAlgorithm::P521 => ES512PublicKey::from_pem(&key.pk)
-                    .unwrap()
-                    .verify_token::<Dpop>(&token, None),
-            };
-            assert!(verify.is_ok());
-
-            // should not be valid with another key
-            let verify_with_other_key = match key.alg {
-                JwsEcAlgorithm::P256 => ES256KeyPair::generate().public_key().verify_token::<Dpop>(&token, None),
-                JwsEcAlgorithm::P384 => ES384KeyPair::generate().public_key().verify_token::<Dpop>(&token, None),
-                JwsEcAlgorithm::P521 => ES512KeyPair::generate().public_key().verify_token::<Dpop>(&token, None),
-            };
-            assert!(verify_with_other_key.is_err());
+            let decoding_key = match key.alg {
+                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                    DecodingKey::from_ec_pem(key.pk.as_ref())
+                }
+                JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(key.pk.as_ref()),
+            }
+            .expect("DecodingKey from pem");
+            let mut validation = Validation::new(key.alg.into());
+            validation.validate_aud = false;
+            assert!(decode::<Dpop>(&token, &decoding_key, &validation).is_ok());
 
             // validate token given jwk in header
-            let header = Token::decode_metadata(token.as_str()).unwrap();
-            let jwk = header.public_key().unwrap();
-            let is_valid = |j: &Jwk| {
-                match key.alg {
-                    JwsEcAlgorithm::P256 => ES256PublicKey::try_from_jwk(j)
-                        .unwrap()
-                        .verify_token::<Dpop>(&token, None),
-                    JwsEcAlgorithm::P384 => ES384PublicKey::try_from_jwk(j)
-                        .unwrap()
-                        .verify_token::<Dpop>(&token, None),
-                    JwsEcAlgorithm::P521 => ES512PublicKey::try_from_jwk(j)
-                        .unwrap()
-                        .verify_token::<Dpop>(&token, None),
-                }
-                .is_ok()
-            };
-            assert!(matches!(jwk.algorithm, AlgorithmParameters::EllipticCurve(_) if is_valid(jwk)));
+            let header = decode_header(token.as_str()).expect("decode header");
+            let jwk = header.jwk.unwrap();
 
-            // should not be valid with another jwk
-            let jwk = RustyJwk::rand_jwk(key.alg.into());
-            assert!(matches!(jwk.algorithm, AlgorithmParameters::EllipticCurve(_) if !is_valid(&jwk)));
-        }
-
-        #[apply(all_ed_keys)]
-        #[wasm_bindgen_test]
-        pub fn should_verify_ed(key: JwtEdKey) {
-            let token = RustyJwtTools::generate_dpop_token(
-                Dpop::default(),
-                &ClientId::default(),
-                BackendNonce::default(),
-                "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
-                key.alg.into(),
-                &key.kp,
-            )
-            .unwrap();
-
-            // validate token given raw public key
-            let verify = match key.alg {
-                JwsEdAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(&key.pk)
-                    .unwrap()
-                    .verify_token::<Dpop>(&token, None),
-            };
-            assert!(verify.is_ok());
+            let decoding_key = DecodingKey::from_jwk(&jwk).expect("DecodingKey from jwk");
+            assert!(decode::<Dpop>(&token, &decoding_key, &validation).is_ok());
 
             // should not be valid with another key
-            let verify = match key.alg {
-                JwsEdAlgorithm::Ed25519 => Ed25519KeyPair::generate()
-                    .public_key()
-                    .verify_token::<Dpop>(&token, None),
-            };
-            assert!(verify.is_err());
-
-            // validate token given jwk in header
-            let header = Token::decode_metadata(token.as_str()).unwrap();
-            let jwk = header.public_key().unwrap();
-
-            let is_valid = |j: &Jwk| {
-                match key.alg {
-                    JwsEdAlgorithm::Ed25519 => Ed25519PublicKey::try_from_jwk(j)
-                        .unwrap()
-                        .verify_token::<Dpop>(&token, None),
-                }
-                .is_ok()
-            };
-            assert!(matches!(jwk.algorithm, AlgorithmParameters::OctetKeyPair(_) if is_valid(jwk)));
-
-            // should not be valid with another jwk
-            let jwk = RustyJwk::rand_jwk(key.alg.into());
-            assert!(matches!(jwk.algorithm, AlgorithmParameters::OctetKeyPair(_) if !is_valid(&jwk)));
+            let other_kp = JwtKey::new_key(key.alg);
+            let decoding_key = DecodingKey::from_ec_pem(other_kp.pk.as_ref()).expect("DecodingKey from random JwtKey");
+            assert!(decode::<Dpop>(&token, &decoding_key, &validation).is_err());
         }
     }
 

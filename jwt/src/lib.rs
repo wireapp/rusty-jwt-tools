@@ -9,10 +9,11 @@ extern crate core;
 #[macro_use]
 pub mod test_utils;
 
+pub mod jwt_key;
+
 mod access;
 mod dpop;
 mod error;
-pub mod jwk;
 pub mod jwk_thumbprint;
 pub mod jwt;
 mod model;
@@ -22,16 +23,15 @@ pub mod prelude {
     pub use dpop::{Dpop, Htm, Htu};
     pub use error::{RustyJwtError, RustyJwtResult};
     #[cfg(feature = "test-utils")]
-    pub use jwk::generate_jwk;
-    pub use jwk::json::parse_json_jwk;
     pub use jwk_thumbprint::JwkThumbprint;
+    #[cfg(feature = "test-utils")]
+    pub use jwt_key::JwtKey;
     pub use model::{
-        alg::{HashAlgorithm, JwsAlgorithm, JwsEcAlgorithm, JwsEdAlgorithm},
+        alg::{HashAlgorithm, JwsAlgorithm},
         client_id::ClientId,
         handle::{Handle, QualifiedHandle},
         nonce::{AcmeNonce, BackendNonce},
         pem::Pem,
-        pk::AnyPublicKey,
         team::Team,
     };
 

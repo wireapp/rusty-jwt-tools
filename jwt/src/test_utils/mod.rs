@@ -1,338 +1,37 @@
+pub use crate::jwt_key;
+use crate::{dpop::Dpop, jwk_thumbprint::JwkThumbprint, jwt_key::JwtKey, prelude::*};
 pub use access::*;
 pub use dpop::*;
+use jsonwebtoken::jwk::Jwk;
+use jwt_simple::claims::JWTClaims;
 #[allow(unused_imports)]
-pub use jwk::*;
-use jwt_simple::prelude::*;
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
-use sec1::pkcs8::{DecodePrivateKey, EncodePrivateKey, EncodePublicKey};
-use serde::de::DeserializeOwned;
 pub use utils::*;
-
-use crate::{dpop::Dpop, jwk::TryIntoJwk, jwk_thumbprint::JwkThumbprint, prelude::*};
-
 pub mod access;
 pub mod dpop;
-pub mod jwk;
 pub mod utils;
 
 #[template]
 #[export]
 #[rstest(
     key,
-    case::Ed25519($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::Ed25519)),
-    case::P256($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P256)),
-    case::P384($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P384)),
-    case::P521($ crate::test_utils::JwtKey::new_key(JwsAlgorithm::P521))
+    case::Ed25519($ crate::jwt_key::JwtKey::new_key(JwsAlgorithm::EdDSA)),
+    case::P256($ crate::jwt_key::JwtKey::new_key(JwsAlgorithm::ES256)),
+    case::P384($ crate::jwt_key::JwtKey::new_key(JwsAlgorithm::ES384)),
+    case::P521($ crate::jwt_key::JwtKey::new_key(JwsAlgorithm::ES512))
 )]
 #[allow(non_snake_case)]
 pub fn all_keys(key: JwtKey) {}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct JwtKey {
-    /// KeyPair
-    pub kp: Pem,
-    /// SecretKey
-    pub sk: Pem,
-    /// PublicKey
-    pub pk: Pem,
-    /// Algorithm
-    pub alg: JwsAlgorithm,
-}
-
-impl JwtKey {
-    pub fn new_key(alg: JwsAlgorithm) -> Self {
-        match alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
-                JwtEcKey::new_key(alg.try_into().unwrap()).into()
-            }
-            JwsAlgorithm::Ed25519 => JwtEdKey::new_key(alg.try_into().unwrap()).into(),
-        }
-    }
-
-    pub fn claims<T>(&self, token: &str) -> JWTClaims<T>
-    where
-        T: Serialize + DeserializeOwned,
-    {
-        match self.alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => JwtEcKey::from(self).claims::<T>(token),
-            JwsAlgorithm::Ed25519 => JwtEdKey::from(self).claims::<T>(token),
-        }
-    }
-
-    /// Just creates a new fresh key with same algorithm
-    pub fn create_another(&self) -> Self {
-        Self::new_key(self.alg)
-    }
-
-    /// Given an algorithm X returns all the algorithms which are not X
-    pub fn reverse_algorithms(&self) -> [JwsAlgorithm; 3] {
-        match self.alg {
-            JwsAlgorithm::P256 => [JwsAlgorithm::P384, JwsAlgorithm::P521, JwsAlgorithm::Ed25519],
-            JwsAlgorithm::P384 => [JwsAlgorithm::P256, JwsAlgorithm::P521, JwsAlgorithm::Ed25519],
-            JwsAlgorithm::P521 => [JwsAlgorithm::P256, JwsAlgorithm::P384, JwsAlgorithm::Ed25519],
-            JwsAlgorithm::Ed25519 => [JwsAlgorithm::P256, JwsAlgorithm::P384, JwsAlgorithm::P521],
-        }
-    }
-
-    pub fn to_jwk(&self) -> Jwk {
-        match self.alg {
-            JwsAlgorithm::P256 => ES256PublicKey::from_pem(self.pk.as_str())
-                .unwrap()
-                .try_into_jwk()
-                .unwrap(),
-            JwsAlgorithm::P384 => ES384PublicKey::from_pem(self.pk.as_str())
-                .unwrap()
-                .try_into_jwk()
-                .unwrap(),
-            JwsAlgorithm::P521 => ES512PublicKey::from_pem(self.pk.as_str())
-                .unwrap()
-                .try_into_jwk()
-                .unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(self.pk.as_str())
-                .unwrap()
-                .try_into_jwk()
-                .unwrap(),
-        }
-    }
-}
-
-impl From<(JwsAlgorithm, Pem)> for JwtKey {
-    fn from((alg, kp): (JwsAlgorithm, Pem)) -> Self {
-        match alg {
-            JwsAlgorithm::P256 | JwsAlgorithm::P384 | JwsAlgorithm::P521 => {
-                JwtEcKey::from((alg.try_into().unwrap(), kp)).into()
-            }
-            JwsAlgorithm::Ed25519 => JwtEdKey::from((alg.try_into().unwrap(), kp)).into(),
-        }
-    }
-}
-
-/// --- Elliptic curves ---
-#[template]
-#[export]
-#[rstest(
-key,
-case::P256($ crate::test_utils::JwtEcKey::new_key($ crate::prelude::JwsEcAlgorithm::P256)),
-case::P384($ crate::test_utils::JwtEcKey::new_key($ crate::prelude::JwsEcAlgorithm::P384)),
-case::P521($ crate::test_utils::JwtEcKey::new_key($ crate::prelude::JwsEcAlgorithm::P521))
-)]
-#[allow(non_snake_case)]
-pub fn all_ec_keys(key: JwtEcKey) {}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct JwtEcKey {
-    /// KeyPair
-    pub kp: Pem,
-    /// SecretKey
-    pub sk: Pem,
-    /// PublicKey
-    pub pk: Pem,
-    pub alg: JwsEcAlgorithm,
-}
-
-impl From<JwtEcKey> for JwtKey {
-    fn from(key: JwtEcKey) -> Self {
-        Self {
-            kp: key.kp,
-            sk: key.sk,
-            pk: key.pk,
-            alg: key.alg.into(),
-        }
-    }
-}
-
-impl From<&JwtKey> for JwtEcKey {
-    fn from(key: &JwtKey) -> Self {
-        Self {
-            kp: key.kp.clone(),
-            sk: key.sk.clone(),
-            pk: key.pk.clone(),
-            alg: key.alg.try_into().unwrap(),
-        }
-    }
-}
-
-impl JwtEcKey {
-    pub fn new_key(alg: JwsEcAlgorithm) -> Self {
-        match alg {
-            JwsEcAlgorithm::P256 => (alg, ES256KeyPair::generate().to_pem().unwrap().into()).into(),
-            JwsEcAlgorithm::P384 => (alg, ES384KeyPair::generate().to_pem().unwrap().into()).into(),
-            JwsEcAlgorithm::P521 => (alg, ES512KeyPair::generate().to_pem().unwrap().into()).into(),
-        }
-    }
-
-    pub fn claims<T>(&self, token: &str) -> JWTClaims<T>
-    where
-        T: Serialize + DeserializeOwned,
-    {
-        match self.alg {
-            JwsEcAlgorithm::P256 => ES256PublicKey::from_pem(&self.pk)
-                .unwrap()
-                .verify_token::<T>(token, None)
-                .unwrap(),
-            JwsEcAlgorithm::P384 => ES384PublicKey::from_pem(&self.pk)
-                .unwrap()
-                .verify_token::<T>(token, None)
-                .unwrap(),
-            JwsEcAlgorithm::P521 => ES512PublicKey::from_pem(&self.pk)
-                .unwrap()
-                .verify_token::<T>(token, None)
-                .unwrap(),
-        }
-    }
-}
-
-impl From<(JwsEcAlgorithm, Pem)> for JwtEcKey {
-    fn from((alg, kp): (JwsEcAlgorithm, Pem)) -> Self {
-        match alg {
-            JwsEcAlgorithm::P256 => {
-                let kp = ES256KeyPair::from_pem(kp.as_str()).unwrap();
-                let kp = kp.key_pair();
-                let sk: Pem = kp.to_pem().unwrap().into();
-                let pk = kp.public_key().to_pem().unwrap().into();
-                Self {
-                    kp: sk.clone(),
-                    sk,
-                    pk,
-                    alg,
-                }
-            }
-            JwsEcAlgorithm::P384 => {
-                let kp = ES384KeyPair::from_pem(kp.as_str()).unwrap();
-                let kp = kp.key_pair();
-                let sk: Pem = kp.to_pem().unwrap().into();
-                let pk = kp.public_key().to_pem().unwrap().into();
-                Self {
-                    kp: sk.clone(),
-                    sk,
-                    pk,
-                    alg,
-                }
-            }
-            JwsEcAlgorithm::P521 => {
-                let kp = ES512KeyPair::from_pem(kp.as_str()).unwrap();
-                let kp = kp.key_pair();
-                let sk: Pem = kp.to_pem().unwrap().into();
-                let pk = kp.public_key().to_pem().unwrap().into();
-                Self {
-                    kp: sk.clone(),
-                    sk,
-                    pk,
-                    alg,
-                }
-            }
-        }
-    }
-}
-
-/// --- Edward curves ---
-#[template]
-#[export]
-#[rstest(
-key,
-case::Ed25519($ crate::test_utils::JwtEdKey::new_key($ crate::prelude::JwsEdAlgorithm::Ed25519))
-)]
-#[allow(non_snake_case)]
-pub fn all_ed_keys(key: JwtEdKey) {}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct JwtEdKey {
-    /// KeyPair
-    pub kp: Pem,
-    /// SecretKey
-    pub sk: Pem,
-    /// PublicKey
-    pub pk: Pem,
-    pub alg: JwsEdAlgorithm,
-}
-
-impl From<JwtEdKey> for JwtKey {
-    fn from(key: JwtEdKey) -> Self {
-        Self {
-            kp: key.kp,
-            sk: key.sk,
-            pk: key.pk,
-            alg: key.alg.into(),
-        }
-    }
-}
-
-impl From<&JwtKey> for JwtEdKey {
-    fn from(key: &JwtKey) -> Self {
-        Self {
-            kp: key.kp.clone(),
-            sk: key.sk.clone(),
-            pk: key.pk.clone(),
-            alg: key.alg.try_into().unwrap(),
-        }
-    }
-}
-
-impl JwtEdKey {
-    pub fn new_key(alg: JwsEdAlgorithm) -> Self {
-        match alg {
-            JwsEdAlgorithm::Ed25519 => (
-                alg,
-                (*ed25519_dalek::SigningKey::generate(&mut rand::thread_rng())
-                    .to_pkcs8_pem(sec1::LineEnding::LF)
-                    .unwrap())
-                .clone()
-                .into(),
-            )
-                .into(),
-        }
-    }
-
-    pub fn claims<T>(&self, token: &str) -> JWTClaims<T>
-    where
-        T: Serialize + DeserializeOwned,
-    {
-        match self.alg {
-            JwsEdAlgorithm::Ed25519 => Ed25519PublicKey::from_pem(&self.pk)
-                .unwrap()
-                .verify_token::<T>(token, None)
-                .unwrap(),
-        }
-    }
-}
-
-impl From<(JwsEdAlgorithm, Pem)> for JwtEdKey {
-    fn from((alg, kp): (JwsEdAlgorithm, Pem)) -> Self {
-        match alg {
-            JwsEdAlgorithm::Ed25519 => {
-                let sk = ed25519_dalek::SigningKey::from_pkcs8_pem(kp.as_str()).unwrap();
-                let mut keypair_bytes = ed25519_dalek::pkcs8::KeypairBytes::from(&sk);
-                let kp_pem = (*keypair_bytes.to_pkcs8_pem(sec1::LineEnding::LF).unwrap())
-                    .clone()
-                    .into();
-                let _ = keypair_bytes.public_key.take();
-                let sk_pem = (*keypair_bytes.to_pkcs8_pem(sec1::LineEnding::LF).unwrap())
-                    .clone()
-                    .into();
-                Self {
-                    kp: kp_pem,
-                    sk: sk_pem,
-                    pk: sk
-                        .verifying_key()
-                        .to_public_key_pem(sec1::LineEnding::LF)
-                        .unwrap()
-                        .into(),
-                    alg,
-                }
-            }
-        }
-    }
-}
 
 #[template]
 #[export]
 #[rstest(
 ciphersuite,
-case::Cipher1($crate::test_utils::Ciphersuite::new(JwsAlgorithm::Ed25519, HashAlgorithm::SHA256)),
-case::Cipher2($crate::test_utils::Ciphersuite::new(JwsAlgorithm::P256, HashAlgorithm::SHA256)),
-case::Cipher7($crate::test_utils::Ciphersuite::new(JwsAlgorithm::P384, HashAlgorithm::SHA384)),
-case::Cipher5($crate::test_utils::Ciphersuite::new(JwsAlgorithm::P521, HashAlgorithm::SHA512)),
+case::Cipher1($crate::test_utils::Ciphersuite::new(JwsAlgorithm::EdDSA, HashAlgorithm::SHA256)),
+case::Cipher2($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES256, HashAlgorithm::SHA256)),
+case::Cipher7($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES384, HashAlgorithm::SHA384)),
+case::Cipher5($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES512, HashAlgorithm::SHA512)),
 )]
 #[allow(non_snake_case)]
 pub fn all_ciphersuites(key: JwtKey, hash: HashAlgorithm) {}
@@ -359,7 +58,7 @@ impl Ciphersuite {
 /// Very useful for debugging a specific test ()
 impl Default for Ciphersuite {
     fn default() -> Self {
-        Self::new(JwsAlgorithm::Ed25519, HashAlgorithm::SHA256)
+        Self::new(JwsAlgorithm::EdDSA, HashAlgorithm::SHA256)
     }
 }
 

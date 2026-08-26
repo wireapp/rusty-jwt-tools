@@ -1,4 +1,11 @@
-use crate::test_utils::*;
+use jsonwebtoken::{EncodingKey, Header, encode};
+use jwt_simple::{
+    claims::{Audiences, Claims},
+    reexports::coarsetime::{Duration, UnixTimeStamp},
+};
+use serde::{Deserialize, Serialize};
+
+use crate::{jwt_key::JwtKey, test_utils::*};
 
 /// Same as [Dpop] but all fields are optional to simulate missing fields
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
@@ -71,34 +78,22 @@ impl From<JwtKey> for DpopBuilder {
 
 impl DpopBuilder {
     pub fn build(self) -> String {
-        let kp = self.key.kp.as_str();
-        match self.key.alg {
-            JwsAlgorithm::P256 => ES256KeyPair::from_pem(kp)
-                .unwrap()
-                .sign_with_header(Some(self.claims()), self.header())
-                .unwrap(),
-            JwsAlgorithm::P384 => ES384KeyPair::from_pem(kp)
-                .unwrap()
-                .sign_with_header(Some(self.claims()), self.header())
-                .unwrap(),
-            JwsAlgorithm::P521 => ES512KeyPair::from_pem(kp)
-                .unwrap()
-                .sign_with_header(Some(self.claims()), self.header())
-                .unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(kp)
-                .unwrap()
-                .sign_with_header(Some(self.claims()), self.header())
-                .unwrap(),
+        let key = match self.key.alg {
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                EncodingKey::from_ec_pem(self.key.kp.as_ref())
+            }
+            JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(self.key.kp.as_ref()),
         }
-    }
+        .expect("encoding key from pem");
 
-    fn header(&self) -> JWTHeader {
-        JWTHeader {
-            algorithm: self.alg.clone(),
-            signature_type: self.typ.map(|s| s.to_string()),
-            public_key: self.jwk.clone(),
+        let header = Header {
+            alg: JwsAlgorithm::try_from(self.alg.as_str()).unwrap().into(),
+            typ: self.typ.map(|s| s.to_string()),
+            jwk: self.jwk.clone(),
             ..Default::default()
-        }
+        };
+
+        encode(&header, &self.claims(), &key).unwrap()
     }
 
     fn claims(&self) -> JWTClaims<TestDpop> {
