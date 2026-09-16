@@ -4,6 +4,9 @@ pub type RustyJwtResult<T> = Result<T, RustyJwtError>;
 /// All errors which [crate::RustyJwtTools] might throw
 #[derive(Debug, thiserror::Error)]
 pub enum RustyJwtError {
+    /// Invalid curve coordinate size
+    #[error("Invalid curve coordinate size")]
+    InvalidCoordinateSize,
     /// JWT error from `jwt-simple` crate
     #[error(transparent)]
     JwtSimpleError(#[from] jwt_simple::Error),
