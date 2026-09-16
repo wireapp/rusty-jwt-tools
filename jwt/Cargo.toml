@@ -19,11 +19,11 @@ base64 = { version = "0.23", default-features = false, features = ["std"] }
 const_format = { version = "0.2", default-features = false }
 derive_more = { version = "2.1.1", features = ["from", "into", "deref"] }
 jwt-simple = { version = "0.13", git = "https://github.com/wireapp/rust-jwt-simple", tag = "v0.13.0-pre.core-crypto-1.0.0", default-features = false }
-p256 = { version = "0.13", default-features = false }
-p384 = { version = "0.13", default-features = false }
-p521 = { version = "0.13", default-features = false }
+p256 = { version = "0.14", default-features = false }
+p384 = { version = "0.14", default-features = false }
+p521 = { version = "0.14", default-features = false }
 percent-encoding = { version = "2.3", default-features = false }
-sec1 = { version = "0.7", default-features = false }
+sec1 = { version = "0.8", default-features = false }
 serde = { version = "1.0", default-features = false }
 serde_json = { version = "1.0", default-features = false }
 sha2 = { version = "0.11", default-features = false }
@@ -36,7 +36,7 @@ zeroize = { version = "1.8", features = ["derive"] }
 wasm-bindgen-test = "0.3"
 rstest = { version = "0.27", default-features = false }
 rstest_reuse = { version = "0.7", default-features = false }
-ed25519-dalek = { version = "2.2", default-features = false }
+ed25519-dalek = { version = "3", features = ["alloc", "pkcs8", "pem"] }
 web-time = { version = "1.1.0", default-features = false }
 rand = { version = "0.8", default-features = false }
 
