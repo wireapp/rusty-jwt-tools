@@ -1,11 +1,11 @@
 pub use access::*;
 pub use dpop::*;
+use ed25519_dalek::pkcs8::{DecodePrivateKey as _, EncodePrivateKey as _, EncodePublicKey as _};
 #[allow(unused_imports)]
 pub use jwk::*;
 use jwt_simple::prelude::*;
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
-use sec1::pkcs8::{DecodePrivateKey, EncodePrivateKey, EncodePublicKey};
 use serde::de::DeserializeOwned;
 pub use utils::*;
 
@@ -275,7 +275,7 @@ impl JwtEdKey {
             JwsEdAlgorithm::Ed25519 => (
                 alg,
                 (*ed25519_dalek::SigningKey::generate(&mut rand::thread_rng())
-                    .to_pkcs8_pem(sec1::LineEnding::LF)
+                    .to_pkcs8_pem(pkcs8::LineEnding::LF)
                     .unwrap())
                 .clone()
                 .into(),
@@ -303,11 +303,11 @@ impl From<(JwsEdAlgorithm, Pem)> for JwtEdKey {
             JwsEdAlgorithm::Ed25519 => {
                 let sk = ed25519_dalek::SigningKey::from_pkcs8_pem(kp.as_str()).unwrap();
                 let mut keypair_bytes = ed25519_dalek::pkcs8::KeypairBytes::from(&sk);
-                let kp_pem = (*keypair_bytes.to_pkcs8_pem(sec1::LineEnding::LF).unwrap())
+                let kp_pem = (*keypair_bytes.to_pkcs8_pem(pkcs8::LineEnding::LF).unwrap())
                     .clone()
                     .into();
                 let _ = keypair_bytes.public_key.take();
-                let sk_pem = (*keypair_bytes.to_pkcs8_pem(sec1::LineEnding::LF).unwrap())
+                let sk_pem = (*keypair_bytes.to_pkcs8_pem(pkcs8::LineEnding::LF).unwrap())
                     .clone()
                     .into();
                 Self {
@@ -315,7 +315,7 @@ impl From<(JwsEdAlgorithm, Pem)> for JwtEdKey {
                     sk: sk_pem,
                     pk: sk
                         .verifying_key()
-                        .to_public_key_pem(sec1::LineEnding::LF)
+                        .to_public_key_pem(pkcs8::LineEnding::LF)
                         .unwrap()
                         .into(),
                     alg,
