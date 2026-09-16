@@ -1,3 +1,5 @@
+use hybrid_array::Array;
+
 use super::*;
 
 impl TryIntoJwk for ES256PublicKey {
@@ -17,8 +19,9 @@ impl TryFromJwk for ES256PublicKey {
             }) => {
                 let x = RustyJwk::base64_url_decode(x.as_bytes())?;
                 let y = RustyJwk::base64_url_decode(y.as_bytes())?;
-                let point =
-                    p256::EncodedPoint::from_affine_coordinates(x.as_slice().into(), y.as_slice().into(), false);
+                let x = Array::try_from(x.as_slice()).map_err(|_| RustyJwtError::InvalidCoordinateSize)?;
+                let y = Array::try_from(y.as_slice()).map_err(|_| RustyJwtError::InvalidCoordinateSize)?;
+                let point = p256::Sec1Point::from_affine_coordinates(&x, &y, false);
                 ES256PublicKey::from_bytes(point.as_bytes())?
             }
             _ => return Err(RustyJwtError::InvalidDpopJwk),
@@ -43,8 +46,9 @@ impl TryFromJwk for ES384PublicKey {
             }) => {
                 let x = RustyJwk::base64_url_decode(x.as_bytes())?;
                 let y = RustyJwk::base64_url_decode(y.as_bytes())?;
-                let point =
-                    p384::EncodedPoint::from_affine_coordinates(x.as_slice().into(), y.as_slice().into(), false);
+                let x = Array::try_from(x.as_slice()).map_err(|_| RustyJwtError::InvalidCoordinateSize)?;
+                let y = Array::try_from(y.as_slice()).map_err(|_| RustyJwtError::InvalidCoordinateSize)?;
+                let point = p384::Sec1Point::from_affine_coordinates(&x, &y, false);
                 ES384PublicKey::from_bytes(point.as_bytes())?
             }
             _ => return Err(RustyJwtError::InvalidDpopJwk),
@@ -69,8 +73,9 @@ impl TryFromJwk for ES512PublicKey {
             }) => {
                 let x = RustyJwk::base64_url_decode(x.as_bytes())?;
                 let y = RustyJwk::base64_url_decode(y.as_bytes())?;
-                let point =
-                    p521::EncodedPoint::from_affine_coordinates(x.as_slice().into(), y.as_slice().into(), false);
+                let x = Array::try_from(x.as_slice()).map_err(|_| RustyJwtError::InvalidCoordinateSize)?;
+                let y = Array::try_from(y.as_slice()).map_err(|_| RustyJwtError::InvalidCoordinateSize)?;
+                let point = p521::Sec1Point::from_affine_coordinates(&x, &y, false);
                 ES512PublicKey::from_bytes(point.as_bytes())?
             }
             _ => return Err(RustyJwtError::InvalidDpopJwk),
@@ -86,19 +91,19 @@ impl TryIntoJwk for AnyEcPublicKey {
         let Self(alg, bytes) = self;
         let (x, y) = match alg {
             JwsEcAlgorithm::P256 => {
-                let point = p256::EncodedPoint::from_bytes(bytes)?;
+                let point = p256::Sec1Point::from_bytes(bytes)?;
                 let x = RustyJwk::base64_url_encode(point.x().ok_or(RustyJwtError::ImplementationError)?);
                 let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
                 (x, y)
             }
             JwsEcAlgorithm::P384 => {
-                let point = p384::EncodedPoint::from_bytes(bytes)?;
+                let point = p384::Sec1Point::from_bytes(bytes)?;
                 let x = RustyJwk::base64_url_encode(point.x().ok_or(RustyJwtError::ImplementationError)?);
                 let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
                 (x, y)
             }
             JwsEcAlgorithm::P521 => {
-                let point = p521::EncodedPoint::from_bytes(bytes)?;
+                let point = p521::Sec1Point::from_bytes(bytes)?;
                 let x = RustyJwk::base64_url_encode(point.x().ok_or(RustyJwtError::ImplementationError)?);
                 let y = RustyJwk::base64_url_encode(point.y().ok_or(RustyJwtError::ImplementationError)?);
                 (x, y)
