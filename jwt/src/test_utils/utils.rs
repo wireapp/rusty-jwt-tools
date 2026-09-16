@@ -1,5 +1,6 @@
 use base64::Engine;
 use jwt_simple::prelude::*;
+use rand::distr::{Alphanumeric, SampleString as _};
 
 pub fn now() -> UnixTimeStamp {
     use web_time::{SystemTime, UNIX_EPOCH};
@@ -8,8 +9,7 @@ pub fn now() -> UnixTimeStamp {
 }
 
 pub fn rand_base64_str(size: usize) -> String {
-    use rand::distributions::{Alphanumeric, DistString};
-    let challenge: String = Alphanumeric.sample_string(&mut rand::thread_rng(), size);
+    let challenge: String = Alphanumeric.sample_string(&mut rand::rng(), size);
     base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(challenge)
 }
 
