@@ -253,10 +253,18 @@ pub mod tests {
                 let access = AccessBuilder::from(ciphersuite.clone());
                 let params = Params {
                     backend_pk: Some(JwtKey::new_key(alg.as_str().try_into().unwrap()).pk),
+                    // not relevant here, and deriving it would require parsing the mismatching key
+                    expected_kid: Some(String::new()),
                     ..ciphersuite.clone().into()
                 };
                 let result = verify_token(&access.build(), params);
-                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidToken(r) if r == "Invalid public key"));
+                // a key of another family can't even be parsed, one of the same family fails verification
+                match result.unwrap_err() {
+                    RustyJwtError::InvalidToken(_) => {}
+                    RustyJwtError::JsonWebTokenError(e)
+                        if matches!(e.kind(), jsonwebtoken::errors::ErrorKind::InvalidKeyFormat) => {}
+                    e => panic!("unexpected error: {e:?}"),
+                }
             }
         }
 
