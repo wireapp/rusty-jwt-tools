@@ -2,10 +2,46 @@ use base64::Engine;
 use jwt_simple::prelude::*;
 use rand::distr::{Alphanumeric, SampleString as _};
 
+use crate::{jwt_key::JwtKey, prelude::JwsAlgorithm};
+
 pub fn now() -> UnixTimeStamp {
     use web_time::{SystemTime, UNIX_EPOCH};
     let now = UnixTimeStamp::from_secs(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
     now - Duration::from_secs(5)
+}
+
+/// Builds a token with the given header fields and signs it with `key`, whatever `alg` says
+///
+/// `jsonwebtoken::encode` refuses to sign when `header.alg` doesn't match the key. Tests use
+/// mismatching or unsupported algorithms on purpose, so the token is assembled and signed by hand.
+pub fn forge_token(
+    key: &JwtKey,
+    alg: &str,
+    typ: Option<&str>,
+    jwk: Option<jsonwebtoken::jwk::Jwk>,
+    claims: &impl Serialize,
+) -> String {
+    let header = jsonwebtoken::Header {
+        alg: alg.parse().unwrap(),
+        typ: typ.map(str::to_string),
+        jwk,
+        ..Default::default()
+    };
+
+    let encoding_key = match key.alg {
+        JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+            jsonwebtoken::EncodingKey::from_ec_pem(key.kp.as_ref())
+        }
+        JwsAlgorithm::EdDSA => jsonwebtoken::EncodingKey::from_ed_pem(key.kp.as_ref()),
+    }
+    .expect("encoding key from pem");
+
+    let b64 = |v: &[u8]| base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(v);
+    let encoded_header = b64(&serde_json::to_vec(&header).unwrap());
+    let encoded_claims = b64(&serde_json::to_vec(claims).unwrap());
+    let message = format!("{encoded_header}.{encoded_claims}");
+    let signature = jsonwebtoken::crypto::sign(message.as_bytes(), &encoding_key, key.alg.into()).unwrap();
+    format!("{message}.{signature}")
 }
 
 pub fn rand_base64_str(size: usize) -> String {
