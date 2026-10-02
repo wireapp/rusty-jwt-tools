@@ -1,4 +1,7 @@
-use jsonwebtoken::{DecodingKey, Header, jwk::Jwk};
+use jsonwebtoken::{
+    DecodingKey, Header,
+    jwk::{AlgorithmParameters, EllipticCurve, EllipticCurveKeyParameters, Jwk, OctetKeyPairParameters},
+};
 use jwt_simple::claims::JWTClaims;
 
 use crate::{
@@ -20,8 +23,43 @@ impl VerifyDpopTokenHeader for Header {
         }
         let alg = JwsAlgorithm::try_from(self.alg)?;
         let jwk = self.jwk.ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
+        if !jwk_matches_alg(&jwk, alg) {
+            return Err(RustyJwtError::InvalidDpopJwk);
+        }
         Ok((alg, jwk))
     }
+}
+
+/// Whether the JWK's key type and curve are the ones expected by `alg`
+fn jwk_matches_alg(jwk: &Jwk, alg: JwsAlgorithm) -> bool {
+    matches!(
+        (alg, &jwk.algorithm),
+        (
+            JwsAlgorithm::ES256,
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                curve: EllipticCurve::P256,
+                ..
+            })
+        ) | (
+            JwsAlgorithm::ES384,
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                curve: EllipticCurve::P384,
+                ..
+            })
+        ) | (
+            JwsAlgorithm::ES512,
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                curve: EllipticCurve::P521,
+                ..
+            })
+        ) | (
+            JwsAlgorithm::EdDSA,
+            AlgorithmParameters::OctetKeyPair(OctetKeyPairParameters {
+                curve: EllipticCurve::Ed25519,
+                ..
+            })
+        )
+    )
 }
 
 /// Verifies DPoP token specific claims
