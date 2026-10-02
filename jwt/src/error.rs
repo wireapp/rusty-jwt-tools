@@ -7,9 +7,9 @@ pub enum RustyJwtError {
     /// Invalid curve coordinate size
     #[error("Invalid curve coordinate size")]
     InvalidCoordinateSize,
-    /// JWT error from `jwt-simple` crate
+    /// JWT error from `jsonwebtoken` crate
     #[error(transparent)]
-    JwtSimpleError(#[from] jwt_simple::Error),
+    JsonWebTokenError(#[from] jsonwebtoken::errors::Error),
     /// Elliptic curve error
     #[error(transparent)]
     Sec1Error(#[from] sec1::Error),
@@ -58,9 +58,6 @@ pub enum RustyJwtError {
     /// DPoP token 'sub' claim mismatches with the expected one
     #[error("DPoP token 'sub' claim mismatches with the expected one")]
     TokenSubMismatch,
-    /// Claim 'iss' is missing while required
-    #[error("Issuer claim 'iss' is missing")]
-    MissingIssuer,
     /// JWT token is expired
     #[error("JWT token is expired")]
     TokenExpired,
@@ -98,8 +95,8 @@ pub enum RustyJwtError {
     #[error("Unsupported algorithm")]
     UnsupportedAlgorithm,
     /// Supplied backend keys have an invalid format
-    #[error("Supplied backend keys have an invalid format because {0}")]
-    InvalidBackendKeys(&'static str),
+    #[error("Supplied backend keys have an invalid format")]
+    InvalidBackendKeys(#[source] jsonwebtoken::errors::Error),
     /// see [crate::prelude::ClientId]
     #[error("Supplied client identifier is invalid")]
     InvalidClientId,

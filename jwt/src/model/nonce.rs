@@ -60,6 +60,12 @@ impl BackendNonce {
     }
 }
 
+impl AsRef<str> for BackendNonce {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
 impl From<String> for BackendNonce {
     fn from(nonce: String) -> Self {
         Self(nonce)

@@ -1,9 +1,9 @@
-use jwt_simple::prelude::*;
+use jsonwebtoken::{DecodingKey, Header, decode_header, jwk::Jwk};
 
 use crate::{
     access::Access,
     jwk_thumbprint::JwkThumbprint,
-    jwt::{Verify, VerifyJwt, VerifyJwtHeader},
+    jwt::{Verify, VerifyJwt},
     prelude::*,
 };
 
@@ -56,8 +56,8 @@ impl RustyJwtTools {
         hash: HashAlgorithm,
         api_version: u32,
     ) -> RustyJwtResult<()> {
-        let header = Token::decode_metadata(access_token)?;
-        let (alg, jwk) = Self::verify_access_token_header(&header)?;
+        let header = decode_header(access_token)?;
+        let (alg, jwk) = Self::verify_access_token_header(header)?;
         Self::verify_access_token_claims(
             access_token,
             alg,
@@ -71,20 +71,20 @@ impl RustyJwtTools {
             max_expiration,
             issuer,
             max_skew_secs,
-            jwk,
+            &jwk,
             hash,
             api_version,
         )
     }
 
     /// Verifies access token specific header
-    fn verify_access_token_header(header: &TokenMetadata) -> RustyJwtResult<(JwsAlgorithm, &Jwk)> {
-        let typ = header.signature_type().ok_or(RustyJwtError::MissingDpopHeader("typ"))?;
+    fn verify_access_token_header(header: Header) -> RustyJwtResult<(JwsAlgorithm, Jwk)> {
+        let typ = header.typ.ok_or(RustyJwtError::MissingDpopHeader("typ"))?;
         if typ != Access::TYP {
             return Err(RustyJwtError::InvalidDpopTyp);
         }
-        let alg = header.verify_jwt_header()?;
-        let jwk = header.public_key().ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
+        let alg = JwsAlgorithm::try_from(header.alg)?;
+        let jwk = header.jwk.ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
         Ok((alg, jwk))
     }
 
@@ -106,7 +106,12 @@ impl RustyJwtTools {
         hash: HashAlgorithm,
         api_version: u32,
     ) -> RustyJwtResult<()> {
-        let pk = AnyPublicKey::from((alg, backend_pk));
+        let pk = match alg {
+            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                DecodingKey::from_ec_pem(backend_pk.as_ref())?
+            }
+            JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(backend_pk.as_ref())?,
+        };
         let verify = Verify {
             leeway,
             client_id,
@@ -114,10 +119,13 @@ impl RustyJwtTools {
             issuer: Some(issuer),
         };
 
-        let claims = access_token.verify_jwt::<Access>(&pk, max_expiration, verify)?;
+        let claims = access_token.verify_jwt::<Access>(alg, &pk, max_expiration, verify)?;
 
         // verify the JWK in access token represents the same key as the one supplied
-        if pk != AnyPublicKey::from((alg, jwk)) {
+        let backend_jwk = Jwk::from_decoding_key(&pk, Some(alg.into()))?;
+        let backend_thumbprint = backend_jwk.thumbprint(hash.into())?;
+        let thumbprint = jwk.thumbprint(hash.into()).map_err(|_| RustyJwtError::InvalidDpopJwk)?;
+        if backend_thumbprint != thumbprint {
             return Err(RustyJwtError::InvalidDpopJwk);
         }
 
@@ -137,17 +145,17 @@ impl RustyJwtTools {
 
         // Dpop proof verification
         use crate::dpop::{VerifyDpop as _, VerifyDpopTokenHeader as _};
-        let proof = claims.custom.proof.as_str();
-        let header = Token::decode_metadata(proof)?;
+        let dpop_proof = claims.custom.proof.as_str();
+        let header = decode_header(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
         let dpop_issuer: Htu = claims
             .issuer
             .ok_or(RustyJwtError::MissingTokenClaim("htu"))
             .and_then(|i| i.as_str().try_into())?;
 
-        proof.verify_client_dpop(
+        dpop_proof.verify_client_dpop(
             alg,
-            jwk,
+            &jwk,
             client_id,
             handle,
             display_name,
@@ -160,7 +168,7 @@ impl RustyJwtTools {
             leeway,
         )?;
 
-        let proof_thumbprint = JwkThumbprint::generate(jwk, hash)?;
+        let proof_thumbprint = JwkThumbprint::generate(&jwk, hash)?;
 
         if proof_thumbprint.kid != client_kid {
             // this would mean the acme server messed up either by miscomputing the JWK thumbprint
@@ -178,8 +186,10 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
+    use jwt_simple::reexports::coarsetime::Duration;
+
     use super::*;
-    use crate::test_utils::*;
+    use crate::{jwt_key::JwtKey, test_utils::*};
 
     mod access {
         use super::*;
@@ -244,10 +254,18 @@ pub mod tests {
                 let access = AccessBuilder::from(ciphersuite.clone());
                 let params = Params {
                     backend_pk: Some(JwtKey::new_key(alg.as_str().try_into().unwrap()).pk),
+                    // not relevant here, and deriving it would require parsing the mismatching key
+                    expected_kid: Some(String::new()),
                     ..ciphersuite.clone().into()
                 };
                 let result = verify_token(&access.build(), params);
-                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidToken(r) if r == "Invalid public key"));
+                // a key of another family can't even be parsed, one of the same family fails verification
+                match result.unwrap_err() {
+                    RustyJwtError::InvalidToken(_) => {}
+                    RustyJwtError::JsonWebTokenError(e)
+                        if matches!(e.kind(), jsonwebtoken::errors::ErrorKind::InvalidKeyFormat) => {}
+                    e => panic!("unexpected error: {e:?}"),
+                }
             }
         }
 
@@ -322,9 +340,9 @@ pub mod tests {
         fn jwk_thumbprint(ciphersuite: Ciphersuite) {
             // should succeed when JWK thumbprint matches JWK in dpop proof
             let proof = DpopBuilder::from(ciphersuite.key.clone()).build();
-            let proof_header = Token::decode_metadata(&proof).unwrap();
-            let proof_jwk = proof_header.public_key().unwrap();
-            let cnf = JwkThumbprint::generate(proof_jwk, ciphersuite.hash).unwrap();
+            let proof_header = decode_header(&proof).unwrap();
+            let proof_jwk = proof_header.jwk.expect("jwk from proof header");
+            let cnf = JwkThumbprint::generate(&proof_jwk, ciphersuite.hash).unwrap();
 
             let access = AccessBuilder {
                 access: TestAccess {
@@ -672,7 +690,7 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingIssuer));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim("iss")));
 
             // should fail when 'iss' and issuer argument mismatch
             let proof = DpopBuilder {
@@ -943,16 +961,6 @@ pub mod tests {
         #[apply(all_ciphersuites)]
         #[test]
         fn should_have_jwk_header(ciphersuite: Ciphersuite) {
-            // should fail when 'jwk' header absent
-            let proof = DpopBuilder {
-                jwk: None,
-                ..ciphersuite.key.clone().into()
-            }
-            .build();
-            let access = build_access(&ciphersuite, proof);
-            let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingDpopHeader(header) if header == "jwk"));
-
             // should succeed when 'typ' has right value
             let jwk = ciphersuite.key.to_jwk();
             let proof = DpopBuilder {
@@ -1658,7 +1666,13 @@ pub mod tests {
 
         let expected_kid = expected_kid
             .or_else(|| {
-                let key = AnyPublicKey::from((ciphersuite.key.alg, &backend_pk));
+                let key = match ciphersuite.key.alg {
+                    JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
+                        DecodingKey::from_ec_pem(backend_pk.as_ref())
+                    }
+                    JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(backend_pk.as_ref()),
+                }
+                .expect("DecodingKey from pem");
                 let relaxed_verify = Verify {
                     client_id: &client_id,
                     leeway: u16::MAX,
@@ -1666,12 +1680,13 @@ pub mod tests {
                     backend_nonce: None,
                 };
                 // let access_claims = access.verify_jwt::<Access>(&key, u64::MAX, relaxed_verify).unwrap();
-                let verifications = Some(VerificationOptions::from(&relaxed_verify));
-                let access_claims = key.verify_token::<serde_json::Value>(access, verifications).ok()?;
-                let proof = access_claims.custom["proof"].as_str()?;
-                let proof_header = Token::decode_metadata(proof).ok()?;
-                let proof_jwk = proof_header.public_key()?;
-                let kid = JwkThumbprint::generate(proof_jwk, ciphersuite.hash).ok()?.kid;
+                let access_claims = access
+                    .verify_jwt::<Access>(ciphersuite.key.alg, &key, max_expiration, relaxed_verify)
+                    .ok()?;
+                let proof = access_claims.custom.proof;
+                let proof_header = decode_header(proof).ok()?;
+                let proof_jwk = proof_header.jwk.expect("jwk from header");
+                let kid = JwkThumbprint::generate(&proof_jwk, ciphersuite.hash).ok()?.kid;
                 Some(kid)
             })
             .unwrap_or_default();

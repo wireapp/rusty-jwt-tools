@@ -1,26 +1,65 @@
-use jwt_simple::prelude::*;
+use jsonwebtoken::{
+    DecodingKey, Header,
+    jwk::{AlgorithmParameters, EllipticCurve, EllipticCurveKeyParameters, Jwk, OctetKeyPairParameters},
+};
+use jwt_simple::claims::JWTClaims;
 
 use crate::{
-    jwt::{Verify, VerifyJwt, VerifyJwtHeader},
+    jwt::{Verify, VerifyJwt},
     prelude::*,
 };
 
 /// Verifies DPoP token specific header
 pub(crate) trait VerifyDpopTokenHeader {
     /// Verifies the header
-    fn verify_dpop_header(&self) -> RustyJwtResult<(JwsAlgorithm, &Jwk)>;
+    fn verify_dpop_header(self) -> RustyJwtResult<(JwsAlgorithm, Jwk)>;
 }
 
-impl VerifyDpopTokenHeader for TokenMetadata {
-    fn verify_dpop_header(&self) -> RustyJwtResult<(JwsAlgorithm, &Jwk)> {
-        let typ = self.signature_type().ok_or(RustyJwtError::MissingDpopHeader("typ"))?;
+impl VerifyDpopTokenHeader for Header {
+    fn verify_dpop_header(self) -> RustyJwtResult<(JwsAlgorithm, Jwk)> {
+        let typ = self.typ.ok_or(RustyJwtError::MissingDpopHeader("typ"))?;
         if typ != Dpop::TYP {
             return Err(RustyJwtError::InvalidDpopTyp);
         }
-        let alg = self.verify_jwt_header()?;
-        let jwk = self.public_key().ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
+        let alg = JwsAlgorithm::try_from(self.alg)?;
+        let jwk = self.jwk.ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
+        if !jwk_matches_alg(&jwk, alg) {
+            return Err(RustyJwtError::InvalidDpopJwk);
+        }
         Ok((alg, jwk))
     }
+}
+
+/// Whether the JWK's key type and curve are the ones expected by `alg`
+fn jwk_matches_alg(jwk: &Jwk, alg: JwsAlgorithm) -> bool {
+    matches!(
+        (alg, &jwk.algorithm),
+        (
+            JwsAlgorithm::ES256,
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                curve: EllipticCurve::P256,
+                ..
+            })
+        ) | (
+            JwsAlgorithm::ES384,
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                curve: EllipticCurve::P384,
+                ..
+            })
+        ) | (
+            JwsAlgorithm::ES512,
+            AlgorithmParameters::EllipticCurve(EllipticCurveKeyParameters {
+                curve: EllipticCurve::P521,
+                ..
+            })
+        ) | (
+            JwsAlgorithm::EdDSA,
+            AlgorithmParameters::OctetKeyPair(OctetKeyPairParameters {
+                curve: EllipticCurve::Ed25519,
+                ..
+            })
+        )
+    )
 }
 
 /// Verifies DPoP token specific claims
@@ -64,7 +103,7 @@ impl VerifyDpop for &str {
         max_expiration: u64,
         leeway: u16,
     ) -> RustyJwtResult<JWTClaims<Dpop>> {
-        let pk = AnyPublicKey::from((alg, jwk));
+        let pk = DecodingKey::from_jwk(jwk).map_err(|e| RustyJwtError::InvalidToken(e.to_string()))?;
         let verify = Verify {
             client_id,
             backend_nonce: Some(backend_nonce),
@@ -72,7 +111,9 @@ impl VerifyDpop for &str {
             issuer: None,
         };
 
-        let claims = (*self).verify_jwt::<Dpop>(&pk, max_expiration, verify)?;
+        // also verifies the nonce
+        let claims = (*self).verify_jwt::<Dpop>(alg, &pk, max_expiration, verify)?;
+
         if let Some(expected_htm) = htm
             && expected_htm != claims.custom.htm
         {

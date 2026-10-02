@@ -1,3 +1,10 @@
+use jsonwebtoken::{decode_header, jwk::Jwk};
+use jwt_simple::{
+    claims::{Claims, JWTClaims},
+    reexports::coarsetime::{Duration, UnixTimeStamp},
+};
+use serde::{Deserialize, Serialize};
+
 use crate::{access::Access, jwk_thumbprint::JwkThumbprint, test_utils::*};
 
 /// Same as [Dpop] but all fields are optional to simulate missing fields
@@ -21,9 +28,9 @@ impl From<Ciphersuite> for TestAccess {
     fn from(ciphersuite: Ciphersuite) -> Self {
         let access = Access::default();
         let proof = DpopBuilder::from(ciphersuite.key.clone()).build();
-        let proof_header = Token::decode_metadata(&proof).unwrap();
-        let proof_jwk = proof_header.public_key().unwrap();
-        let cnf = JwkThumbprint::generate(proof_jwk, ciphersuite.hash).unwrap();
+        let proof_header = decode_header(&proof).unwrap();
+        let proof_jwk = proof_header.jwk.expect("Getting jwk from dpop token header");
+        let cnf = JwkThumbprint::generate(&proof_jwk, ciphersuite.hash).unwrap();
         Self {
             challenge: Some(access.challenge),
             cnf: Some(cnf),
@@ -73,34 +80,13 @@ impl From<Ciphersuite> for AccessBuilder {
 
 impl AccessBuilder {
     pub fn build(self) -> String {
-        let kp = self.ciphersuite.key.kp.as_str();
-        match self.ciphersuite.key.alg {
-            JwsAlgorithm::P256 => ES256KeyPair::from_pem(kp)
-                .unwrap()
-                .sign_with_header(Some(self.claims()), self.header())
-                .unwrap(),
-            JwsAlgorithm::P384 => ES384KeyPair::from_pem(kp)
-                .unwrap()
-                .sign_with_header(Some(self.claims()), self.header())
-                .unwrap(),
-            JwsAlgorithm::P521 => ES512KeyPair::from_pem(kp)
-                .unwrap()
-                .sign_with_header(Some(self.claims()), self.header())
-                .unwrap(),
-            JwsAlgorithm::Ed25519 => Ed25519KeyPair::from_pem(kp)
-                .unwrap()
-                .sign_with_header(Some(self.claims()), self.header())
-                .unwrap(),
-        }
-    }
-
-    fn header(&self) -> JWTHeader {
-        JWTHeader {
-            algorithm: self.alg.clone(),
-            signature_type: self.typ.map(|s| s.to_string()),
-            public_key: self.jwk.clone(),
-            ..Default::default()
-        }
+        forge_token(
+            &self.ciphersuite.key,
+            &self.alg,
+            self.typ,
+            self.jwk.clone(),
+            &self.claims(),
+        )
     }
 
     fn claims(&self) -> JWTClaims<TestAccess> {

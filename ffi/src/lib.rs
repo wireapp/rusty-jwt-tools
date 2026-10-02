@@ -251,7 +251,7 @@ pub enum HsError {
     /// Client DPoP token "nbf" claim is in the future
     NotYetValid = 20,
     /// Bubbling up errors
-    JwtSimpleError = 21,
+    JsonWebTokenError = 21,
     /// Bubbling up errors
     RandError = 22,
     /// Bubbling up errors
@@ -316,7 +316,7 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::TokenLivesTooLong => Self::ExpMismatch,
             RustyJwtError::TokenExpired => Self::Expired,
             RustyJwtError::ImplementationError => Self::ImplementationError,
-            RustyJwtError::JwtSimpleError(_) => Self::JwtSimpleError,
+            RustyJwtError::JsonWebTokenError(_) => Self::JsonWebTokenError,
             RustyJwtError::Sec1Error(_) => Self::Sec1Error,
             RustyJwtError::UrlParseError(_) => Self::UrlParseError,
             RustyJwtError::UuidError(_) => Self::UuidError,
@@ -325,7 +325,7 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::JsonError(_) => Self::JsonError,
             RustyJwtError::InvalidJwkThumbprint => Self::InvalidJwkThumbprint,
             RustyJwtError::MissingDpopHeader(_) => Self::MissingDpopHeader,
-            RustyJwtError::MissingIssuer => Self::MissingIssuer,
+            RustyJwtError::MissingTokenClaim("iss") => Self::MissingIssuer,
             RustyJwtError::DpopChallengeMismatch => Self::DpopChallengeMismatch,
             RustyJwtError::DpopHtuMismatch => Self::DpopHtuMismatch,
             RustyJwtError::DpopHtmMismatch => Self::DpopHtmMismatch,
