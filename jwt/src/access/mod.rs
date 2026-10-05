@@ -1,6 +1,11 @@
-use jwt_simple::prelude::*;
+use coarsetime::Duration;
+use serde::{Deserialize, Serialize};
 
-use crate::{jwk_thumbprint::JwkThumbprint, jwt::new_jti, prelude::*};
+use crate::{
+    jwk_thumbprint::JwkThumbprint,
+    jwt::{Audiences, JwtClaims, new_jti},
+    prelude::*,
+};
 
 mod generate;
 mod verify;
@@ -66,16 +71,17 @@ impl Access {
         issuer: Htu,
         audience: url::Url,
         expiry: core::time::Duration,
-    ) -> JWTClaims<Self> {
+    ) -> JwtClaims<Self> {
         let now = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NOW_LEEWAY_SECONDS);
-        let mut claims = Claims::with_custom_claims(self, expiry.into())
-            .invalid_before(now)
-            .with_jwt_id(new_jti())
-            .with_subject(client_id.to_uri())
-            .with_nonce(nonce.to_string())
-            .with_issuer(issuer)
-            .with_audience(audience);
-        claims.issued_at = Some(now);
-        claims
+        JwtClaims {
+            issued_at: Some(now),
+            invalid_before: Some(now),
+            jwt_id: Some(new_jti()),
+            subject: Some(client_id.to_uri()),
+            nonce: Some(nonce.to_string()),
+            issuer: Some(issuer.to_string()),
+            audiences: Some(Audiences::AsString(audience.to_string())),
+            ..JwtClaims::new(self, expiry.into())
+        }
     }
 }

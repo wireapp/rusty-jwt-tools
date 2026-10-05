@@ -1,10 +1,10 @@
 use jsonwebtoken::{EncodingKey, Header, decode_header, jwk::Jwk};
-use jwt_simple::claims::JWTClaims;
 
 use crate::{
     access::Access,
     dpop::{VerifyDpop, VerifyDpopTokenHeader},
     jwk_thumbprint::JwkThumbprint,
+    jwt::JwtClaims,
     prelude::*,
 };
 
@@ -96,7 +96,7 @@ impl RustyJwtTools {
         alg: JwsAlgorithm,
         client_jwk: &Jwk,
         proof: &str,
-        proof_claims: JWTClaims<Dpop>,
+        proof_claims: JwtClaims<Dpop>,
         backend_keys: Pem,
         client_id: &ClientId,
         nonce: BackendNonce,
@@ -110,8 +110,7 @@ impl RustyJwtTools {
             let audience = proof_claims
                 .audiences
                 .ok_or(RustyJwtError::MissingTokenClaim("aud"))?
-                .into_string()
-                .map_err(|_| RustyJwtError::InvalidAudience)?
+                .into_string()?
                 .parse::<url::Url>()
                 .map_err(|_| RustyJwtError::InvalidAudience)?;
             let cnf = JwkThumbprint::generate(client_jwk, hash)?;
@@ -152,7 +151,7 @@ impl RustyJwtTools {
 #[cfg(test)]
 pub mod tests {
     use base64::Engine;
-    use jwt_simple::reexports::coarsetime::Duration;
+    use coarsetime::Duration;
     use serde_json::{Value, json};
 
     use super::*;
@@ -459,7 +458,6 @@ pub mod tests {
 
     mod backend_keys {
         use jsonwebtoken::{DecodingKey, Validation, decode, errors::ErrorKind};
-        use jwt_simple::claims::NoCustomClaims;
 
         use super::*;
 
@@ -477,7 +475,7 @@ pub mod tests {
             };
             let mut validation = Validation::new(ciphersuite.key.alg.into());
             validation.validate_aud = false;
-            decode::<NoCustomClaims>(access_token, &key, &validation).unwrap();
+            decode::<serde_json::Value>(access_token, &key, &validation).unwrap();
         }
 
         #[apply(all_ciphersuites)]
