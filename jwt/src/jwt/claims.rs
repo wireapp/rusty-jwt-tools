@@ -112,3 +112,41 @@ mod unix_timestamp {
         Ok(secs.map(|secs| UnixTimeStamp::from_secs(secs as u64)))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn audiences(json: &str) -> Audiences {
+        serde_json::from_str::<JwtClaims<serde_json::Value>>(json)
+            .unwrap()
+            .audiences
+            .unwrap()
+    }
+
+    #[test]
+    fn should_accept_single_audience() {
+        let aud = audiences(r#"{"aud":"https://a"}"#);
+        assert_eq!(aud.into_string().unwrap(), "https://a");
+    }
+
+    #[test]
+    fn should_accept_list_with_one_audience() {
+        let aud = audiences(r#"{"aud":["https://a"]}"#);
+        assert_eq!(aud.into_string().unwrap(), "https://a");
+    }
+
+    #[test]
+    fn should_fail_converting_many_audiences_to_string() {
+        let aud = audiences(r#"{"aud":["https://a","https://b"]}"#);
+        assert_eq!(aud, Audiences::AsList(vec!["https://a".into(), "https://b".into()]));
+        assert!(matches!(aud.into_string(), Err(RustyJwtError::InvalidAudience)));
+    }
+
+    #[test]
+    fn should_fail_converting_empty_audiences_to_string() {
+        let aud = audiences(r#"{"aud":[]}"#);
+        assert_eq!(aud, Audiences::AsList(vec![]));
+        assert!(matches!(aud.into_string(), Err(RustyJwtError::InvalidAudience)));
+    }
+}
