@@ -1,15 +1,14 @@
 use jsonwebtoken::{EncodingKey, Header, jwk::Jwk};
-use jwt_simple::claims::JWTClaims;
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::*;
+use crate::{jwt::JwtClaims, prelude::*};
 
 impl RustyJwtTools {
     /// Build a new generic JWT
     pub fn generate_jwt<T>(
         alg: JwsAlgorithm,
         mut header: Header,
-        claims: JWTClaims<T>,
+        claims: JwtClaims<T>,
         kp: &Pem,
         with_jwk: bool,
     ) -> RustyJwtResult<String>

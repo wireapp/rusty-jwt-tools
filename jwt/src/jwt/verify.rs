@@ -1,16 +1,13 @@
 //! Generic Jwt utilities
 
+use coarsetime::{Clock, Duration};
 use jsonwebtoken::{
     DecodingKey, Validation, decode,
     errors::{Error, ErrorKind},
 };
-use jwt_simple::{
-    claims::JWTClaims,
-    reexports::coarsetime::{Clock, Duration},
-};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::prelude::*;
+use crate::{jwt::JwtClaims, prelude::*};
 
 /// Global trait to verify a Jwt token
 #[derive(Debug, Clone)]
@@ -41,10 +38,10 @@ pub trait VerifyJwt {
         key: &DecodingKey,
         max_expiration: u64,
         // expected_cnf: Option<&JwkThumbprint>,
-        // actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
-        // custom: Option<fn(&JWTClaims<T>) -> RustyJwtResult<JWTClaims<T>>>,
+        // actual_cnf: Option<fn(&JwtClaims<T>) -> &JwkThumbprint>,
+        // custom: Option<fn(&JwtClaims<T>) -> RustyJwtResult<JwtClaims<T>>>,
         verify: Verify,
-    ) -> RustyJwtResult<JWTClaims<T>>
+    ) -> RustyJwtResult<JwtClaims<T>>
     where
         T: Serialize + DeserializeOwned;
 }
@@ -56,10 +53,10 @@ impl VerifyJwt for &str {
         key: &DecodingKey,
         max_expiration: u64,
         // expected_cnf: Option<&JwkThumbprint>,
-        // actual_cnf: Option<fn(&JWTClaims<T>) -> &JwkThumbprint>,
-        // custom: Option<fn(&JWTClaims<T>) -> RustyJwtResult<JWTClaims<T>>>,
+        // actual_cnf: Option<fn(&JwtClaims<T>) -> &JwkThumbprint>,
+        // custom: Option<fn(&JwtClaims<T>) -> RustyJwtResult<JwtClaims<T>>>,
         verify: Verify,
-    ) -> RustyJwtResult<JWTClaims<T>>
+    ) -> RustyJwtResult<JwtClaims<T>>
     where
         T: Serialize + DeserializeOwned,
     {
@@ -78,7 +75,7 @@ impl VerifyJwt for &str {
         validation.sub = Some(verify.client_id.to_uri());
 
         // Get the token claims, validating the above via jsonwebtoken
-        let token = decode::<JWTClaims<T>>(self, key, &validation).map_err(jwt_error_mapping)?;
+        let token = decode::<JwtClaims<T>>(self, key, &validation).map_err(jwt_error_mapping)?;
         let claims = token.claims;
 
         // custom validations
