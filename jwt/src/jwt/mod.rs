@@ -1,7 +1,9 @@
 //! Generic crate for everything related to Jwt without any adherence to Dpop
 
+pub use claims::{Audiences, JwtClaims};
 pub use verify::{Verify, VerifyJwt};
 
+mod claims;
 pub(crate) mod generate;
 pub mod verify;
 
