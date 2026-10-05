@@ -1,10 +1,11 @@
-use jwt_simple::{
-    claims::{Audiences, Claims},
-    reexports::coarsetime::{Duration, UnixTimeStamp},
-};
+use coarsetime::{Duration, UnixTimeStamp};
 use serde::{Deserialize, Serialize};
 
-use crate::{jwt_key::JwtKey, test_utils::*};
+use crate::{
+    jwt::{Audiences, JwtClaims},
+    jwt_key::JwtKey,
+    test_utils::*,
+};
 
 /// Same as [Dpop] but all fields are optional to simulate missing fields
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
@@ -80,9 +81,9 @@ impl DpopBuilder {
         forge_token(&self.key, &self.alg, self.typ, self.jwk.clone(), &self.claims())
     }
 
-    fn claims(&self) -> JWTClaims<TestDpop> {
+    fn claims(&self) -> JwtClaims<TestDpop> {
         let exp = Duration::from_days(2);
-        let mut claims = Claims::with_custom_claims(self.dpop.clone(), exp);
+        let mut claims = JwtClaims::new(self.dpop.clone(), exp);
         claims.audiences = Some(Audiences::AsString(
             "https://stepca/acme/wire/challenge/aaa/bbb".to_string(),
         ));

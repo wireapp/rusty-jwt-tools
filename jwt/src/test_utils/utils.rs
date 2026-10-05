@@ -1,6 +1,7 @@
 use base64::Engine;
-use jwt_simple::prelude::*;
+use coarsetime::{Duration, UnixTimeStamp};
 use rand::distr::{Alphanumeric, SampleString as _};
+use serde::Serialize;
 
 use crate::{jwt_key::JwtKey, prelude::JwsAlgorithm};
 

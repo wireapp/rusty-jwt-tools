@@ -1,7 +1,6 @@
 pub use access::*;
 pub use dpop::*;
 use jsonwebtoken::jwk::Jwk;
-use jwt_simple::claims::JWTClaims;
 #[allow(unused_imports)]
 pub use rstest::*;
 pub use rstest_reuse::{self, *};

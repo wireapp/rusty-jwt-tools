@@ -1,11 +1,8 @@
+use coarsetime::{Duration, UnixTimeStamp};
 use jsonwebtoken::{decode_header, jwk::Jwk};
-use jwt_simple::{
-    claims::{Claims, JWTClaims},
-    reexports::coarsetime::{Duration, UnixTimeStamp},
-};
 use serde::{Deserialize, Serialize};
 
-use crate::{access::Access, jwk_thumbprint::JwkThumbprint, test_utils::*};
+use crate::{access::Access, jwk_thumbprint::JwkThumbprint, jwt::JwtClaims, test_utils::*};
 
 /// Same as [Dpop] but all fields are optional to simulate missing fields
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
@@ -89,9 +86,9 @@ impl AccessBuilder {
         )
     }
 
-    fn claims(&self) -> JWTClaims<TestAccess> {
+    fn claims(&self) -> JwtClaims<TestAccess> {
         let exp = Duration::from_days(2);
-        let mut claims = Claims::with_custom_claims(self.access.clone(), exp);
+        let mut claims = JwtClaims::new(self.access.clone(), exp);
         claims.subject = self.sub.as_ref().map(|c| c.to_uri());
         claims.nonce = self.nonce.as_ref().map(|n| n.as_str().to_string());
         claims.jwt_id = self.jti.clone();
