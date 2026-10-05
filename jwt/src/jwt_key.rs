@@ -1,7 +1,6 @@
 //! Test utils exposed for e2e test
 
 use jsonwebtoken::{DecodingKey, Validation, decode, jwk::Jwk};
-use jwt_simple::claims::JWTClaims;
 use p256::{
     elliptic_curve::Generate,
     pkcs8::{DecodePrivateKey as _, EncodePrivateKey as _, EncodePublicKey as _},
@@ -9,7 +8,10 @@ use p256::{
 use rand;
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::model::{alg::JwsAlgorithm, pem::Pem};
+use crate::{
+    jwt::JwtClaims,
+    model::{alg::JwsAlgorithm, pem::Pem},
+};
 
 /// Test util to for keys
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -70,7 +72,7 @@ impl JwtKey {
     }
 
     /// Decode the claims of a token
-    pub fn claims<T>(&self, token: &str) -> JWTClaims<T>
+    pub fn claims<T>(&self, token: &str) -> JwtClaims<T>
     where
         T: Serialize + DeserializeOwned,
     {
@@ -82,7 +84,7 @@ impl JwtKey {
         };
         let mut validation = Validation::new(self.alg.into());
         validation.validate_aud = false;
-        decode::<JWTClaims<T>>(token, &key, &validation)
+        decode::<JwtClaims<T>>(token, &key, &validation)
             .expect("decoding token")
             .claims
     }
