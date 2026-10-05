@@ -2,10 +2,9 @@ use jsonwebtoken::{
     DecodingKey, Header,
     jwk::{AlgorithmParameters, EllipticCurve, EllipticCurveKeyParameters, Jwk, OctetKeyPairParameters},
 };
-use jwt_simple::claims::JWTClaims;
 
 use crate::{
-    jwt::{Verify, VerifyJwt},
+    jwt::{JwtClaims, Verify, VerifyJwt},
     prelude::*,
 };
 
@@ -84,7 +83,7 @@ pub(crate) trait VerifyDpop {
         htu: &Htu,
         max_expiration: u64,
         leeway: u16,
-    ) -> RustyJwtResult<JWTClaims<Dpop>>;
+    ) -> RustyJwtResult<JwtClaims<Dpop>>;
 }
 
 impl VerifyDpop for &str {
@@ -102,7 +101,7 @@ impl VerifyDpop for &str {
         htu: &Htu,
         max_expiration: u64,
         leeway: u16,
-    ) -> RustyJwtResult<JWTClaims<Dpop>> {
+    ) -> RustyJwtResult<JwtClaims<Dpop>> {
         let pk = DecodingKey::from_jwk(jwk).map_err(|e| RustyJwtError::InvalidToken(e.to_string()))?;
         let verify = Verify {
             client_id,

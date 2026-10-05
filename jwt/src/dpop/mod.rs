@@ -1,10 +1,13 @@
+use coarsetime::Duration;
 pub use htm::Htm;
 pub use htu::Htu;
-use jwt_simple::prelude::*;
 use serde::{Deserialize, Serialize};
 pub(crate) use verify::{VerifyDpop, VerifyDpopTokenHeader};
 
-use crate::{jwt::new_jti, prelude::*};
+use crate::{
+    jwt::{Audiences, JwtClaims, new_jti},
+    prelude::*,
+};
 
 mod generate;
 mod htm;
@@ -55,17 +58,18 @@ impl Dpop {
         client_id: &ClientId,
         expiry: core::time::Duration,
         audience: url::Url,
-    ) -> JWTClaims<Self> {
+    ) -> JwtClaims<Self> {
         let expiry = coarsetime::Duration::from_secs(expiry.as_secs());
         let now = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NOW_LEEWAY_SECONDS);
-        let mut claims = Claims::with_custom_claims(self, expiry)
-            .with_audience(audience)
-            .invalid_before(now)
-            .with_jwt_id(new_jti())
-            .with_nonce(nonce.to_string())
-            .with_subject(client_id.to_uri());
-        claims.issued_at = Some(now);
-        claims
+        JwtClaims {
+            issued_at: Some(now),
+            invalid_before: Some(now),
+            jwt_id: Some(new_jti()),
+            subject: Some(client_id.to_uri()),
+            nonce: Some(nonce.to_string()),
+            audiences: Some(Audiences::AsString(audience.to_string())),
+            ..JwtClaims::new(self, expiry)
+        }
     }
 }
 
