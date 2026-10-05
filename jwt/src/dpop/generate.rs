@@ -69,8 +69,8 @@ pub mod tests {
                 &key.kp,
             )
             .unwrap();
-            let header = Token::decode_metadata(token.as_str()).unwrap();
-            assert_eq!(header.signature_type(), Some(Dpop::TYP))
+            let header = jsonwebtoken::decode_header(&token).unwrap();
+            assert_eq!(header.typ.as_deref(), Some(Dpop::TYP))
         }
 
         #[apply(all_keys)]
@@ -86,8 +86,8 @@ pub mod tests {
                 &key.kp,
             )
             .unwrap();
-            let header = Token::decode_metadata(token.as_str()).unwrap();
-            assert_eq!(header.algorithm(), key.alg.to_string())
+            let header = jsonwebtoken::decode_header(&token).unwrap();
+            assert_eq!(header.alg, key.alg.into())
         }
 
         #[apply(all_keys)]
