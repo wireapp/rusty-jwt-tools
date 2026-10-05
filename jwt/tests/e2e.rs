@@ -1,6 +1,6 @@
 use base64::Engine;
+use coarsetime::Duration;
 use jsonwebtoken::decode_header;
-use jwt_simple::reexports::coarsetime::Duration;
 use rand::distr::{Alphanumeric, SampleString as _};
 use rusty_jwt_tools::{jwk_thumbprint::JwkThumbprint, jwt_key::JwtKey, prelude::*};
 
