@@ -27,7 +27,7 @@ unused-ignored-advisory = "deny"
 ignore = [
   # The fix at https://github.com/RustCrypto/RSA/pull/394 is merged,
   # and will be in rsa v0.10, once that comes out of the eternal
-  # pre-release state. We need to update it via our rusty-jwt-simple.
+  # pre-release state. We need to update it via our jsonwebtoken fork.
   "RUSTSEC-2023-0071",
 ]
 
