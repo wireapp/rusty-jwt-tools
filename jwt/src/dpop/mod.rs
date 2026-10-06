@@ -1,4 +1,5 @@
-use coarsetime::Duration;
+use std::time::Duration;
+
 pub use htm::Htm;
 pub use htu::Htu;
 use serde::{Deserialize, Serialize};
@@ -56,11 +57,10 @@ impl Dpop {
         self,
         nonce: BackendNonce,
         client_id: &ClientId,
-        expiry: core::time::Duration,
+        expiry: Duration,
         audience: url::Url,
     ) -> JwtClaims<Self> {
-        let expiry = coarsetime::Duration::from_secs(expiry.as_secs());
-        let now = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NOW_LEEWAY_SECONDS);
+        let now = jsonwebtoken::get_current_timestamp() - Self::NOW_LEEWAY_SECONDS;
         JwtClaims {
             issued_at: Some(now),
             invalid_before: Some(now),
