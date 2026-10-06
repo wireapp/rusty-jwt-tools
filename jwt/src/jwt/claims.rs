@@ -1,4 +1,5 @@
-use coarsetime::{Clock, Duration, UnixTimeStamp};
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 
 use crate::prelude::*;
@@ -8,30 +9,30 @@ use crate::prelude::*;
 /// [1]: https://www.rfc-editor.org/rfc/rfc7519#section-4.1
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JwtClaims<T> {
-    /// Time the claims were created at
+    /// Time the claims were created at, in seconds since the UNIX epoch
     #[serde(
         rename = "iat",
         default,
         skip_serializing_if = "Option::is_none",
-        with = "unix_timestamp"
+        deserialize_with = "unix_timestamp::deserialize"
     )]
-    pub issued_at: Option<UnixTimeStamp>,
-    /// Time the claims expire at
+    pub issued_at: Option<u64>,
+    /// Time the claims expire at, in seconds since the UNIX epoch
     #[serde(
         rename = "exp",
         default,
         skip_serializing_if = "Option::is_none",
-        with = "unix_timestamp"
+        deserialize_with = "unix_timestamp::deserialize"
     )]
-    pub expires_at: Option<UnixTimeStamp>,
-    /// Time the claims will be invalid until
+    pub expires_at: Option<u64>,
+    /// Time the claims will be invalid until, in seconds since the UNIX epoch
     #[serde(
         rename = "nbf",
         default,
         skip_serializing_if = "Option::is_none",
-        with = "unix_timestamp"
+        deserialize_with = "unix_timestamp::deserialize"
     )]
-    pub invalid_before: Option<UnixTimeStamp>,
+    pub invalid_before: Option<u64>,
     /// Issuer
     #[serde(rename = "iss", default, skip_serializing_if = "Option::is_none")]
     pub issuer: Option<String>,
@@ -55,10 +56,10 @@ pub struct JwtClaims<T> {
 impl<T> JwtClaims<T> {
     /// Creates claims issued now and expiring in `valid_for`, all other registered claims being empty
     pub fn new(custom: T, valid_for: Duration) -> Self {
-        let now = Clock::now_since_epoch();
+        let now = jsonwebtoken::get_current_timestamp();
         Self {
             issued_at: Some(now),
-            expires_at: Some(now + valid_for),
+            expires_at: Some(now + valid_for.as_secs()),
             invalid_before: Some(now),
             issuer: None,
             subject: None,
@@ -95,21 +96,16 @@ impl Audiences {
     }
 }
 
-/// (De)serializes a [UnixTimeStamp] as a JWT [NumericDate][1], i.e. seconds since the UNIX epoch
+/// Deserializes a JWT [NumericDate], i.e. seconds since the UNIX epoch
 ///
 /// [1]: https://www.rfc-editor.org/rfc/rfc7519#section-2
 mod unix_timestamp {
-    use coarsetime::UnixTimeStamp;
-    use serde::{Deserialize as _, Deserializer, Serialize as _, Serializer};
+    use serde::{Deserialize as _, Deserializer};
 
-    pub fn serialize<S: Serializer>(timestamp: &Option<UnixTimeStamp>, serializer: S) -> Result<S::Ok, S::Error> {
-        timestamp.map(|t| t.as_secs()).serialize(serializer)
-    }
-
-    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<UnixTimeStamp>, D::Error> {
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<u64>, D::Error> {
         // NumericDate may contain a fractional part
         let secs = Option::<f64>::deserialize(deserializer)?;
-        Ok(secs.map(|secs| UnixTimeStamp::from_secs(secs as u64)))
+        Ok(secs.map(|secs| secs as u64))
     }
 }
 
