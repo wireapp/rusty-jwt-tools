@@ -1,4 +1,5 @@
-use coarsetime::Duration;
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -70,9 +71,9 @@ impl Access {
         nonce: BackendNonce,
         issuer: Htu,
         audience: url::Url,
-        expiry: core::time::Duration,
+        expiry: Duration,
     ) -> JwtClaims<Self> {
-        let now = coarsetime::Clock::now_since_epoch() - Duration::from_secs(Self::NOW_LEEWAY_SECONDS);
+        let now = jsonwebtoken::get_current_timestamp() - Self::NOW_LEEWAY_SECONDS;
         JwtClaims {
             issued_at: Some(now),
             invalid_before: Some(now),
@@ -81,7 +82,7 @@ impl Access {
             nonce: Some(nonce.to_string()),
             issuer: Some(issuer.to_string()),
             audiences: Some(Audiences::AsString(audience.to_string())),
-            ..JwtClaims::new(self, expiry.into())
+            ..JwtClaims::new(self, expiry)
         }
     }
 }
