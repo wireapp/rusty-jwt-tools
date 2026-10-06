@@ -5,7 +5,15 @@ use crate::prelude::{RustyJwtError, RustyJwtResult};
 /// There is a `AT MOST ONE` mapping between a user and a team but a user does not necessarily
 /// belong to a team.
 #[derive(
-    Debug, Clone, serde::Serialize, serde::Deserialize, derive_more::From, derive_more::Into, derive_more::Deref,
+    Debug,
+    Clone,
+    Eq,
+    PartialEq,
+    serde::Serialize,
+    serde::Deserialize,
+    derive_more::From,
+    derive_more::Into,
+    derive_more::Deref,
 )]
 #[serde(transparent)]
 pub struct Team(pub Option<String>);
@@ -30,23 +38,9 @@ impl TryFrom<&[u8]> for Team {
     }
 }
 
-impl Eq for Team {}
-
 #[cfg(test)]
 impl Default for Team {
     fn default() -> Self {
         Self(Some("wire".to_string()))
-    }
-}
-
-/// We want this to be lenient and backward compatible during the migration period
-impl PartialEq for Team {
-    fn eq(&self, server_team: &Self) -> bool {
-        match (&self.0, &server_team.0) {
-            // this probably means that client & server are operating on different versions.
-            (None, Some(_)) | (Some(_), None) => false,
-            (Some(a), Some(b)) => a.eq(b),
-            (None, None) => true,
-        }
     }
 }
