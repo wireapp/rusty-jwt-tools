@@ -1,14 +1,17 @@
 use base64::Engine;
-use coarsetime::{Duration, UnixTimeStamp};
 use rand::distr::{Alphanumeric, SampleString as _};
 use serde::Serialize;
 
 use crate::{jwt_key::JwtKey, prelude::JwsAlgorithm};
 
-pub fn now() -> UnixTimeStamp {
-    use web_time::{SystemTime, UNIX_EPOCH};
-    let now = UnixTimeStamp::from_secs(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
-    now - Duration::from_secs(5)
+/// One hour in seconds
+pub const HOUR: u64 = 60 * 60;
+/// One day in seconds
+pub const DAY: u64 = 24 * HOUR;
+
+/// Returns a unix timestamp 5 seconds in the past
+pub fn now() -> u64 {
+    jsonwebtoken::get_current_timestamp() - 5
 }
 
 /// Builds a token with the given header fields and signs it with `key`, whatever `alg` says
