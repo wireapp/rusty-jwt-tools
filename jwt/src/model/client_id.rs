@@ -62,7 +62,9 @@ impl ClientId {
         }
 
         let username = percent_decode_str(uri.username()).decode_utf8()?;
-        let (user_id, device_id) = username.split_once('!').ok_or(RustyJwtError::InvalidClientId)?;
+        let (user_id, device_id) = username
+            .split_once(Self::URI_DELIMITER)
+            .ok_or(RustyJwtError::InvalidClientId)?;
 
         let user_id = Self::parse_user_id(user_id)?;
         let device_id = Self::parse_device_id(device_id)?;
