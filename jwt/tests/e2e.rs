@@ -1,5 +1,6 @@
+use std::time::Duration;
+
 use base64::Engine;
-use coarsetime::Duration;
 use jsonwebtoken::decode_header;
 use rand::distr::{Alphanumeric, SampleString as _};
 use rusty_jwt_tools::{jwk_thumbprint::JwkThumbprint, jwt_key::JwtKey, prelude::*};
@@ -25,7 +26,7 @@ fn e2e_jwt() {
             .unwrap();
         let htm = Htm::Post;
         let leeway: u16 = 5;
-        let expiry = Duration::from_days(1).into();
+        let expiry = Duration::from_secs(24 * 60 * 60); // 1 day
         let max_expiration: u64 = 2136351646; // somewhere in 2037
         let handle = Handle::from(handle).try_to_qualified(domain).unwrap();
         let dpop = Dpop {
@@ -64,7 +65,7 @@ fn e2e_jwt() {
             backend_sk.clone(),
             hash_alg,
             5,
-            core::time::Duration::from_secs(360),
+            Duration::from_secs(360),
         )
         .unwrap();
 

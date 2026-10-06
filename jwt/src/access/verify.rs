@@ -186,7 +186,6 @@ impl RustyJwtTools {
 
 #[cfg(test)]
 pub mod tests {
-    use coarsetime::Duration;
 
     use super::*;
     use crate::{jwt_key::JwtKey, test_utils::*};
@@ -751,7 +750,7 @@ pub mod tests {
         #[test]
         fn iat(ciphersuite: Ciphersuite) {
             // should succeed when 'iat' claim is present in access token and in the past
-            let yesterday = now() - Duration::from_days(1);
+            let yesterday = now() - DAY;
             let access = AccessBuilder {
                 iat: Some(yesterday),
                 ..ciphersuite.clone().into()
@@ -768,7 +767,7 @@ pub mod tests {
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "iat"));
 
             // should fail when issued in the future
-            let tomorrow = now() + Duration::from_days(1);
+            let tomorrow = now() + DAY;
             let access = AccessBuilder {
                 iat: Some(tomorrow),
                 ..ciphersuite.clone().into()
@@ -779,7 +778,7 @@ pub mod tests {
             // should fail respecting leeway
 
             // will fail as there is no tolerance
-            let in_1_h = now() + Duration::from_hours(1);
+            let in_1_h = now() + HOUR;
             let access = AccessBuilder {
                 iat: Some(in_1_h),
                 ..ciphersuite.clone().into()
@@ -808,7 +807,7 @@ pub mod tests {
         #[test]
         fn exp(ciphersuite: Ciphersuite) {
             // should succeed when 'exp' claim is present in access token and in future
-            let tomorrow = now() + Duration::from_days(1);
+            let tomorrow = now() + DAY;
             let access = AccessBuilder {
                 exp: Some(tomorrow),
                 ..ciphersuite.clone().into()
@@ -825,7 +824,7 @@ pub mod tests {
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "exp"));
 
             // should fail when 'exp' claim is in the past
-            let yesterday = now() - Duration::from_days(1);
+            let yesterday = now() - DAY;
             let access = AccessBuilder {
                 exp: Some(yesterday),
                 ..ciphersuite.clone().into()
@@ -836,7 +835,7 @@ pub mod tests {
             // should fail respecting leeway
 
             // will fail as there is no tolerance
-            let previous_hour = now() - Duration::from_hours(1);
+            let previous_hour = now() - HOUR;
             let access = AccessBuilder {
                 exp: Some(previous_hour),
                 ..ciphersuite.clone().into()
@@ -865,15 +864,15 @@ pub mod tests {
         #[test]
         fn exp_threshold(ciphersuite: Ciphersuite) {
             // should succeed when 'exp' is sooner than supplied 'max_expiration'
-            let tomorrow = now() + Duration::from_days(1);
-            let day_after_tomorrow = tomorrow + Duration::from_days(1);
+            let tomorrow = now() + DAY;
+            let day_after_tomorrow = tomorrow + DAY;
 
             let access = AccessBuilder {
                 exp: Some(tomorrow),
                 ..ciphersuite.clone().into()
             };
             let params = Params {
-                max_expiration: day_after_tomorrow.as_secs(),
+                max_expiration: day_after_tomorrow,
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access.build(), params);
@@ -885,7 +884,7 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let params = Params {
-                max_expiration: tomorrow.as_secs(),
+                max_expiration: tomorrow,
                 ..ciphersuite.into()
             };
             let result = verify_token(&access.build(), params);
@@ -1506,7 +1505,7 @@ pub mod tests {
         #[test]
         fn should_verify_iat(ciphersuite: Ciphersuite) {
             // should succeed when 'iat' claim is present in dpop token and in the past
-            let yesterday = now() - Duration::from_days(1);
+            let yesterday = now() - DAY;
             let proof = DpopBuilder {
                 iat: Some(yesterday),
                 ..ciphersuite.key.clone().into()
@@ -1527,7 +1526,7 @@ pub mod tests {
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "iat"));
 
             // should fail when issued in the future
-            let tomorrow = now() + Duration::from_days(1);
+            let tomorrow = now() + DAY;
             let proof = DpopBuilder {
                 iat: Some(tomorrow),
                 ..ciphersuite.key.clone().into()
@@ -1542,7 +1541,7 @@ pub mod tests {
         #[test]
         fn should_verify_expiry(ciphersuite: Ciphersuite) {
             // should succeed when 'exp' claim is present in dpop token and in future
-            let tomorrow = now() + Duration::from_days(1);
+            let tomorrow = now() + DAY;
             let proof = DpopBuilder {
                 exp: Some(tomorrow),
                 ..ciphersuite.key.clone().into()
@@ -1563,7 +1562,7 @@ pub mod tests {
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "exp"));
 
             // should fail when 'exp' claim is in the past
-            let yesterday = now() - Duration::from_days(1);
+            let yesterday = now() - DAY;
             let proof = DpopBuilder {
                 exp: Some(yesterday),
                 ..ciphersuite.key.clone().into()
@@ -1579,8 +1578,8 @@ pub mod tests {
         #[test]
         fn should_verify_max_expiration(ciphersuite: Ciphersuite) {
             // should succeed when 'exp' is sooner than supplied 'max_expiration'
-            let tomorrow = now() + Duration::from_days(1);
-            let day_after_tomorrow = tomorrow + Duration::from_days(1);
+            let tomorrow = now() + DAY;
+            let day_after_tomorrow = tomorrow + DAY;
 
             let proof = DpopBuilder {
                 exp: Some(tomorrow),
@@ -1589,7 +1588,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let params = Params {
-                max_expiration: day_after_tomorrow.as_secs(),
+                max_expiration: day_after_tomorrow,
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access, params);
@@ -1603,7 +1602,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let params = Params {
-                max_expiration: tomorrow.as_secs(),
+                max_expiration: tomorrow,
                 ..ciphersuite.into()
             };
             let result = verify_token(&access, params);

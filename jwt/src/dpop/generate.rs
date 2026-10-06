@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use jsonwebtoken::Header;
 
 use crate::{dpop::Dpop, prelude::*};
@@ -19,7 +21,7 @@ impl RustyJwtTools {
         client_id: &ClientId,
         nonce: BackendNonce,
         audience: url::Url,
-        expiry: core::time::Duration,
+        expiry: Duration,
         alg: JwsAlgorithm,
         kp: &Pem,
     ) -> RustyJwtResult<String> {
@@ -47,7 +49,6 @@ pub mod tests {
     };
     use serde_json::{Value, json};
     use wasm_bindgen_test::*;
-    use web_time::{SystemTime, UNIX_EPOCH};
 
     use crate::{dpop::*, jwt_key::JwtKey, test_utils::*};
 
@@ -64,7 +65,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -81,7 +82,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -98,7 +99,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -132,7 +133,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -171,7 +172,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -221,7 +222,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -248,7 +249,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -270,7 +271,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -291,7 +292,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -308,16 +309,16 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
             .unwrap();
             let claims = key.claims::<Dpop>(&token);
             assert!(claims.issued_at.is_some());
-            let iat = claims.issued_at.unwrap().as_secs();
+            let iat = claims.issued_at.unwrap();
 
-            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            let now = jsonwebtoken::get_current_timestamp();
             let leeway = Dpop::NOW_LEEWAY_SECONDS;
 
             let test_leeway = 2;
@@ -333,16 +334,16 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
             .unwrap();
             let claims = key.claims::<Dpop>(&token);
             assert!(claims.invalid_before.is_some());
-            let nbf = claims.invalid_before.unwrap().as_secs();
+            let nbf = claims.invalid_before.unwrap();
 
-            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            let now = jsonwebtoken::get_current_timestamp();
             let leeway = Dpop::NOW_LEEWAY_SECONDS;
 
             let test_leeway = 2;
@@ -352,7 +353,7 @@ pub mod tests {
         #[apply(all_keys)]
         #[wasm_bindgen_test]
         fn should_have_exp(key: JwtKey) {
-            let expiry = Duration::from_days(90).into();
+            let expiry = Duration::from_secs(90 * DAY);
             let token = RustyJwtTools::generate_dpop_token(
                 Dpop::default(),
                 &ClientId::default(),
@@ -365,8 +366,8 @@ pub mod tests {
             .unwrap();
             let claims = key.claims::<Dpop>(&token);
             assert!(claims.expires_at.is_some());
-            let exp = claims.expires_at.unwrap().as_secs();
-            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            let exp = claims.expires_at.unwrap();
+            let now = jsonwebtoken::get_current_timestamp();
             let ttl = now + expiry.as_secs();
             let leeway = 1;
             let range = (ttl - leeway)..=(ttl + leeway);
@@ -382,7 +383,7 @@ pub mod tests {
                 &ClientId::default(),
                 nonce.clone(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -406,7 +407,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default().clone(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -427,7 +428,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default().clone(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -448,7 +449,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default().clone(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -470,7 +471,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -490,7 +491,7 @@ pub mod tests {
                 &client_id,
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )
@@ -518,7 +519,7 @@ pub mod tests {
                 &ClientId::default(),
                 BackendNonce::default(),
                 "https://stepca/acme/wire/challenge/aaa/bbb".parse().unwrap(),
-                Duration::from_days(1).into(),
+                Duration::from_secs(DAY),
                 key.alg,
                 &key.kp,
             )

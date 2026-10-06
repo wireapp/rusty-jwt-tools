@@ -1,4 +1,5 @@
-use coarsetime::{Duration, UnixTimeStamp};
+use std::time::Duration;
+
 use jsonwebtoken::{decode_header, jwk::Jwk};
 use serde::{Deserialize, Serialize};
 
@@ -49,15 +50,15 @@ pub struct AccessBuilder {
     pub sub: Option<ClientId>,
     pub nonce: Option<BackendNonce>,
     pub jti: Option<String>,
-    pub iat: Option<UnixTimeStamp>,
-    pub exp: Option<UnixTimeStamp>,
+    pub iat: Option<u64>,
+    pub exp: Option<u64>,
     pub issuer: Option<Htu>,
 }
 
 impl From<Ciphersuite> for AccessBuilder {
     fn from(ciphersuite: Ciphersuite) -> Self {
         let iat = now();
-        let exp = iat + Duration::from_days(2);
+        let exp = iat + 2 * DAY;
         let proof = DpopBuilder::from(ciphersuite.key.clone());
         Self {
             alg: ciphersuite.key.alg.to_string(),
@@ -87,7 +88,7 @@ impl AccessBuilder {
     }
 
     fn claims(&self) -> JwtClaims<TestAccess> {
-        let exp = Duration::from_days(2);
+        let exp = Duration::from_secs(2 * DAY);
         let mut claims = JwtClaims::new(self.access.clone(), exp);
         claims.subject = self.sub.as_ref().map(|c| c.to_uri());
         claims.nonce = self.nonce.as_ref().map(|n| n.as_str().to_string());

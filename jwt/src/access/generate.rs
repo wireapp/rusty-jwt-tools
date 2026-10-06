@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use jsonwebtoken::{EncodingKey, Header, decode_header, jwk::Jwk};
 
 use crate::{
@@ -59,7 +61,7 @@ impl RustyJwtTools {
         backend_keys: Pem,
         hash_algorithm: HashAlgorithm,
         api_version: u32,
-        expiry: core::time::Duration,
+        expiry: Duration,
     ) -> RustyJwtResult<String> {
         let header = decode_header(dpop_proof)?;
         let (alg, jwk) = header.verify_dpop_header()?;
@@ -102,7 +104,7 @@ impl RustyJwtTools {
         nonce: BackendNonce,
         hash: HashAlgorithm,
         api_version: u32,
-        expiry: core::time::Duration,
+        expiry: Duration,
     ) -> RustyJwtResult<String> {
         let mut header = Self::new_access_header(alg);
 
@@ -151,7 +153,6 @@ impl RustyJwtTools {
 #[cfg(test)]
 pub mod tests {
     use base64::Engine;
-    use coarsetime::Duration;
     use serde_json::{Value, json};
 
     use super::*;
@@ -396,12 +397,9 @@ pub mod tests {
                 let token = access_token_with_dpop(&dpop.build(), params).unwrap();
 
                 let claims = backend_key.claims::<Access>(&token);
-                let nbf = claims.invalid_before.unwrap().as_secs();
+                let nbf = claims.invalid_before.unwrap();
 
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs();
+                let now = jsonwebtoken::get_current_timestamp();
                 let leeway = Dpop::NOW_LEEWAY_SECONDS;
                 let test_leeway = 2;
 
@@ -1003,7 +1001,7 @@ pub mod tests {
         #[test]
         fn iat(ciphersuite: Ciphersuite) {
             // should succeed when 'iat' claim is present in dpop token and in the past
-            let yesterday = now() - Duration::from_days(1);
+            let yesterday = now() - DAY;
             let dpop = DpopBuilder {
                 iat: Some(yesterday),
                 ..ciphersuite.key.clone().into()
@@ -1022,7 +1020,7 @@ pub mod tests {
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "iat"));
 
             // should fail when issued in the future
-            let tomorrow = now() + Duration::from_days(1);
+            let tomorrow = now() + DAY;
             let dpop = DpopBuilder {
                 iat: Some(tomorrow),
                 ..ciphersuite.key.clone().into()
@@ -1034,7 +1032,7 @@ pub mod tests {
             // should fail respecting leeway
 
             // will fail as there is no tolerance
-            let in_1_h = now() + Duration::from_hours(1);
+            let in_1_h = now() + HOUR;
             let dpop = DpopBuilder {
                 iat: Some(in_1_h),
                 ..ciphersuite.key.clone().into()
@@ -1063,7 +1061,7 @@ pub mod tests {
         #[test]
         fn nbf(ciphersuite: Ciphersuite) {
             // should succeed when 'nbf' claim is present in dpop token and in the past
-            let yesterday = now() - Duration::from_days(1);
+            let yesterday = now() - DAY;
             let dpop = DpopBuilder {
                 nbf: Some(yesterday),
                 ..ciphersuite.key.clone().into()
@@ -1082,7 +1080,7 @@ pub mod tests {
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "nbf"));
 
             // should fail when 'nbf' in the future
-            let tomorrow = now() + Duration::from_days(1);
+            let tomorrow = now() + DAY;
             let dpop = DpopBuilder {
                 nbf: Some(tomorrow),
                 ..ciphersuite.key.clone().into()
@@ -1096,7 +1094,7 @@ pub mod tests {
         #[test]
         fn exp(ciphersuite: Ciphersuite) {
             // should succeed when 'exp' claim is present in dpop token and in future
-            let tomorrow = now() + Duration::from_days(1);
+            let tomorrow = now() + DAY;
             let dpop = DpopBuilder {
                 exp: Some(tomorrow),
                 ..ciphersuite.key.clone().into()
@@ -1115,7 +1113,7 @@ pub mod tests {
             assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "exp"));
 
             // should fail when 'exp' claim is in the past
-            let yesterday = now() - Duration::from_days(1);
+            let yesterday = now() - DAY;
             let dpop = DpopBuilder {
                 exp: Some(yesterday),
                 ..ciphersuite.key.clone().into()
@@ -1127,7 +1125,7 @@ pub mod tests {
             // should fail respecting leeway
 
             // will fail as there is no tolerance
-            let previous_hour = now() - Duration::from_hours(1);
+            let previous_hour = now() - HOUR;
             let dpop = DpopBuilder {
                 exp: Some(previous_hour),
                 ..ciphersuite.key.clone().into()
@@ -1156,15 +1154,15 @@ pub mod tests {
         #[test]
         fn exp_threshold(ciphersuite: Ciphersuite) {
             // should succeed when 'exp' is sooner than supplied 'max_expiration'
-            let tomorrow = now() + Duration::from_days(1);
-            let day_after_tomorrow = tomorrow + Duration::from_days(1);
+            let tomorrow = now() + DAY;
+            let day_after_tomorrow = tomorrow + DAY;
 
             let dpop = DpopBuilder {
                 exp: Some(tomorrow),
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                max_expiration: day_after_tomorrow.as_secs(),
+                max_expiration: day_after_tomorrow,
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
@@ -1176,7 +1174,7 @@ pub mod tests {
                 ..ciphersuite.key.clone().into()
             };
             let params = Params {
-                max_expiration: tomorrow.as_secs(),
+                max_expiration: tomorrow,
                 ..ciphersuite.into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
@@ -1201,7 +1199,7 @@ pub mod tests {
         pub backend_keys: JwtKey,
         pub hash_alg: HashAlgorithm,
         pub api_version: u32,
-        pub expiry: core::time::Duration,
+        pub expiry: Duration,
         pub audience: url::Url,
     }
 
@@ -1224,7 +1222,7 @@ pub mod tests {
                 backend_keys,
                 hash_alg: ciphersuite.hash,
                 api_version: Access::DEFAULT_WIRE_SERVER_API_VERSION,
-                expiry: core::time::Duration::from_secs(Access::DEFAULT_EXPIRY),
+                expiry: Duration::from_secs(Access::DEFAULT_EXPIRY),
                 audience: "https://stepca:32902/acme/wire/challenge/I16phsvAPGbruDHr5Bh6akQVPKP6OO5v/dF2LHNmGI20R8rzzcgnrCSv789XcFEyL".parse().unwrap(),
             }
         }
@@ -1240,7 +1238,7 @@ pub mod tests {
             audience,
             ..
         } = params.clone();
-        let expiry = Duration::from_days(1).into();
+        let expiry = Duration::from_secs(DAY);
         let dpop =
             RustyJwtTools::generate_dpop_token(dpop, &client_id, backend_nonce, audience, expiry, dpop_alg, &key.kp)
                 .unwrap();

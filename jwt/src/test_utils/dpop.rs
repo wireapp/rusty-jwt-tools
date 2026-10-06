@@ -1,4 +1,5 @@
-use coarsetime::{Duration, UnixTimeStamp};
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -51,15 +52,15 @@ pub struct DpopBuilder {
     pub sub: Option<ClientId>,
     pub nonce: Option<BackendNonce>,
     pub jti: Option<String>,
-    pub iat: Option<UnixTimeStamp>,
-    pub nbf: Option<UnixTimeStamp>,
-    pub exp: Option<UnixTimeStamp>,
+    pub iat: Option<u64>,
+    pub nbf: Option<u64>,
+    pub exp: Option<u64>,
 }
 
 impl From<JwtKey> for DpopBuilder {
     fn from(key: JwtKey) -> Self {
         let now = now();
-        let exp = now + Duration::from_days(2);
+        let exp = now + 2 * DAY;
         Self {
             alg: key.alg.to_string(),
             typ: Some("dpop+jwt"),
@@ -82,7 +83,7 @@ impl DpopBuilder {
     }
 
     fn claims(&self) -> JwtClaims<TestDpop> {
-        let exp = Duration::from_days(2);
+        let exp = Duration::from_secs(2 * DAY);
         let mut claims = JwtClaims::new(self.dpop.clone(), exp);
         claims.audiences = Some(Audiences::AsString(
             "https://stepca/acme/wire/challenge/aaa/bbb".to_string(),
