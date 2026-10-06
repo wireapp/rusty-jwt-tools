@@ -2,8 +2,6 @@
 //!
 //! A collection of JWT utilities.
 #![cfg_attr(not(test), deny(missing_docs))]
-#![allow(clippy::single_component_path_imports)]
-extern crate core;
 
 #[cfg(test)]
 #[macro_use]
