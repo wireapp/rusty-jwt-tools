@@ -1,6 +1,5 @@
 //! Generic Jwt utilities
 
-use coarsetime::{Clock, Duration};
 use jsonwebtoken::{
     DecodingKey, Validation, decode,
     errors::{Error, ErrorKind},
@@ -83,12 +82,12 @@ impl VerifyJwt for &str {
         let issued_at = claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim("iat"))?;
         // TODO: This validation used to happen in simple_jwt
         // This assumes that iat is only part of dpop validation
-        let now = Clock::now_since_epoch();
-        if issued_at > now + Duration::from_secs(verify.leeway as u64) {
+        let now = jsonwebtoken::get_current_timestamp();
+        if issued_at > now + verify.leeway as u64 {
             return Err(RustyJwtError::InvalidDpopIat);
         }
         let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim("exp"))?;
-        if exp > Duration::from_secs(max_expiration) {
+        if exp > max_expiration {
             return Err(RustyJwtError::TokenLivesTooLong);
         }
 
