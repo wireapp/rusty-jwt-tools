@@ -5,7 +5,6 @@ use p256::{
     elliptic_curve::Generate,
     pkcs8::{DecodePrivateKey as _, EncodePrivateKey as _, EncodePublicKey as _},
 };
-use rand;
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
