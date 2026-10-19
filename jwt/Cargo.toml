@@ -18,7 +18,6 @@ workspace = true
 base64 = { version = "0.23", default-features = false, features = ["std"] }
 const_format = { version = "0.2", default-features = false }
 derive_more = { version = "2.1.1", features = ["from", "into", "deref"] }
-hybrid-array = "0.4"
 pkcs8 = { version = "0.11", features = ["pem"] }
 jsonwebtoken = { git = "https://github.com/wireapp/jsonwebtoken", rev = "99fbbda7e70c470c160aa7c37ae32f6f108b7efd", features = [
   "rust_crypto",
