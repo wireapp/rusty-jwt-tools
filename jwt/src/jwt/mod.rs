@@ -3,7 +3,7 @@
 #[cfg(test)]
 pub(crate) use claims::NOW_LEEWAY_SECONDS;
 pub use claims::{Audiences, JwtClaims};
-pub use verify::{Verify, VerifyJwt};
+pub use verify::{ExpectedClaims, VerifyJwt};
 
 mod claims;
 pub(crate) mod generate;

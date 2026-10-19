@@ -4,7 +4,7 @@ use jsonwebtoken::{
 };
 
 use crate::{
-    jwt::{JwtClaims, Verify, VerifyJwt},
+    jwt::{ExpectedClaims, JwtClaims, VerifyJwt},
     prelude::*,
 };
 
@@ -103,15 +103,16 @@ impl VerifyDpop for &str {
         leeway: u16,
     ) -> RustyJwtResult<JwtClaims<Dpop>> {
         let pk = DecodingKey::from_jwk(jwk).map_err(|e| RustyJwtError::InvalidToken(e.to_string()))?;
-        let verify = Verify {
+        let expected = ExpectedClaims {
             client_id,
             backend_nonce: Some(backend_nonce),
             leeway,
             issuer: None,
+            max_expiration,
         };
 
         // also verifies the nonce
-        let claims = (*self).verify_jwt::<Dpop>(alg, &pk, max_expiration, verify)?;
+        let claims = (*self).verify_jwt::<Dpop>(alg, &pk, expected)?;
 
         if let Some(expected_htm) = htm
             && expected_htm != claims.custom.htm

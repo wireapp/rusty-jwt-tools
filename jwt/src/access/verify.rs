@@ -3,7 +3,7 @@ use jsonwebtoken::{Header, decode_header, jwk::Jwk};
 use crate::{
     access::Access,
     jwk_thumbprint::JwkThumbprint,
-    jwt::{Verify, VerifyJwt},
+    jwt::{ExpectedClaims, VerifyJwt},
     prelude::*,
 };
 
@@ -107,14 +107,15 @@ impl RustyJwtTools {
         api_version: u32,
     ) -> RustyJwtResult<()> {
         let pk = alg.decoding_key(backend_pk)?;
-        let verify = Verify {
+        let expected = ExpectedClaims {
             leeway,
             client_id,
             backend_nonce: None,
             issuer: Some(issuer),
+            max_expiration,
         };
 
-        let claims = access_token.verify_jwt::<Access>(alg, &pk, max_expiration, verify)?;
+        let claims = access_token.verify_jwt::<Access>(alg, &pk, expected)?;
 
         // verify the JWK in access token represents the same key as the one supplied
         let backend_jwk = Jwk::from_decoding_key(&pk, Some(alg.into()))?;
@@ -1675,15 +1676,16 @@ pub mod tests {
                     .alg
                     .decoding_key(&backend_pk)
                     .expect("DecodingKey from pem");
-                let relaxed_verify = Verify {
+                let relaxed_expected = ExpectedClaims {
                     client_id: &client_id,
                     leeway: u16::MAX,
                     issuer: None,
                     backend_nonce: None,
+                    max_expiration,
                 };
                 // let access_claims = access.verify_jwt::<Access>(&key, u64::MAX, relaxed_verify).unwrap();
                 let access_claims = access
-                    .verify_jwt::<Access>(ciphersuite.key.alg, &key, max_expiration, relaxed_verify)
+                    .verify_jwt::<Access>(ciphersuite.key.alg, &key, relaxed_expected)
                     .ok()?;
                 let proof = access_claims.custom.proof;
                 let proof_header = decode_header(proof).ok()?;

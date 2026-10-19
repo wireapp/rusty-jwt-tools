@@ -10,7 +10,7 @@ use crate::{jwt::JwtClaims, prelude::*};
 
 /// Global trait to verify a Jwt token
 #[derive(Debug, Clone)]
-pub struct Verify<'a> {
+pub struct ExpectedClaims<'a> {
     /// client_id
     pub client_id: &'a ClientId,
     /// nonce
@@ -19,6 +19,8 @@ pub struct Verify<'a> {
     pub leeway: u16,
     /// issuer
     pub issuer: Option<Htu>,
+    /// max expiration
+    pub max_expiration: u64,
 }
 
 /// Verifies a Jwt token
@@ -35,11 +37,10 @@ pub trait VerifyJwt {
         &self,
         alg: JwsAlgorithm,
         key: &DecodingKey,
-        max_expiration: u64,
         // expected_cnf: Option<&JwkThumbprint>,
         // actual_cnf: Option<fn(&JwtClaims<T>) -> &JwkThumbprint>,
         // custom: Option<fn(&JwtClaims<T>) -> RustyJwtResult<JwtClaims<T>>>,
-        verify: Verify,
+        expected: ExpectedClaims,
     ) -> RustyJwtResult<JwtClaims<T>>
     where
         T: Serialize + DeserializeOwned;
@@ -50,18 +51,17 @@ impl VerifyJwt for &str {
         &self,
         alg: JwsAlgorithm,
         key: &DecodingKey,
-        max_expiration: u64,
         // expected_cnf: Option<&JwkThumbprint>,
         // actual_cnf: Option<fn(&JwtClaims<T>) -> &JwkThumbprint>,
         // custom: Option<fn(&JwtClaims<T>) -> RustyJwtResult<JwtClaims<T>>>,
-        verify: Verify,
+        expected: ExpectedClaims,
     ) -> RustyJwtResult<JwtClaims<T>>
     where
         T: Serialize + DeserializeOwned,
     {
         // Setup the validation
         let mut validation = Validation::new(alg.into());
-        if let Some(issuer) = verify.issuer {
+        if let Some(issuer) = expected.issuer {
             validation.set_required_spec_claims(&["exp", "sub", "nbf", "iss"]);
             validation.set_issuer(&[issuer]);
         } else {
@@ -70,8 +70,8 @@ impl VerifyJwt for &str {
         validation.validate_aud = false;
         validation.validate_exp = true;
         validation.validate_nbf = true;
-        validation.leeway = verify.leeway.into();
-        validation.sub = Some(verify.client_id.to_uri());
+        validation.leeway = expected.leeway.into();
+        validation.sub = Some(expected.client_id.to_uri());
 
         // Get the token claims, validating the above via jsonwebtoken
         let token = decode::<JwtClaims<T>>(self, key, &validation).map_err(jwt_error_mapping)?;
@@ -83,15 +83,15 @@ impl VerifyJwt for &str {
         // TODO: This validation used to happen in simple_jwt
         // This assumes that iat is only part of dpop validation
         let now = jsonwebtoken::get_current_timestamp();
-        if issued_at > now + verify.leeway as u64 {
+        if issued_at > now + expected.leeway as u64 {
             return Err(RustyJwtError::InvalidDpopIat);
         }
         let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim("exp"))?;
-        if exp > max_expiration {
+        if exp > expected.max_expiration {
             return Err(RustyJwtError::TokenLivesTooLong);
         }
 
-        if let Some(backend_nonce) = verify.backend_nonce {
+        if let Some(backend_nonce) = expected.backend_nonce {
             let nonce = claims
                 .nonce
                 .as_deref()
