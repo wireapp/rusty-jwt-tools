@@ -7,9 +7,6 @@ pub enum RustyJwtError {
     /// JWT error from `jsonwebtoken` crate
     #[error(transparent)]
     JsonWebTokenError(#[from] jsonwebtoken::errors::Error),
-    /// Elliptic curve error
-    #[error(transparent)]
-    Sec1Error(#[from] sec1::Error),
     /// Invalid URL
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
@@ -19,12 +16,6 @@ pub enum RustyJwtError {
     /// UTF-8 parsing error
     #[error(transparent)]
     Utf8Error(#[from] core::str::Utf8Error),
-    /// Base64 decoding error
-    #[error(transparent)]
-    Base64DecodeError(#[from] base64::DecodeError),
-    /// Json error
-    #[error(transparent)]
-    JsonError(#[from] serde_json::Error),
     /// Invalid URL
     #[error("Invalid Htu '{0}' in DPoP token because {1}")]
     InvalidHtu(url::Url, &'static str),
