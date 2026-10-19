@@ -49,21 +49,18 @@ impl RustyJwtToolsFfi {
     /// see [RustyJwtTools::generate_access_token]
     ///
     /// If any input is invalid, the returned [HsResult] holds the error for the first invalid
-    /// input.
+    /// input. A null pointer yields [HsError::FfiError].
     ///
     /// ## Safety
     ///
     /// This function accepts several C-style string pointers as parameters.
-    /// Each of them must abide by the following restrictions for safe usage:
+    /// Each of them must either be null or abide by the following restrictions for safe usage:
     ///
-    /// Safety
-    ///
-    /// - The memory pointed to by `ptr` must contain a valid nul terminator at the end of the string.
-    /// - `ptr` must be valid for reads of bytes up to and including the nul terminator. This means in particular:
-    ///     - The entire memory range of this `CStr` must be contained within a single allocated object!
-    ///     - `ptr` must be non-null even for a zero-length cstr.
-    ///     - The memory referenced by the returned CStr must not be mutated for the duration of lifetime 'a.
-    /// - The nul terminator must be within `isize::MAX` from `ptr`
+    /// - The memory pointed to by the pointer must contain a valid nul terminator at the end of the string.
+    /// - The pointer must be valid for reads of bytes up to and including the nul terminator. This means in particular:
+    ///     - The entire memory range of the string must be contained within a single allocated object!
+    ///     - The memory must not be mutated for the duration of this call.
+    /// - The nul terminator must be within `isize::MAX` from the pointer
     #[unsafe(no_mangle)]
     pub extern "C" fn generate_dpop_access_token(
         dpop_proof: *const c_char,
@@ -80,35 +77,48 @@ impl RustyJwtToolsFfi {
         max_expiration: u64,
         backend_keys: *const c_char,
     ) -> *const HsResult<CString> {
+        /// Borrows the bytes of a C string, without the nul terminator
+        ///
+        /// # Safety
+        ///
+        /// `ptr` must either be null or abide by the rules of [CStr::from_ptr]
+        unsafe fn c_str_bytes<'a>(ptr: *const c_char) -> HsResult<&'a [u8]> {
+            if ptr.is_null() {
+                return Err(HsError::FfiError);
+            }
+            // SAFETY: `ptr` is non-null and the caller guarantees the remaining rules of `CStr::from_ptr`
+            Ok(unsafe { CStr::from_ptr(ptr) }.to_bytes())
+        }
+
         let generate = || -> HsResult<CString> {
             // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
-            let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
+            let dpop = unsafe { c_str_bytes(dpop_proof) }?;
             let dpop = core::str::from_utf8(dpop).map_err(RustyJwtError::from)?;
             // SAFETY: safe if the rules in the function signature are all followed for `user_id`
-            let user_id = unsafe { CStr::from_ptr(user_id).to_bytes() };
+            let user_id = unsafe { c_str_bytes(user_id) }?;
             let user_id = core::str::from_utf8(user_id)
                 .ok()
                 .and_then(|s| uuid::Uuid::from_str(s).ok())
                 .ok_or(HsError::InvalidUserId)?;
             // SAFETY: safe if the rules in the function signature are all followed for `domain`
-            let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
+            let domain = unsafe { c_str_bytes(domain) }?;
             let client_id = ClientId::try_from_raw_parts(user_id.as_ref(), client_id, domain)?;
             // SAFETY: safe if the rules in the function signature are all followed for `handle`
-            let handle = Handle::try_from(unsafe { CStr::from_ptr(handle).to_bytes() })?;
+            let handle = Handle::try_from(unsafe { c_str_bytes(handle) }?)?;
             let handle = handle.try_to_qualified(&client_id.domain)?;
             // SAFETY: safe if the rules in the function signature are all followed for `display_name`
-            let display_name = unsafe { CStr::from_ptr(display_name).to_bytes() };
+            let display_name = unsafe { c_str_bytes(display_name) }?;
             let display_name = core::str::from_utf8(display_name).map_err(RustyJwtError::from)?;
             // SAFETY: safe if the rules in the function signature are all followed for `team`
-            let team = Team::try_from(unsafe { CStr::from_ptr(team).to_bytes() })?;
+            let team = Team::try_from(unsafe { c_str_bytes(team) }?)?;
             // SAFETY: safe if the rules in the function signature are all followed for `backend_nonce`
-            let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() })?;
+            let backend_nonce = BackendNonce::try_from_bytes(unsafe { c_str_bytes(backend_nonce) }?)?;
             // SAFETY: safe if the rules in the function signature are all followed for `uri`
-            let uri = Htu::try_from(unsafe { CStr::from_ptr(uri).to_bytes() })?;
+            let uri = Htu::try_from(unsafe { c_str_bytes(uri) }?)?;
             // SAFETY: safe if the rules in the function signature are all followed for `method`
-            let method = Htm::try_from(unsafe { CStr::from_ptr(method).to_bytes() })?;
+            let method = Htm::try_from(unsafe { c_str_bytes(method) }?)?;
             // SAFETY: safe if the rules in the function signature are all followed for `backend_keys`
-            let backend_kp = Pem::try_from(unsafe { CStr::from_ptr(backend_keys).to_bytes() })?;
+            let backend_kp = Pem::try_from(unsafe { c_str_bytes(backend_keys) }?)?;
             // TODO: change in API
             let hash_algorithm = HashAlgorithm::SHA256;
 
