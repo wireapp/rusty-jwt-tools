@@ -195,7 +195,6 @@ pub type HsResult<T> = Result<T, HsError>;
 
 #[derive(Debug, Copy, Clone)]
 #[repr(u8)]
-#[allow(dead_code)]
 pub enum HsError {
     /// Unmapped error
     UnknownError = 1,
@@ -240,19 +239,11 @@ pub enum HsError {
     /// Bubbling up errors
     JsonWebTokenError = 21,
     /// Bubbling up errors
-    RandError = 22,
-    /// Bubbling up errors
-    Sec1Error = 23,
-    /// Bubbling up errors
     UrlParseError = 24,
     /// Bubbling up errors
     UuidError = 25,
     /// Bubbling up errors
     Utf8Error = 26,
-    /// Bubbling up errors
-    Base64DecodeError = 27,
-    /// Bubbling up errors
-    JsonError = 28,
     /// Bubbling up errors
     InvalidJwkThumbprint = 31,
     /// Bubbling up errors
