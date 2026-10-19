@@ -1683,7 +1683,6 @@ pub mod tests {
                     backend_nonce: None,
                     max_expiration,
                 };
-                // let access_claims = access.verify_jwt::<Access>(&key, u64::MAX, relaxed_verify).unwrap();
                 let access_claims = access
                     .verify_jwt::<Access>(ciphersuite.key.alg, &key, relaxed_expected)
                     .ok()?;
