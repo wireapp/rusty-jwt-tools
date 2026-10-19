@@ -1062,7 +1062,6 @@ dependencies = [
  "rstest",
  "rstest_reuse",
  "rusty-jwt-tools",
- "sec1",
  "serde",
  "serde_json",
  "sha2",
