@@ -76,7 +76,7 @@ impl RustyJwtToolsFfi {
         max_skew_secs: u16,
         max_expiration: u64,
         backend_keys: *const c_char,
-    ) -> *const HsResult<String> {
+    ) -> *const HsResult<CString> {
         // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
         let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
         let dpop = core::str::from_utf8(dpop);
@@ -150,14 +150,16 @@ impl RustyJwtToolsFfi {
                 ACCESS_TOKEN_API_VERSION,
                 ACCESS_TOKEN_EXPIRY,
             )
-            .map_err(HsError::from);
+            .map_err(HsError::from)
+            // a JWS compact serialization never contains a nul byte
+            .and_then(|token| CString::new(token).map_err(|_| HsError::ImplementationError));
             return Box::into_raw(Box::new(res));
         }
         Box::into_raw(Box::new(Err(HsError::ImplementationError)))
     }
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn get_error(ptr: *const HsResult<String>) -> u8 {
+    pub extern "C" fn get_error(ptr: *const HsResult<CString>) -> u8 {
         // SAFETY: safe because if the pointer is null we panic before dereferencing it
         let result = unsafe {
             assert!(!ptr.is_null());
@@ -170,8 +172,13 @@ impl RustyJwtToolsFfi {
         }
     }
 
+    /// Returns the access token as a nul-terminated C string, or null in case of an error.
+    ///
+    /// The returned string is owned by the [HsResult] and must not be freed by the caller.
+    /// It is only valid until [Self::free_dpop_access_token] is called on `ptr`, so callers
+    /// must copy it before that.
     #[unsafe(no_mangle)]
-    pub extern "C" fn get_token(ptr: *const HsResult<String>) -> *const c_char {
+    pub extern "C" fn get_token(ptr: *const HsResult<CString>) -> *const c_char {
         // SAFETY: safe because if the pointer is null we panic before dereferencing it
         let result = unsafe {
             assert!(!ptr.is_null());
@@ -179,21 +186,15 @@ impl RustyJwtToolsFfi {
         };
 
         match result {
-            Ok(value) => {
-                // we have to convert this into a ('\0' terminated!) C string
-                match CString::new(value.as_str()) {
-                    Ok(value) => value.into_raw(),
-                    _ => std::ptr::null_mut(),
-                }
-            }
-            Err(_) => std::ptr::null_mut(),
+            Ok(token) => token.as_ptr(),
+            Err(_) => std::ptr::null(),
         }
     }
 
     /// Frees the allocated [HsResult] used for returning the result.
     /// This has to be called from haskell
     #[unsafe(no_mangle)]
-    pub extern "C" fn free_dpop_access_token(ptr: *mut HsResult<String>) {
+    pub extern "C" fn free_dpop_access_token(ptr: *mut HsResult<CString>) {
         if ptr.is_null() {
             return;
         }
