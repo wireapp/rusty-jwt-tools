@@ -160,7 +160,7 @@ impl FromStr for HashAlgorithm {
             "SHA-256" => Self::SHA256,
             "SHA-384" => Self::SHA384,
             "SHA-512" => Self::SHA512,
-            _ => return Err(RustyJwtError::ImplementationError),
+            _ => return Err(RustyJwtError::UnsupportedAlgorithm),
         })
     }
 }
