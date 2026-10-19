@@ -1,4 +1,4 @@
-use jsonwebtoken::{DecodingKey, Header, decode_header, jwk::Jwk};
+use jsonwebtoken::{Header, decode_header, jwk::Jwk};
 
 use crate::{
     access::Access,
@@ -106,12 +106,7 @@ impl RustyJwtTools {
         hash: HashAlgorithm,
         api_version: u32,
     ) -> RustyJwtResult<()> {
-        let pk = match alg {
-            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                DecodingKey::from_ec_pem(backend_pk.as_ref())?
-            }
-            JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(backend_pk.as_ref())?,
-        };
+        let pk = alg.decoding_key(backend_pk)?;
         let verify = Verify {
             leeway,
             client_id,
@@ -1675,13 +1670,11 @@ pub mod tests {
 
         let expected_kid = expected_kid
             .or_else(|| {
-                let key = match ciphersuite.key.alg {
-                    JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                        DecodingKey::from_ec_pem(backend_pk.as_ref())
-                    }
-                    JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(backend_pk.as_ref()),
-                }
-                .expect("DecodingKey from pem");
+                let key = ciphersuite
+                    .key
+                    .alg
+                    .decoding_key(&backend_pk)
+                    .expect("DecodingKey from pem");
                 let relaxed_verify = Verify {
                     client_id: &client_id,
                     leeway: u16::MAX,

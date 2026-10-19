@@ -1,4 +1,4 @@
-use jsonwebtoken::{EncodingKey, Header, jwk::Jwk};
+use jsonwebtoken::{Header, jwk::Jwk};
 use serde::Serialize;
 
 use crate::{jwt::JwtClaims, prelude::*};
@@ -15,10 +15,7 @@ impl RustyJwtTools {
     where
         T: Serialize,
     {
-        let key = match alg {
-            JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(kp.as_ref())?,
-            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => EncodingKey::from_ec_pem(kp.as_ref())?,
-        };
+        let key = alg.encoding_key(kp)?;
 
         if with_jwk {
             let jwk = Jwk::from_encoding_key(&key, alg.into())?;

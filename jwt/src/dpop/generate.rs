@@ -44,7 +44,7 @@ impl RustyJwtTools {
 pub mod tests {
     use base64::Engine;
     use jsonwebtoken::{
-        DecodingKey, EncodingKey, Validation, decode, decode_header,
+        DecodingKey, Validation, decode, decode_header,
         jwk::{Jwk, ThumbprintHash},
     };
     use serde_json::{Value, json};
@@ -142,12 +142,7 @@ pub mod tests {
             let jwk = header.jwk.as_ref().unwrap();
 
             // Build the expected JWK from the key that was used to sign the token.
-            let encoding_key = match key.alg {
-                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                    EncodingKey::from_ec_pem(key.sk.as_bytes()).unwrap()
-                }
-                JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(key.sk.as_bytes()).unwrap(),
-            };
+            let encoding_key = key.alg.encoding_key(&key.sk).unwrap();
 
             let expected_jwk = Jwk::from_encoding_key(&encoding_key, key.alg.into()).unwrap();
 
@@ -179,13 +174,7 @@ pub mod tests {
             .unwrap();
 
             // validate token given raw public key
-            let decoding_key = match key.alg {
-                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                    DecodingKey::from_ec_pem(key.pk.as_ref())
-                }
-                JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(key.pk.as_ref()),
-            }
-            .expect("DecodingKey from pem");
+            let decoding_key = key.alg.decoding_key(&key.pk).expect("DecodingKey from pem");
             let mut validation = Validation::new(key.alg.into());
             validation.validate_aud = false;
             assert!(decode::<Dpop>(&token, &decoding_key, &validation).is_ok());
@@ -199,13 +188,10 @@ pub mod tests {
 
             // should not be valid with another key
             let other_kp = JwtKey::new_key(key.alg);
-            let decoding_key = match other_kp.alg {
-                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                    DecodingKey::from_ec_pem(other_kp.pk.as_ref())
-                }
-                JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(other_kp.pk.as_ref()),
-            }
-            .expect("DecodingKey from random JwtKey");
+            let decoding_key = other_kp
+                .alg
+                .decoding_key(&other_kp.pk)
+                .expect("DecodingKey from random JwtKey");
             assert!(decode::<Dpop>(&token, &decoding_key, &validation).is_err());
         }
     }

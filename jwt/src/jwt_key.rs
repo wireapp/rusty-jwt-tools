@@ -1,6 +1,6 @@
 //! Test utils exposed for e2e test
 
-use jsonwebtoken::{DecodingKey, Validation, decode, jwk::Jwk};
+use jsonwebtoken::{Validation, decode, jwk::Jwk};
 use p256::{
     elliptic_curve::Generate,
     pkcs8::{DecodePrivateKey as _, EncodePrivateKey as _, EncodePublicKey as _},
@@ -75,12 +75,7 @@ impl JwtKey {
     where
         T: Serialize + DeserializeOwned,
     {
-        let key = match self.alg {
-            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                DecodingKey::from_ec_pem(self.pk.as_ref()).expect("Decoding key from pem")
-            }
-            JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(self.pk.as_ref()).expect("Decoding key from pem"),
-        };
+        let key = self.alg.decoding_key(&self.pk).expect("Decoding key from pem");
         let mut validation = Validation::new(self.alg.into());
         validation.validate_aud = false;
         decode::<JwtClaims<T>>(token, &key, &validation)
@@ -105,12 +100,7 @@ impl JwtKey {
 
     /// Get the Jwk of a key
     pub fn to_jwk(&self) -> Jwk {
-        let key = match self.alg {
-            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                DecodingKey::from_ec_pem(self.pk.as_ref()).unwrap()
-            }
-            JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(self.pk.as_ref()).unwrap(),
-        };
+        let key = self.alg.decoding_key(&self.pk).unwrap();
         Jwk::from_decoding_key(&key, Some(self.alg.into())).expect("jwk from decoding key")
     }
 }

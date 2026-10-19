@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use jsonwebtoken::{EncodingKey, Header, decode_header, jwk::Jwk};
+use jsonwebtoken::{Header, decode_header, jwk::Jwk};
 
 use crate::{
     access::Access,
@@ -127,13 +127,9 @@ impl RustyJwtTools {
             }
             .into_jwt_claims(client_id, nonce, proof_claims.custom.htu, audience, expiry)
         };
-        let key = match alg {
-            JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(backend_keys.as_ref()),
-            JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                EncodingKey::from_ec_pem(backend_keys.as_ref())
-            }
-        }
-        .map_err(RustyJwtError::InvalidBackendKeys)?;
+        let key = alg
+            .encoding_key(&backend_keys)
+            .map_err(RustyJwtError::InvalidBackendKeys)?;
 
         let jwk = Jwk::from_encoding_key(&key, alg.into()).map_err(RustyJwtError::InvalidBackendKeys)?;
         header.jwk = Some(jwk);
@@ -219,12 +215,7 @@ pub mod tests {
                 let header = decode_header(&token).unwrap();
                 let jwk = header.jwk.as_ref().unwrap();
 
-                let backend_key = match key.alg {
-                    JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                        EncodingKey::from_ec_pem(backend_kp.as_bytes()).unwrap()
-                    }
-                    JwsAlgorithm::EdDSA => EncodingKey::from_ed_pem(backend_kp.as_bytes()).unwrap(),
-                };
+                let backend_key = key.alg.encoding_key(&backend_kp).unwrap();
                 let backend_jwk = Jwk::from_encoding_key(&backend_key, key.alg.into()).unwrap();
 
                 assert_eq!(
@@ -455,7 +446,7 @@ pub mod tests {
     }
 
     mod backend_keys {
-        use jsonwebtoken::{DecodingKey, Validation, decode, errors::ErrorKind};
+        use jsonwebtoken::{Validation, decode, errors::ErrorKind};
 
         use super::*;
 
@@ -465,12 +456,11 @@ pub mod tests {
             let params = Params::from(ciphersuite.clone());
             let backend_keys = params.backend_keys.clone();
             let access_token = access_token(params).unwrap();
-            let key = match ciphersuite.key.alg {
-                JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-                    DecodingKey::from_ec_pem(backend_keys.pk.as_ref()).expect("key from ec pem")
-                }
-                JwsAlgorithm::EdDSA => DecodingKey::from_ed_pem(backend_keys.pk.as_ref()).expect("key from ed pem"),
-            };
+            let key = ciphersuite
+                .key
+                .alg
+                .decoding_key(&backend_keys.pk)
+                .expect("key from pem");
             let mut validation = Validation::new(ciphersuite.key.alg.into());
             validation.validate_aud = false;
             decode::<serde_json::Value>(access_token, &key, &validation).unwrap();

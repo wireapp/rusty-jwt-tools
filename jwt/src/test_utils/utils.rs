@@ -2,7 +2,7 @@ use base64::Engine;
 use rand::distr::{Alphanumeric, SampleString as _};
 use serde::Serialize;
 
-use crate::{jwt_key::JwtKey, prelude::JwsAlgorithm};
+use crate::jwt_key::JwtKey;
 
 /// One hour in seconds
 pub const HOUR: u64 = 60 * 60;
@@ -32,13 +32,7 @@ pub fn forge_token(
         ..Default::default()
     };
 
-    let encoding_key = match key.alg {
-        JwsAlgorithm::ES256 | JwsAlgorithm::ES384 | JwsAlgorithm::ES512 => {
-            jsonwebtoken::EncodingKey::from_ec_pem(key.kp.as_ref())
-        }
-        JwsAlgorithm::EdDSA => jsonwebtoken::EncodingKey::from_ed_pem(key.kp.as_ref()),
-    }
-    .expect("encoding key from pem");
+    let encoding_key = key.alg.encoding_key(&key.kp).expect("encoding key from pem");
 
     let b64 = |v: &[u8]| base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(v);
     let encoded_header = b64(&serde_json::to_vec(&header).unwrap());
