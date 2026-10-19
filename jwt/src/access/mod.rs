@@ -2,11 +2,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    jwk_thumbprint::JwkThumbprint,
-    jwt::{Audiences, JwtClaims, new_jti},
-    prelude::*,
-};
+use crate::{jwk_thumbprint::JwkThumbprint, jwt::JwtClaims, prelude::*};
 
 mod generate;
 mod verify;
@@ -62,9 +58,6 @@ impl Access {
     /// Current wire-server API version
     pub(crate) const DEFAULT_SCOPE: &'static str = "wire_client_id";
 
-    /// we want "nbf" & "iat" slightly in the past to prevent clock drifts or problems non-monotonic hosts
-    pub(crate) const NOW_LEEWAY_SECONDS: u64 = 3600;
-
     fn into_jwt_claims(
         self,
         client_id: &ClientId,
@@ -73,16 +66,9 @@ impl Access {
         audience: url::Url,
         expiry: Duration,
     ) -> JwtClaims<Self> {
-        let now = jsonwebtoken::get_current_timestamp() - Self::NOW_LEEWAY_SECONDS;
         JwtClaims {
-            issued_at: Some(now),
-            invalid_before: Some(now),
-            jwt_id: Some(new_jti()),
-            subject: Some(client_id.to_uri()),
-            nonce: Some(nonce.to_string()),
             issuer: Some(issuer.to_string()),
-            audiences: Some(Audiences::AsString(audience.to_string())),
-            ..JwtClaims::new(self, expiry)
+            ..JwtClaims::new_for_client(self, client_id, nonce, audience, expiry)
         }
     }
 }

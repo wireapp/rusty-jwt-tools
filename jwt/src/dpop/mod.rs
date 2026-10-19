@@ -5,10 +5,7 @@ pub use htu::Htu;
 use serde::{Deserialize, Serialize};
 pub(crate) use verify::{VerifyDpop, VerifyDpopTokenHeader};
 
-use crate::{
-    jwt::{Audiences, JwtClaims, new_jti},
-    prelude::*,
-};
+use crate::{jwt::JwtClaims, prelude::*};
 
 mod generate;
 mod htm;
@@ -49,9 +46,6 @@ impl Dpop {
     /// JWT header 'typ'
     pub const TYP: &'static str = "dpop+jwt";
 
-    /// we want "nbf" & "iat" slightly in the past to prevent clock drifts or problems non-monotonic hosts
-    pub(crate) const NOW_LEEWAY_SECONDS: u64 = 3600;
-
     /// Create JWT claims (a JSON object) from DPoP fields
     pub fn into_jwt_claims(
         self,
@@ -60,16 +54,7 @@ impl Dpop {
         expiry: Duration,
         audience: url::Url,
     ) -> JwtClaims<Self> {
-        let now = jsonwebtoken::get_current_timestamp() - Self::NOW_LEEWAY_SECONDS;
-        JwtClaims {
-            issued_at: Some(now),
-            invalid_before: Some(now),
-            jwt_id: Some(new_jti()),
-            subject: Some(client_id.to_uri()),
-            nonce: Some(nonce.to_string()),
-            audiences: Some(Audiences::AsString(audience.to_string())),
-            ..JwtClaims::new(self, expiry)
-        }
+        JwtClaims::new_for_client(self, client_id, nonce, audience, expiry)
     }
 }
 

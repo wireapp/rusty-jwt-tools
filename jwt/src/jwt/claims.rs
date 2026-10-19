@@ -2,7 +2,10 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::*;
+use crate::{jwt::new_jti, prelude::*};
+
+/// we want "nbf" & "iat" slightly in the past to prevent clock drifts or problems non-monotonic hosts
+pub(crate) const NOW_LEEWAY_SECONDS: u64 = 3600;
 
 /// A set of JWT claims: the registered claims from [RFC 7519 Section 4.1][1] plus application-defined `custom` ones
 ///
@@ -67,6 +70,26 @@ impl<T> JwtClaims<T> {
             jwt_id: None,
             nonce: None,
             custom,
+        }
+    }
+
+    /// Creates claims for a token of `client_id`, issued [NOW_LEEWAY_SECONDS] in the past and expiring in `expiry`
+    pub(crate) fn new_for_client(
+        custom: T,
+        client_id: &ClientId,
+        nonce: BackendNonce,
+        audience: url::Url,
+        expiry: Duration,
+    ) -> Self {
+        let now = jsonwebtoken::get_current_timestamp() - NOW_LEEWAY_SECONDS;
+        Self {
+            issued_at: Some(now),
+            invalid_before: Some(now),
+            jwt_id: Some(new_jti()),
+            subject: Some(client_id.to_uri()),
+            nonce: Some(nonce.to_string()),
+            audiences: Some(Audiences::AsString(audience.to_string())),
+            ..Self::new(custom, expiry)
         }
     }
 }

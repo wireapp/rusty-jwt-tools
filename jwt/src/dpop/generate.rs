@@ -305,7 +305,7 @@ pub mod tests {
             let iat = claims.issued_at.unwrap();
 
             let now = jsonwebtoken::get_current_timestamp();
-            let leeway = Dpop::NOW_LEEWAY_SECONDS;
+            let leeway = crate::jwt::NOW_LEEWAY_SECONDS;
 
             let test_leeway = 2;
             assert!(iat <= (now - leeway) + test_leeway);
@@ -330,7 +330,7 @@ pub mod tests {
             let nbf = claims.invalid_before.unwrap();
 
             let now = jsonwebtoken::get_current_timestamp();
-            let leeway = Dpop::NOW_LEEWAY_SECONDS;
+            let leeway = crate::jwt::NOW_LEEWAY_SECONDS;
 
             let test_leeway = 2;
             assert!(nbf <= (now - leeway) + test_leeway);
