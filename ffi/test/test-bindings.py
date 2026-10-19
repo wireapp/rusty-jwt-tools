@@ -122,6 +122,17 @@ def test_should_return_an_error_when_given_invalid_method(lib):
     lib.free_dpop_access_token(result)
 
 
+def test_should_return_an_error_when_given_null_pointer(lib):
+    args = sample_args()
+    args["domain"] = None
+    result = generate_token(lib, args)
+    # FFI boundary error
+    assert lib.get_error(result) == 2
+    assert lib.get_token(result) is None
+
+    lib.free_dpop_access_token(result)
+
+
 if __name__ == "__main__":
     assert len(sys.argv) == 2
     lib = load_ffi_library(sys.argv[1])
@@ -129,3 +140,4 @@ if __name__ == "__main__":
     test_should_return_a_valid_access_token(lib)
     test_should_return_an_error_when_given_wrong_nonce(lib)
     test_should_return_an_error_when_given_invalid_method(lib)
+    test_should_return_an_error_when_given_null_pointer(lib)
