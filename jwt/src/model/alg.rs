@@ -1,6 +1,6 @@
 use std::{fmt::Formatter, str::FromStr};
 
-use jsonwebtoken::{Algorithm, jwk::ThumbprintHash};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, jwk::ThumbprintHash};
 
 use crate::prelude::*;
 
@@ -34,6 +34,24 @@ pub enum JwsAlgorithm {
     /// [1]: https://tools.ietf.org/html/rfc8032
     /// [2]: https://tools.ietf.org/html/rfc8037
     EdDSA,
+}
+
+impl JwsAlgorithm {
+    /// Parses a PEM encoded private key for signing with this algorithm
+    pub(crate) fn encoding_key(self, pem: &Pem) -> jsonwebtoken::errors::Result<EncodingKey> {
+        match self {
+            Self::ES256 | Self::ES384 | Self::ES512 => EncodingKey::from_ec_pem(pem.as_bytes()),
+            Self::EdDSA => EncodingKey::from_ed_pem(pem.as_bytes()),
+        }
+    }
+
+    /// Parses a PEM encoded public key for verifying signatures of this algorithm
+    pub(crate) fn decoding_key(self, pem: &Pem) -> jsonwebtoken::errors::Result<DecodingKey> {
+        match self {
+            Self::ES256 | Self::ES384 | Self::ES512 => DecodingKey::from_ec_pem(pem.as_bytes()),
+            Self::EdDSA => DecodingKey::from_ed_pem(pem.as_bytes()),
+        }
+    }
 }
 
 impl From<JwsAlgorithm> for jsonwebtoken::Algorithm {
