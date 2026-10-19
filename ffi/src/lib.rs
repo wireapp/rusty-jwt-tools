@@ -48,6 +48,9 @@ const ACCESS_TOKEN_API_VERSION: u32 = 5;
 impl RustyJwtToolsFfi {
     /// see [RustyJwtTools::generate_access_token]
     ///
+    /// If any input is invalid, the returned [HsResult] holds the error for the first invalid
+    /// input.
+    ///
     /// ## Safety
     ///
     /// This function accepts several C-style string pointers as parameters.
@@ -77,85 +80,58 @@ impl RustyJwtToolsFfi {
         max_expiration: u64,
         backend_keys: *const c_char,
     ) -> *const HsResult<CString> {
-        // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
-        let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
-        let dpop = core::str::from_utf8(dpop);
-        // SAFETY: safe if the rules in the function signature are all followed for `user_id`
-        let user_id = unsafe { CStr::from_ptr(user_id) };
-        let Some(user_id) = std::str::from_utf8(user_id.to_bytes())
-            .ok()
-            .and_then(|s| uuid::Uuid::from_str(s).ok())
-        else {
-            return Box::into_raw(Box::new(Err(HsError::InvalidUserId)));
-        };
-        // SAFETY: safe if the rules in the function signature are all followed for `domain`
-        let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
-        // SAFETY: safe if the rules in the function signature are all followed for `team`
-        let team = unsafe { CStr::from_ptr(team).to_bytes() }.try_into();
-        let client_id = ClientId::try_from_raw_parts(user_id.as_ref(), client_id, domain);
-        // SAFETY: safe if the rules in the function signature are all followed for `handle`
-        let handle: Result<Handle, _> = unsafe { CStr::from_ptr(handle).to_bytes() }.try_into();
-        // SAFETY: safe if the rules in the function signature are all followed for `display_name`
-        let display_name = unsafe { CStr::from_ptr(display_name).to_bytes() };
-        let display_name = core::str::from_utf8(display_name);
-        // SAFETY: safe if the rules in the function signature are all followed for `backend_nonce`
-        let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() });
-        // SAFETY: safe if the rules in the function signature are all followed for `uri`
-        let uri = unsafe { CStr::from_ptr(uri).to_bytes() }.try_into();
-        // SAFETY: safe if the rules in the function signature are all followed for `method`
-        let method = unsafe { CStr::from_ptr(method).to_bytes() }.try_into();
-        // SAFETY: safe if the rules in the function signature are all followed for `backend_keys`
-        let backend_kp = unsafe { CStr::from_ptr(backend_keys).to_bytes() }.try_into();
-        // TODO: change in API
-        let hash_algorithm = HashAlgorithm::SHA256;
+        let generate = || -> HsResult<CString> {
+            // SAFETY: safe if the rules in the function signature are all followed for `dpop_proof`
+            let dpop = unsafe { CStr::from_ptr(dpop_proof).to_bytes() };
+            let dpop = core::str::from_utf8(dpop).map_err(RustyJwtError::from)?;
+            // SAFETY: safe if the rules in the function signature are all followed for `user_id`
+            let user_id = unsafe { CStr::from_ptr(user_id).to_bytes() };
+            let user_id = core::str::from_utf8(user_id)
+                .ok()
+                .and_then(|s| uuid::Uuid::from_str(s).ok())
+                .ok_or(HsError::InvalidUserId)?;
+            // SAFETY: safe if the rules in the function signature are all followed for `domain`
+            let domain = unsafe { CStr::from_ptr(domain).to_bytes() };
+            let client_id = ClientId::try_from_raw_parts(user_id.as_ref(), client_id, domain)?;
+            // SAFETY: safe if the rules in the function signature are all followed for `handle`
+            let handle = Handle::try_from(unsafe { CStr::from_ptr(handle).to_bytes() })?;
+            let handle = handle.try_to_qualified(&client_id.domain)?;
+            // SAFETY: safe if the rules in the function signature are all followed for `display_name`
+            let display_name = unsafe { CStr::from_ptr(display_name).to_bytes() };
+            let display_name = core::str::from_utf8(display_name).map_err(RustyJwtError::from)?;
+            // SAFETY: safe if the rules in the function signature are all followed for `team`
+            let team = Team::try_from(unsafe { CStr::from_ptr(team).to_bytes() })?;
+            // SAFETY: safe if the rules in the function signature are all followed for `backend_nonce`
+            let backend_nonce = BackendNonce::try_from_bytes(unsafe { CStr::from_ptr(backend_nonce).to_bytes() })?;
+            // SAFETY: safe if the rules in the function signature are all followed for `uri`
+            let uri = Htu::try_from(unsafe { CStr::from_ptr(uri).to_bytes() })?;
+            // SAFETY: safe if the rules in the function signature are all followed for `method`
+            let method = Htm::try_from(unsafe { CStr::from_ptr(method).to_bytes() })?;
+            // SAFETY: safe if the rules in the function signature are all followed for `backend_keys`
+            let backend_kp = Pem::try_from(unsafe { CStr::from_ptr(backend_keys).to_bytes() })?;
+            // TODO: change in API
+            let hash_algorithm = HashAlgorithm::SHA256;
 
-        if let (
-            Ok(dpop),
-            Ok(client_id),
-            Ok(handle),
-            Ok(display_name),
-            Ok(team),
-            Ok(nonce),
-            Ok(uri),
-            Ok(method),
-            Ok(kp),
-        ) = (
-            dpop,
-            client_id,
-            handle,
-            display_name,
-            team,
-            backend_nonce,
-            uri,
-            method,
-            backend_kp,
-        ) {
-            let handle = match handle.try_to_qualified(&client_id.domain).map_err(HsError::from) {
-                Ok(handle) => handle,
-                Err(e) => return Box::into_raw(Box::new(Err(e))),
-            };
-            let res = RustyJwtTools::generate_access_token(
+            let token = RustyJwtTools::generate_access_token(
                 dpop,
                 &client_id,
                 handle,
                 display_name,
                 team,
-                nonce,
+                backend_nonce,
                 uri,
                 method,
                 max_skew_secs,
                 max_expiration,
-                kp,
+                backend_kp,
                 hash_algorithm,
                 ACCESS_TOKEN_API_VERSION,
                 ACCESS_TOKEN_EXPIRY,
-            )
-            .map_err(HsError::from)
+            )?;
             // a JWS compact serialization never contains a nul byte
-            .and_then(|token| CString::new(token).map_err(|_| HsError::ImplementationError));
-            return Box::into_raw(Box::new(res));
-        }
-        Box::into_raw(Box::new(Err(HsError::ImplementationError)))
+            CString::new(token).map_err(|_| HsError::ImplementationError)
+        };
+        Box::into_raw(Box::new(generate()))
     }
 
     #[unsafe(no_mangle)]
