@@ -68,7 +68,7 @@ pub(crate) trait VerifyDpop {
     /// # Arguments
     /// * `htm` - method
     /// * `uri` - uri
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     fn verify_client_dpop(
         &self,
         alg: JwsAlgorithm,

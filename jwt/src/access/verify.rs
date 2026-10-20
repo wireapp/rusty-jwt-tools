@@ -40,7 +40,7 @@ impl RustyJwtTools {
     /// * `backend_pk` - PEM format for public key of the Wire backend
     /// * `client_kid` - JWK thumbprint of the dpop_proof JWK
     /// * `api_version` - version of wire-server http API
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     pub fn verify_access_token(
         access_token: &str,
         client_id: &ClientId,
@@ -88,7 +88,7 @@ impl RustyJwtTools {
         Ok((alg, jwk))
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     fn verify_access_token_claims(
         access_token: &str,
         alg: JwsAlgorithm,

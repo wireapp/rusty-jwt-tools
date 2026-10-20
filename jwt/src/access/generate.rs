@@ -46,7 +46,7 @@ impl RustyJwtTools {
     /// * `hash_algorithm` - to calculate JWK thumbprint
     /// * `api_version` - version of wire-server http API
     /// * `expiry` - access token 'exp' (expiry)
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     pub fn generate_access_token(
         dpop_proof: &str,
         client_id: &ClientId,
@@ -93,7 +93,7 @@ impl RustyJwtTools {
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments)]
     fn access_token(
         alg: JwsAlgorithm,
         client_jwk: &Jwk,

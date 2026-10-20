@@ -1,7 +1,6 @@
 pub use access::*;
 pub use dpop::*;
 use jsonwebtoken::jwk::Jwk;
-#[allow(unused_imports)]
 pub use rstest::*;
 pub use rstest_reuse::{self, *};
 pub use utils::*;
@@ -21,7 +20,7 @@ pub mod utils;
     case::P384($ crate::jwt_key::JwtKey::new_key(JwsAlgorithm::ES384)),
     case::P521($ crate::jwt_key::JwtKey::new_key(JwsAlgorithm::ES512))
 )]
-#[allow(non_snake_case)]
+#[expect(non_snake_case)]
 pub fn all_keys(key: JwtKey) {}
 
 #[template]
@@ -33,7 +32,7 @@ case::Cipher2($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES256, HashAlgo
 case::Cipher7($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES384, HashAlgorithm::SHA384)),
 case::Cipher5($crate::test_utils::Ciphersuite::new(JwsAlgorithm::ES512, HashAlgorithm::SHA512)),
 )]
-#[allow(non_snake_case)]
+#[expect(non_snake_case)]
 pub fn all_ciphersuites(key: JwtKey, hash: HashAlgorithm) {}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -70,7 +69,7 @@ impl Default for Ciphersuite {
     case::SHA384(HashAlgorithm::SHA384),
     case::SHA512(HashAlgorithm::SHA512)
 )]
-#[allow(non_snake_case)]
+#[expect(non_snake_case)]
 pub fn all_hash(hash: HashAlgorithm) {}
 
 #[template]
@@ -80,5 +79,5 @@ pub fn all_hash(hash: HashAlgorithm) {}
     case::AES128($ crate::test_utils::JweKey::new(JweAlgorithm::AES128GCM)),
     case::AES256($ crate::test_utils::JweKey::new(JweAlgorithm::AES256GCM)),
 )]
-#[allow(non_snake_case)]
+#[expect(non_snake_case)]
 pub fn all_cipher(key: JweKey) {}

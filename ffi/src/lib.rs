@@ -1,6 +1,6 @@
 #![cfg(not(target_family = "wasm"))]
 #![warn(dead_code)]
-#![allow(clippy::not_unsafe_ptr_arg_deref)]
+#![expect(clippy::not_unsafe_ptr_arg_deref)]
 
 //! This crate exposes API needed to generate DPoP access tokens in foreign code.
 //!
