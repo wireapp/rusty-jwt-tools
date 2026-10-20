@@ -44,9 +44,7 @@ fn e2e_jwt() {
         let client_dpop =
             RustyJwtTools::generate_dpop_token(dpop, &alice, nonce.clone(), audience, expiry, alg, &client_sk).unwrap();
 
-        println!(
-            "1. generate dpop:\nclient signature key:\n{client_sk}\nDpop token:\nhttps://jwt.io/#id_token={client_dpop}\n"
-        );
+        println!("1. generate dpop:\nDpop token:\nhttps://jwt.io/#id_token={client_dpop}\n");
 
         let backend_sk = backend_keys.sk;
 
@@ -69,9 +67,7 @@ fn e2e_jwt() {
         )
         .unwrap();
 
-        println!(
-            "2. generate access token:\nwire-server signature key:\n{backend_sk}\naccess token:\nhttps://jwt.io/#id_token={access_token}\n"
-        );
+        println!("2. generate access token:\naccess token:\nhttps://jwt.io/#id_token={access_token}\n");
 
         // now acme server will verify the access token
         let backend_pk = backend_keys.pk;
@@ -93,7 +89,7 @@ fn e2e_jwt() {
             hash_alg,
             5,
         );
-        println!("3. verify access token\nwire-server public signature key:\n{backend_pk}");
+        println!("3. verify access token");
         if verify.is_ok() {
             println!("✅ access token verified");
             results.push(verify);
