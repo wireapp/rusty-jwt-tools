@@ -198,7 +198,7 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access.build(), ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingDpopHeader(header) if header == "typ"));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenHeader(header) if header == "typ"));
 
             // should fail when wrong value
             let access = AccessBuilder {
@@ -206,7 +206,10 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access.build(), ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopTyp));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::InvalidTokenTyp(Access::TYP)
+            ));
 
             // should be valid
             let access = AccessBuilder {
@@ -307,7 +310,7 @@ pub mod tests {
             };
             let params = Params::from(ciphersuite.clone());
             let result = verify_token(&access.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingDpopHeader("jwk")));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenHeader("jwk")));
 
             // should succeed when JWK does not match signature
             let invalid_ciphersuite = Ciphersuite {
@@ -327,7 +330,7 @@ pub mod tests {
             let params = Params::from(ciphersuite);
             let result = verify_token(&access.build(), params);
             // result.unwrap();
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidJwk));
         }
 
         #[apply(all_ciphersuites)]
@@ -643,7 +646,7 @@ pub mod tests {
                 ..ciphersuite.into()
             };
             let result = verify_token(&access.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopChallengeMismatch));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::ChallengeMismatch));
         }
 
         #[apply(all_ciphersuites)]
@@ -769,7 +772,7 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access.build(), ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenIssuedInFuture));
 
             // should fail respecting leeway
 
@@ -784,7 +787,7 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenIssuedInFuture));
 
             // will succeed as there is tolerance
             let access = AccessBuilder {
@@ -930,7 +933,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingDpopHeader(header) if header == "typ"));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenHeader(header) if header == "typ"));
 
             // should fail when 'typ' has wrong value
             let proof = DpopBuilder {
@@ -940,7 +943,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopTyp));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidTokenTyp(Dpop::TYP)));
 
             // should succeed when 'typ' has right value
             let proof = DpopBuilder {
@@ -964,7 +967,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingDpopHeader(header) if header == "jwk"));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenHeader(header) if header == "jwk"));
 
             // should succeed when 'typ' has right value
             let jwk = ciphersuite.key.to_jwk();
@@ -1018,7 +1021,7 @@ pub mod tests {
                 .build();
                 let access = build_access(&ciphersuite, proof);
                 let result = verify_token(&access, ciphersuite.clone().into());
-                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
+                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidJwk));
             }
 
             // should succeed when 'alg' matches JWK's 'alg'
@@ -1494,7 +1497,7 @@ pub mod tests {
                 ..ciphersuite.into()
             };
             let result = verify_token(&access, params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopChallengeMismatch));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::ChallengeMismatch));
         }
 
         #[apply(all_ciphersuites)]
@@ -1530,7 +1533,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenIssuedInFuture));
         }
 
         #[apply(all_ciphersuites)]

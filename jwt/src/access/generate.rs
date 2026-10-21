@@ -516,7 +516,7 @@ pub mod tests {
             };
             let params = ciphersuite.clone().into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingDpopHeader(header) if header == "typ"));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenHeader(header) if header == "typ"));
 
             // should fail when wrong value
             let dpop = DpopBuilder {
@@ -525,7 +525,7 @@ pub mod tests {
             };
             let params = ciphersuite.clone().into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopTyp));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidTokenTyp(Dpop::TYP)));
 
             // should be valid
             let dpop = DpopBuilder {
@@ -571,7 +571,7 @@ pub mod tests {
             };
             let params = ciphersuite.clone().into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingDpopHeader(header) if header == "jwk"));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenHeader(header) if header == "jwk"));
 
             // should be valid
             let params = ciphersuite.into();
@@ -590,7 +590,7 @@ pub mod tests {
                 };
                 let params = ciphersuite.clone().into();
                 let result = access_token_with_dpop(&dpop.build(), params);
-                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopJwk));
+                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidJwk));
             }
         }
 
@@ -1017,7 +1017,7 @@ pub mod tests {
             };
             let params = ciphersuite.clone().into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenIssuedInFuture));
 
             // should fail respecting leeway
 
@@ -1032,7 +1032,7 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidDpopIat));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenIssuedInFuture));
 
             // will succeed as there is tolerance
             let dpop = DpopBuilder {
@@ -1077,7 +1077,7 @@ pub mod tests {
             };
             let params = ciphersuite.into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopNotYetValid));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenNotYetValid));
         }
 
         #[apply(all_ciphersuites)]
