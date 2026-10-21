@@ -1288,13 +1288,21 @@ pub mod tests {
                 ..ciphersuite.key.clone().into()
             }
             .build();
-            let access = build_access(&ciphersuite, proof);
+            let access = AccessBuilder {
+                access: TestAccess {
+                    proof: Some(proof),
+                    ..ciphersuite.clone().into()
+                },
+                issuer: Some(issuer_a.clone()),
+                ..ciphersuite.clone().into()
+            }
+            .build();
             let params = Params {
                 issuer: issuer_a.clone(),
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access, params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHtuMismatch));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim("htu")));
 
             // should fail when 'htu' claim mismatches the 'iss' claim in the access token
             let proof = DpopBuilder {
