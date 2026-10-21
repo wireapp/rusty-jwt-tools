@@ -79,12 +79,12 @@ impl RustyJwtTools {
 
     /// Verifies access token specific header
     fn verify_access_token_header(header: Header) -> RustyJwtResult<(JwsAlgorithm, Jwk)> {
-        let typ = header.typ.ok_or(RustyJwtError::MissingDpopHeader("typ"))?;
+        let typ = header.typ.ok_or(RustyJwtError::MissingTokenHeader("typ"))?;
         if typ != Access::TYP {
-            return Err(RustyJwtError::InvalidDpopTyp);
+            return Err(RustyJwtError::InvalidTokenTyp(Access::TYP));
         }
         let alg = JwsAlgorithm::try_from(header.alg)?;
-        let jwk = header.jwk.ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
+        let jwk = header.jwk.ok_or(RustyJwtError::MissingTokenHeader("jwk"))?;
         Ok((alg, jwk))
     }
 
@@ -120,13 +120,13 @@ impl RustyJwtTools {
         // verify the JWK in access token represents the same key as the one supplied
         let backend_jwk = Jwk::from_decoding_key(&pk, Some(alg.into()))?;
         let backend_thumbprint = backend_jwk.thumbprint(hash.into())?;
-        let thumbprint = jwk.thumbprint(hash.into()).map_err(|_| RustyJwtError::InvalidDpopJwk)?;
+        let thumbprint = jwk.thumbprint(hash.into()).map_err(|_| RustyJwtError::InvalidJwk)?;
         if backend_thumbprint != thumbprint {
-            return Err(RustyJwtError::InvalidDpopJwk);
+            return Err(RustyJwtError::InvalidJwk);
         }
 
         if &claims.custom.challenge != challenge {
-            return Err(RustyJwtError::DpopChallengeMismatch);
+            return Err(RustyJwtError::ChallengeMismatch);
         }
         if claims.custom.api_version != api_version {
             return Err(RustyJwtError::UnsupportedApiVersion);

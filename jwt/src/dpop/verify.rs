@@ -16,14 +16,14 @@ pub(crate) trait VerifyDpopTokenHeader {
 
 impl VerifyDpopTokenHeader for Header {
     fn verify_dpop_header(self) -> RustyJwtResult<(JwsAlgorithm, Jwk)> {
-        let typ = self.typ.ok_or(RustyJwtError::MissingDpopHeader("typ"))?;
+        let typ = self.typ.ok_or(RustyJwtError::MissingTokenHeader("typ"))?;
         if typ != Dpop::TYP {
-            return Err(RustyJwtError::InvalidDpopTyp);
+            return Err(RustyJwtError::InvalidTokenTyp(Dpop::TYP));
         }
         let alg = JwsAlgorithm::try_from(self.alg)?;
-        let jwk = self.jwk.ok_or(RustyJwtError::MissingDpopHeader("jwk"))?;
+        let jwk = self.jwk.ok_or(RustyJwtError::MissingTokenHeader("jwk"))?;
         if !jwk_matches_alg(&jwk, alg) {
-            return Err(RustyJwtError::InvalidDpopJwk);
+            return Err(RustyJwtError::InvalidJwk);
         }
         Ok((alg, jwk))
     }
@@ -125,7 +125,7 @@ impl VerifyDpop for &str {
         if let Some(chal) = challenge
             && chal != &claims.custom.challenge
         {
-            return Err(RustyJwtError::DpopChallengeMismatch);
+            return Err(RustyJwtError::ChallengeMismatch);
         }
         if &claims.custom.handle != handle {
             return Err(RustyJwtError::DpopHandleMismatch);

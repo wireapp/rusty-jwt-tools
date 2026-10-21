@@ -22,29 +22,29 @@ pub enum RustyJwtError {
     /// Invalid HTTP method
     #[error("Invalid Htm '{0}'")]
     InvalidHtm(String),
-    /// Invalid DPoP proof jwk
-    #[error("Invalid JWK in DPoP token")]
-    InvalidDpopJwk,
+    /// The JWK in the token header doesn't match the algorithm or the expected key
+    #[error("Invalid JWK in token header")]
+    InvalidJwk,
     /// JWK thumbprint mismatches JWK in header
     #[error("JWK thumbprint mismatches JWK in header")]
     InvalidJwkThumbprint,
-    /// DPoP 'iat' claim is issued in the future
-    #[error("DPoP 'iat' claim is issued in the future")]
-    InvalidDpopIat,
-    /// DPoP 'nbf' claim is issued in the future
-    #[error("DPoP 'nbf' claim is issued in the future")]
-    DpopNotYetValid,
+    /// JWT token 'iat' claim is in the future
+    #[error("JWT token 'iat' claim is in the future")]
+    TokenIssuedInFuture,
+    /// JWT token 'nbf' claim is in the future
+    #[error("JWT token 'nbf' claim is in the future")]
+    TokenNotYetValid,
     /// JWT token verification failed
     #[error("JWT token verification failed because {0}")]
     InvalidToken(String),
-    /// DPoP token lacks header field
-    #[error("DPoP token should have a '{0}' header field")]
-    MissingDpopHeader(&'static str),
-    /// DPoP token should have a 'typ' header field equal to 'dpop+jwt'
-    #[error("DPoP token should have a 'typ' header field equal to 'dpop+jwt'")]
-    InvalidDpopTyp,
-    /// DPoP token 'sub' claim mismatches with the expected one
-    #[error("DPoP token 'sub' claim mismatches with the expected one")]
+    /// JWT token lacks a header field
+    #[error("JWT token should have a '{0}' header field")]
+    MissingTokenHeader(&'static str),
+    /// JWT token 'typ' header field isn't the expected one
+    #[error("JWT token should have a 'typ' header field equal to '{0}'")]
+    InvalidTokenTyp(&'static str),
+    /// JWT token 'sub' claim mismatches with the expected one
+    #[error("JWT token 'sub' claim mismatches with the expected one")]
     TokenSubMismatch,
     /// JWT token is expired
     #[error("JWT token is expired")]
@@ -70,9 +70,9 @@ pub enum RustyJwtError {
     /// DPoP token 'team' claim mismatches with the expected team
     #[error("DPoP token 'team' claim mismatches with the expected team")]
     DpopTeamMismatch,
-    /// DPoP token 'chal' claim mismatches with the expected [crate::prelude::AcmeNonce]
-    #[error("DPoP token 'chal' claim mismatches with the expected challenge")]
-    DpopChallengeMismatch,
+    /// JWT token 'chal' claim mismatches with the expected [crate::prelude::AcmeNonce]
+    #[error("JWT token 'chal' claim mismatches with the expected challenge")]
+    ChallengeMismatch,
     /// DPoP token 'htu' claim mismatches with the expected uri
     #[error("DPoP token 'htu' claim mismatches with the expected uri")]
     DpopHtuMismatch,

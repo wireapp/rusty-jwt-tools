@@ -72,11 +72,9 @@ impl VerifyJwt for &str {
         // custom validations
         claims.jwt_id.as_ref().ok_or(RustyJwtError::MissingTokenClaim("jti"))?;
         let issued_at = claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim("iat"))?;
-        // TODO: This validation used to happen in simple_jwt
-        // This assumes that iat is only part of dpop validation
         let now = jsonwebtoken::get_current_timestamp();
         if issued_at > now + expected.leeway as u64 {
-            return Err(RustyJwtError::InvalidDpopIat);
+            return Err(RustyJwtError::TokenIssuedInFuture);
         }
         let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim("exp"))?;
         if exp > expected.max_expiration {
@@ -135,8 +133,7 @@ pub fn jwt_error_mapping(e: Error) -> RustyJwtError {
 
         ErrorKind::ExpiredSignature => RustyJwtError::TokenExpired,
 
-        // TODO:This mapping assumes that if an nbf is in the future it is a dpop validation error
-        ErrorKind::ImmatureSignature => RustyJwtError::DpopNotYetValid,
+        ErrorKind::ImmatureSignature => RustyJwtError::TokenNotYetValid,
 
         // TODO: This mapping assumes that if an invalid issuer occurs,
         // that this happens in dpop htu verification
