@@ -2,6 +2,7 @@ use jsonwebtoken::{Header, decode_header, jwk::Jwk};
 
 use crate::{
     access::Access,
+    dpop::{VerifyDpop as _, VerifyDpopTokenHeader as _},
     jwk_thumbprint::JwkThumbprint,
     jwt::{ExpectedClaims, VerifyJwt},
     prelude::*,
@@ -139,32 +140,35 @@ impl RustyJwtTools {
         }
         let nonce: BackendNonce = claims.nonce.ok_or(RustyJwtError::MissingTokenClaim("nonce"))?.into();
 
-        // Dpop proof verification
-        use crate::dpop::{VerifyDpop as _, VerifyDpopTokenHeader as _};
-        let dpop_proof = claims.custom.proof.as_str();
-        let header = decode_header(dpop_proof)?;
-        let (alg, jwk) = header.verify_dpop_header()?;
         let dpop_issuer: Htu = claims
             .issuer
             .ok_or(RustyJwtError::MissingTokenClaim("iss"))
             .and_then(|i| i.as_str().try_into())?;
 
-        dpop_proof.verify_client_dpop(
-            alg,
-            &jwk,
-            client_id,
-            handle,
-            display_name,
-            team,
-            &nonce,
-            Some(&claims.custom.challenge),
-            None,
-            &dpop_issuer,
-            max_expiration,
-            leeway,
-        )?;
+        // Dpop proof verification
+        let dpop_proof = claims.custom.proof.as_str();
+        let verify_proof = || -> RustyJwtResult<Jwk> {
+            let header = decode_header(dpop_proof)?;
+            let (alg, jwk) = header.verify_dpop_header()?;
+            dpop_proof.verify_client_dpop(
+                alg,
+                &jwk,
+                client_id,
+                handle,
+                display_name,
+                team,
+                &nonce,
+                Some(&claims.custom.challenge),
+                None,
+                &dpop_issuer,
+                max_expiration,
+                leeway,
+            )?;
+            Ok(jwk)
+        };
+        let proof_jwk = verify_proof().map_err(|e| RustyJwtError::InvalidDpopProof(Box::new(e)))?;
 
-        let proof_thumbprint = JwkThumbprint::generate(&jwk, hash)?;
+        let proof_thumbprint = JwkThumbprint::generate(&proof_jwk, hash)?;
 
         if proof_thumbprint.kid != client_kid {
             // this would mean the acme server messed up either by miscomputing the JWK thumbprint

@@ -82,6 +82,9 @@ pub enum RustyJwtError {
     /// DPoP token 'htm' claim mismatches with the expected method
     #[error("DPoP token 'htm' claim mismatches with the expected method")]
     DpopHtmMismatch,
+    /// The DPoP proof embedded in an access token failed verification
+    #[error("The DPoP proof in the access token is invalid: {0}")]
+    InvalidDpopProof(Box<RustyJwtError>),
     /// Unsupported algorithm
     #[error("Unsupported algorithm")]
     UnsupportedAlgorithm,
