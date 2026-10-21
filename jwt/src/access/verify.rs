@@ -146,7 +146,7 @@ impl RustyJwtTools {
         let (alg, jwk) = header.verify_dpop_header()?;
         let dpop_issuer: Htu = claims
             .issuer
-            .ok_or(RustyJwtError::MissingTokenClaim("htu"))
+            .ok_or(RustyJwtError::MissingTokenClaim("iss"))
             .and_then(|i| i.as_str().try_into())?;
 
         dpop_proof.verify_client_dpop(
@@ -712,7 +712,7 @@ pub mod tests {
                 ..ciphersuite.into()
             };
             let result = verify_token(&access.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHtuMismatch));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenIssuerMismatch));
         }
 
         #[apply(all_ciphersuites)]
@@ -1246,7 +1246,7 @@ pub mod tests {
                 ..ciphersuite.into()
             };
             let result = verify_token(&access, params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHtuMismatch));
+            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenIssuerMismatch));
         }
 
         #[apply(all_ciphersuites)]

@@ -46,6 +46,9 @@ pub enum RustyJwtError {
     /// JWT token 'sub' claim mismatches with the expected one
     #[error("JWT token 'sub' claim mismatches with the expected one")]
     TokenSubMismatch,
+    /// JWT token 'iss' claim mismatches with the expected issuer
+    #[error("JWT token 'iss' claim mismatches with the expected issuer")]
+    TokenIssuerMismatch,
     /// JWT token is expired
     #[error("JWT token is expired")]
     TokenExpired,

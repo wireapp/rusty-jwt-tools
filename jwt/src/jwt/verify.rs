@@ -135,9 +135,7 @@ pub fn jwt_error_mapping(e: Error) -> RustyJwtError {
 
         ErrorKind::ImmatureSignature => RustyJwtError::TokenNotYetValid,
 
-        // TODO: This mapping assumes that if an invalid issuer occurs,
-        // that this happens in dpop htu verification
-        ErrorKind::InvalidIssuer => RustyJwtError::DpopHtuMismatch,
+        ErrorKind::InvalidIssuer => RustyJwtError::TokenIssuerMismatch,
 
         // DPoP claims failing because of serde
         ErrorKind::Json(error) => {
