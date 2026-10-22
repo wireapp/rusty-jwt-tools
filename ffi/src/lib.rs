@@ -339,7 +339,14 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::MissingTokenClaim(Claim::Name) => Self::MissingDisplayName,
             RustyJwtError::InvalidAudience => Self::InvalidAudience,
             RustyJwtError::InvalidHandle => Self::InvalidHandle,
-            _ => Self::UnknownError,
+            // Can't happen, since only a DPoP proof is verified here, never an access token, and no identifier URIs
+            // are parsed
+            RustyJwtError::MissingTokenClaim(
+                Claim::Cnf | Claim::Proof | Claim::ApiVersion | Claim::ClientId | Claim::Scope,
+            )
+            | RustyJwtError::TokenIssuerMismatch
+            | RustyJwtError::InvalidDpopProof(_)
+            | RustyJwtError::InvalidIdentifierScheme(_) => Self::ImplementationError,
         }
     }
 }
