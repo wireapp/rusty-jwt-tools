@@ -1,5 +1,111 @@
 # Changelog
 
+## v0.15.0 - 2026-10-26
+
+### Highlights
+
+`jwt-simple` has been replaced by `jsonwebtoken` (via our fork), which affects
+large parts of the Rust API, see the breaking changes below.
+
+To replace what `jwt-simple` provided, `JwsAlgorithm` can now generate key
+pairs and convert them from and to raw private keys (`generate_keypair`,
+`keypair_from_bytes` and `keypair_to_bytes`), build the public JWK of a key pair
+(`public_jwk`) and provide the key to sign with (`encoding_key`). The fork is
+re-exported as `rusty_jwt_tools::jsonwebtoken`: use it instead of depending on
+the fork directly, so that its types match the ones of this crate.
+
+The FFI used by wire-server has become more robust: the token returned by
+`get_token` is no longer leaked, null pointers no longer cause undefined
+behaviour, and invalid inputs as well as DPoP proofs lacking a claim are now
+reported with specific error codes instead of `ImplementationError` or
+`UnknownError`. Existing error codes are unchanged.
+
+Errors are now clearer about which token failed: errors shared by DPoP proofs
+and access tokens have neutral names, and errors of the DPoP proof embedded in
+an access token are wrapped in `InvalidDpopProof`.
+
+`Pem` can no longer leak private keys by accident: it is redacted in `Debug`
+and has neither `Display` nor `Deref<Target = String>` anymore.
+
+In addition, unused dependencies and error variants have been removed.
+
+### Breaking Changes
+
+#### FFI
+
+- The string returned by `get_token` is owned by the result and only valid
+  until `free_dpop_access_token` is called on it.
+
+- Invalid inputs to `generate_dpop_access_token` are reported with the error
+  code of the first invalid input instead of `ImplementationError` (3), and
+  null pointers with `FfiError` (2).
+
+- New error codes: `MissingNbf` (44), `MissingSub` (45), `MissingAud` (46),
+  `MissingNonce` (47), `MissingHtm` (48), `MissingHtu` (49), `MissingHandle`
+  (50), `MissingDisplayName` (51), `InvalidAudience` (52) and `InvalidHandle`
+  (53). These were reported as `UnknownError` (1), which isn't returned
+  anymore.
+
+- The error codes `RandError` (22), `Sec1Error` (23), `Base64DecodeError` (27)
+  and `JsonError` (28) are no longer returned.
+
+### Features
+
+- generate and convert key pairs with `JwsAlgorithm` (0b94c14)
+- add `JwsAlgorithm::public_jwk` (94c83d9)
+- make `JwsAlgorithm::encoding_key` public (104fb81)
+- re-export `jsonwebtoken` (ea4fc5f)
+- add error codes for missing DPoP claims, invalid audience and invalid handle (2a1c83d)
+- [**breaking**] wrap errors of the DPoP proof in an access token (14bce6a)
+
+### Bug Fixes
+
+- remove duplicate word in `MissingTokenClaim` message (0fa77c5)
+- [**breaking**] report 'iss' mismatches as `TokenIssuerMismatch` (c5033ea)
+- [**breaking**] prevent accidentally leaking `Pem` contents (8da3fe0)
+- return `UnsupportedAlgorithm` for `HashAlgorithm::from_str` (5eb1ece)
+- [**breaking**] handle null pointers (0c60bca)
+- [**breaking**] report specific input errors (53cbab2)
+- don't leak the token returned by `get_token` (98871ae)
+
+### Documentation
+
+- document `ExpectedClaims` and `verify_jwt` (5302078)
+
+### Testing
+
+- cover invalid domain input (3fb094a)
+- adjust tests to `Claim` (a69b976)
+- adjust tests to wrapped Dpop error (6eac066)
+- make the missing 'htu' case reach the proof (9438f23)
+- adjust to renamed errors (26cbb07)
+- don't print keys in the e2e test (643a7c4)
+- cover null pointer input (9b00834)
+- cover invalid method input (8282c1d)
+- use `u64` timestamps (42bf5cf)
+- add `u64` timestamp helpers (82529f5)
+- adjust coarsetime import (fa73df1)
+- test audience parsing (9b2b453)
+- adjust header decoding (eb86c39)
+- migrate e2e test (e5da89a)
+- fix `backend_pk_and_alg` (863290c)
+- migrate `should_have_jwk` (ac47cd3)
+- migrate `should_verify` (daf97d9)
+- migrate `iss` (d0ec29c)
+- migrate `should_fail_when_invalid` (ed40b98)
+- migrate `generate` tests (6a85826)
+- `Params.backend_key` is a `JwtKey` (4b93965)
+- migrate `should_have_jwk` (3eb0dc7)
+- migrate `jwk_thumbprint` (9709274)
+- migrate `verify_token` helper function (49c0b2f)
+- migrate `dpop` helpers (ab61837)
+- migrate `access` helpers (40dd0d4)
+- add `forge_token` helper (bf75f03)
+- simplify key generation helpers (e228eed)
+- migrate `claims` helper (b91fb45)
+- remove `test_utils/jwk` module (47490c2)
+- remove `JwkThumbprint` tests (705e73b)
+
 ## v0.14.0 - 2026-01-13
 
 ### Highlights
