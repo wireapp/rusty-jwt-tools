@@ -55,8 +55,8 @@ pub enum RustyJwtError {
     /// JWT token expiry is later than supplied threshold
     #[error("JWT token expiry is later than supplied threshold")]
     TokenLivesTooLong,
-    /// JWT token token lacks a claim
-    #[error("JWT token token lacks '{0}' claim")]
+    /// JWT token lacks a claim
+    #[error("JWT token lacks '{0}' claim")]
     MissingTokenClaim(&'static str),
     /// JWT token has an invalid "aud" claim
     #[error("JWT token has an invalid 'aud' claim")]
