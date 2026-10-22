@@ -270,6 +270,26 @@ pub enum HsError {
     DpopTeamMismatch = 42,
     /// Client display name does not match the supplied display name
     DpopDisplayNameMismatch = 43,
+    /// (nbf) claim is absent in DPoP token
+    MissingNbf = 44,
+    /// (sub) claim is absent in DPoP token
+    MissingSub = 45,
+    /// (aud) claim is absent in DPoP token
+    MissingAud = 46,
+    /// (nonce) claim is absent in DPoP token
+    MissingNonce = 47,
+    /// (htm) claim is absent in DPoP token
+    MissingHtm = 48,
+    /// (htu) claim is absent in DPoP token
+    MissingHtu = 49,
+    /// (handle) claim is absent in DPoP token
+    MissingHandle = 50,
+    /// (name) claim is absent in DPoP token
+    MissingDisplayName = 51,
+    /// (aud) claim in DPoP token is not a single valid URI
+    InvalidAudience = 52,
+    /// `handle` qualified with `domain` is not a valid handle
+    InvalidHandle = 53,
 }
 
 impl From<RustyJwtError> for HsError {
@@ -309,6 +329,16 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::UnsupportedApiVersion => Self::UnsupportedApiVersion,
             RustyJwtError::UnsupportedScope => Self::UnsupportedScope,
             RustyJwtError::DpopDisplayNameMismatch => Self::DpopDisplayNameMismatch,
+            RustyJwtError::MissingTokenClaim(Claim::Nbf) => Self::MissingNbf,
+            RustyJwtError::MissingTokenClaim(Claim::Sub) => Self::MissingSub,
+            RustyJwtError::MissingTokenClaim(Claim::Aud) => Self::MissingAud,
+            RustyJwtError::MissingTokenClaim(Claim::Nonce) => Self::MissingNonce,
+            RustyJwtError::MissingTokenClaim(Claim::Htm) => Self::MissingHtm,
+            RustyJwtError::MissingTokenClaim(Claim::Htu) => Self::MissingHtu,
+            RustyJwtError::MissingTokenClaim(Claim::Handle) => Self::MissingHandle,
+            RustyJwtError::MissingTokenClaim(Claim::Name) => Self::MissingDisplayName,
+            RustyJwtError::InvalidAudience => Self::InvalidAudience,
+            RustyJwtError::InvalidHandle => Self::InvalidHandle,
             _ => Self::UnknownError,
         }
     }
