@@ -937,7 +937,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenHeader(header) if header == "typ"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenHeader(header) if header == "typ"));
 
             // should fail when 'typ' has wrong value
             let proof = DpopBuilder {
@@ -947,7 +947,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidTokenTyp(Dpop::TYP)));
+            assert!(matches!(proof_error(result), RustyJwtError::InvalidTokenTyp(Dpop::TYP)));
 
             // should succeed when 'typ' has right value
             let proof = DpopBuilder {
@@ -971,7 +971,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenHeader(header) if header == "jwk"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenHeader(header) if header == "jwk"));
 
             // should succeed when 'typ' has right value
             let jwk = ciphersuite.key.to_jwk();
@@ -997,7 +997,7 @@ pub mod tests {
                 .build();
                 let access = build_access(&ciphersuite, proof);
                 let result = verify_token(&access, ciphersuite.clone().into());
-                assert!(matches!(result.unwrap_err(), RustyJwtError::UnsupportedAlgorithm));
+                assert!(matches!(proof_error(result), RustyJwtError::UnsupportedAlgorithm));
             }
 
             // should succeed when 'alg' supported
@@ -1025,7 +1025,7 @@ pub mod tests {
                 .build();
                 let access = build_access(&ciphersuite, proof);
                 let result = verify_token(&access, ciphersuite.clone().into());
-                assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidJwk));
+                assert!(matches!(proof_error(result), RustyJwtError::InvalidJwk));
             }
 
             // should succeed when 'alg' matches JWK's 'alg'
@@ -1059,7 +1059,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::InvalidToken(_)));
+            assert!(matches!(proof_error(result), RustyJwtError::InvalidToken(_)));
         }
 
         #[apply(all_ciphersuites)]
@@ -1096,7 +1096,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "sub"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenClaim(claim) if claim == "sub"));
 
             // should fail when 'sub' from proof mismatches 'sub' or 'client_id' in access token
             let proof = DpopBuilder {
@@ -1119,7 +1119,7 @@ pub mod tests {
                 ..ciphersuite.into()
             };
             let result = verify_token(&access, params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenSubMismatch));
+            assert!(matches!(proof_error(result), RustyJwtError::TokenSubMismatch));
         }
 
         #[apply(all_ciphersuites)]
@@ -1167,7 +1167,7 @@ pub mod tests {
             };
             let result = verify_token(&access, params);
             assert!(matches!(
-                result.unwrap_err(),
+                proof_error(result),
                 RustyJwtError::MissingTokenClaim("handle")
             ));
 
@@ -1193,7 +1193,7 @@ pub mod tests {
                 ..ciphersuite.into()
             };
             let result = verify_token(&access, params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHandleMismatch));
+            assert!(matches!(proof_error(result), RustyJwtError::DpopHandleMismatch));
         }
 
         #[apply(all_ciphersuites)]
@@ -1306,7 +1306,7 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = verify_token(&access, params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim("htu")));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenClaim("htu")));
 
             // should fail when 'htu' claim mismatches the 'iss' claim in the access token
             let proof = DpopBuilder {
@@ -1331,7 +1331,7 @@ pub mod tests {
                 ..ciphersuite.into()
             };
             let result = verify_token(&access, params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopHtuMismatch));
+            assert!(matches!(proof_error(result), RustyJwtError::DpopHtuMismatch));
         }
 
         #[apply(all_ciphersuites)]
@@ -1361,7 +1361,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "htm"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenClaim(claim) if claim == "htm"));
         }
 
         #[apply(all_ciphersuites)]
@@ -1385,7 +1385,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "jti"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenClaim(claim) if claim == "jti"));
         }
 
         #[apply(all_ciphersuites)]
@@ -1418,7 +1418,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "nonce"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenClaim(claim) if claim == "nonce"));
 
             // should fail when 'nonce' claim mismatches the 'nonce' claim in the access token
             let nonce1 = BackendNonce::rand();
@@ -1438,7 +1438,7 @@ pub mod tests {
             }
             .build();
             let result = verify_token(&access, ciphersuite.into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::DpopNonceMismatch));
+            assert!(matches!(proof_error(result), RustyJwtError::DpopNonceMismatch));
         }
 
         #[apply(all_ciphersuites)]
@@ -1482,7 +1482,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "chal"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenClaim(claim) if claim == "chal"));
 
             // should fail when 'chal' claim mismatches the 'chal' claim in the access token
             let chal1 = AcmeNonce::rand();
@@ -1509,7 +1509,7 @@ pub mod tests {
                 ..ciphersuite.into()
             };
             let result = verify_token(&access, params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::ChallengeMismatch));
+            assert!(matches!(proof_error(result), RustyJwtError::ChallengeMismatch));
         }
 
         #[apply(all_ciphersuites)]
@@ -1534,7 +1534,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "iat"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenClaim(claim) if claim == "iat"));
 
             // should fail when issued in the future
             let tomorrow = now() + DAY;
@@ -1545,7 +1545,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenIssuedInFuture));
+            assert!(matches!(proof_error(result), RustyJwtError::TokenIssuedInFuture));
         }
 
         #[apply(all_ciphersuites)]
@@ -1570,7 +1570,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.clone().into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "exp"));
+            assert!(matches!(proof_error(result), RustyJwtError::MissingTokenClaim(claim) if claim == "exp"));
 
             // should fail when 'exp' claim is in the past
             let yesterday = now() - DAY;
@@ -1581,7 +1581,7 @@ pub mod tests {
             .build();
             let access = build_access(&ciphersuite, proof);
             let result = verify_token(&access, ciphersuite.into());
-            assert!(matches!(result.unwrap_err(), RustyJwtError::TokenExpired));
+            assert!(matches!(proof_error(result), RustyJwtError::TokenExpired));
         }
 
         #[ignore]
@@ -1664,6 +1664,14 @@ pub mod tests {
                 expected_kid: None,
                 api_version: Access::DEFAULT_WIRE_SERVER_API_VERSION,
             }
+        }
+    }
+
+    /// Returns the error of the DPoP proof embedded in the access token
+    fn proof_error(result: RustyJwtResult<()>) -> RustyJwtError {
+        match result.unwrap_err() {
+            RustyJwtError::InvalidDpopProof(e) => *e,
+            e => panic!("expected an invalid DPoP proof, got {e:?}"),
         }
     }
 
