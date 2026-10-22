@@ -639,7 +639,10 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "sub"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Sub)
+            ));
 
             // should fail when client_id and JWT's 'sub' mismatch
             let dpop = DpopBuilder {
@@ -697,7 +700,10 @@ pub mod tests {
             };
             let params = ciphersuite.into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "htu"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Htu)
+            ));
         }
 
         #[apply(all_ciphersuites)]
@@ -743,7 +749,10 @@ pub mod tests {
             };
             let params = ciphersuite.into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "htm"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Htm)
+            ));
         }
 
         #[apply(all_ciphersuites)]
@@ -765,7 +774,10 @@ pub mod tests {
             };
             let params = ciphersuite.into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "jti"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Jti)
+            ));
         }
 
         #[apply(all_ciphersuites)]
@@ -794,7 +806,10 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "nonce"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Nonce)
+            ));
 
             // should fail when backend_nonce and Dpop 'nonce' mismatch
             let dpop = DpopBuilder {
@@ -841,7 +856,10 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "handle"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Handle)
+            ));
 
             // should fail when backend handle and proof's 'handle' mismatch
             let dpop = DpopBuilder {
@@ -891,7 +909,10 @@ pub mod tests {
                 ..ciphersuite.clone().into()
             };
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "name"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Name)
+            ));
 
             // should fail when backend handle and proof's 'name' mismatch
             let dpop = DpopBuilder {
@@ -984,7 +1005,10 @@ pub mod tests {
             };
             let params = ciphersuite.into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "chal"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Chal)
+            ));
         }
 
         #[apply(all_ciphersuites)]
@@ -1007,7 +1031,10 @@ pub mod tests {
             };
             let params = ciphersuite.clone().into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "iat"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Iat)
+            ));
 
             // should fail when issued in the future
             let tomorrow = now() + DAY;
@@ -1067,7 +1094,10 @@ pub mod tests {
             };
             let params = ciphersuite.clone().into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "nbf"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Nbf)
+            ));
 
             // should fail when 'nbf' in the future
             let tomorrow = now() + DAY;
@@ -1100,7 +1130,10 @@ pub mod tests {
             };
             let params = ciphersuite.clone().into();
             let result = access_token_with_dpop(&dpop.build(), params);
-            assert!(matches!(result.unwrap_err(), RustyJwtError::MissingTokenClaim(claim) if claim == "exp"));
+            assert!(matches!(
+                result.unwrap_err(),
+                RustyJwtError::MissingTokenClaim(Claim::Exp)
+            ));
 
             // should fail when 'exp' claim is in the past
             let yesterday = now() - DAY;
