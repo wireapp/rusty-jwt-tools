@@ -70,13 +70,16 @@ impl VerifyJwt for &str {
         let claims = token.claims;
 
         // custom validations
-        claims.jwt_id.as_ref().ok_or(RustyJwtError::MissingTokenClaim("jti"))?;
-        let issued_at = claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim("iat"))?;
+        claims
+            .jwt_id
+            .as_ref()
+            .ok_or(RustyJwtError::MissingTokenClaim(Claim::Jti))?;
+        let issued_at = claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim(Claim::Iat))?;
         let now = jsonwebtoken::get_current_timestamp();
         if issued_at > now + expected.leeway as u64 {
             return Err(RustyJwtError::TokenIssuedInFuture);
         }
-        let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim("exp"))?;
+        let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim(Claim::Exp))?;
         if exp > expected.max_expiration {
             return Err(RustyJwtError::TokenLivesTooLong);
         }
@@ -85,7 +88,7 @@ impl VerifyJwt for &str {
             let nonce = claims
                 .nonce
                 .as_deref()
-                .ok_or(RustyJwtError::MissingTokenClaim("nonce"))?;
+                .ok_or(RustyJwtError::MissingTokenClaim(Claim::Nonce))?;
 
             if nonce != backend_nonce.as_str() {
                 return Err(RustyJwtError::DpopNonceMismatch);
@@ -96,36 +99,10 @@ impl VerifyJwt for &str {
     }
 }
 
-/// Claims which can be reported as [RustyJwtError::MissingTokenClaim]
-const KNOWN_CLAIMS: &[&str] = &[
-    // spec claims, reported by jsonwebtoken
-    "exp",
-    "nbf",
-    "aud",
-    "iss",
-    "sub",
-    // DPoP claims, reported by serde
-    "chal",
-    "htm",
-    "htu",
-    "cnf",
-    "proof",
-    "api_version",
-    "client_id",
-    "scope",
-    "handle",
-    "name",
-];
-
-/// Returns the `'static` name of a known claim
-fn known_claim(name: &str) -> Option<&'static str> {
-    KNOWN_CLAIMS.iter().copied().find(|&claim| claim == name)
-}
-
 /// Maps jsonwebtoken::errors::Error to RustyJwtError
 pub fn jwt_error_mapping(e: Error) -> RustyJwtError {
     match e.into_kind() {
-        ErrorKind::MissingRequiredClaim(claim) => known_claim(&claim)
+        ErrorKind::MissingRequiredClaim(claim) => Claim::from_name(&claim)
             .map(RustyJwtError::MissingTokenClaim)
             .unwrap_or_else(|| RustyJwtError::InvalidToken(format!("missing required claim '{claim}'"))),
 
@@ -143,7 +120,7 @@ pub fn jwt_error_mapping(e: Error) -> RustyJwtError {
 
             msg.strip_prefix("missing field `")
                 .and_then(|rest| rest.split_once('`'))
-                .and_then(|(field, _)| known_claim(field))
+                .and_then(|(field, _)| Claim::from_name(field))
                 .map(RustyJwtError::MissingTokenClaim)
                 .unwrap_or(RustyJwtError::InvalidToken(msg))
         }

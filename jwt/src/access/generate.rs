@@ -111,7 +111,7 @@ impl RustyJwtTools {
         let claims = {
             let audience = proof_claims
                 .audiences
-                .ok_or(RustyJwtError::MissingTokenClaim("aud"))?
+                .ok_or(RustyJwtError::MissingTokenClaim(Claim::Aud))?
                 .into_string()?
                 .parse::<url::Url>()
                 .map_err(|_| RustyJwtError::InvalidAudience)?;

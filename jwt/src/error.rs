@@ -1,6 +1,105 @@
 /// Wrapper over a [Result] with a [RustyJwtError] error
 pub type RustyJwtResult<T> = Result<T, RustyJwtError>;
 
+/// A claim which can be reported as [RustyJwtError::MissingTokenClaim]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum Claim {
+    /// 'exp': expiration time
+    Exp,
+    /// 'nbf': not before
+    Nbf,
+    /// 'iat': issued at
+    Iat,
+    /// 'jti': JWT identifier
+    Jti,
+    /// 'sub': subject
+    Sub,
+    /// 'iss': issuer
+    Iss,
+    /// 'aud': audience
+    Aud,
+    /// 'nonce': backend nonce
+    Nonce,
+    /// 'chal': ACME challenge
+    Chal,
+    /// 'htm': HTTP method of a DPoP proof
+    Htm,
+    /// 'htu': HTTP URI of a DPoP proof
+    Htu,
+    /// 'cnf': JWK thumbprint in an access token
+    Cnf,
+    /// 'proof': DPoP proof in an access token
+    Proof,
+    /// 'api_version': wire-server API version in an access token
+    ApiVersion,
+    /// 'client_id': client identifier in an access token
+    ClientId,
+    /// 'scope': scope of an access token
+    Scope,
+    /// 'handle': handle of the client
+    Handle,
+    /// 'name': display name of the client
+    Name,
+}
+
+impl Claim {
+    const ALL: [Self; 18] = [
+        Self::Exp,
+        Self::Nbf,
+        Self::Iat,
+        Self::Jti,
+        Self::Sub,
+        Self::Iss,
+        Self::Aud,
+        Self::Nonce,
+        Self::Chal,
+        Self::Htm,
+        Self::Htu,
+        Self::Cnf,
+        Self::Proof,
+        Self::ApiVersion,
+        Self::ClientId,
+        Self::Scope,
+        Self::Handle,
+        Self::Name,
+    ];
+
+    /// The name of the claim in a JWT
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Exp => "exp",
+            Self::Nbf => "nbf",
+            Self::Iat => "iat",
+            Self::Jti => "jti",
+            Self::Sub => "sub",
+            Self::Iss => "iss",
+            Self::Aud => "aud",
+            Self::Nonce => "nonce",
+            Self::Chal => "chal",
+            Self::Htm => "htm",
+            Self::Htu => "htu",
+            Self::Cnf => "cnf",
+            Self::Proof => "proof",
+            Self::ApiVersion => "api_version",
+            Self::ClientId => "client_id",
+            Self::Scope => "scope",
+            Self::Handle => "handle",
+            Self::Name => "name",
+        }
+    }
+
+    /// Returns the claim with the given name in a JWT
+    pub(crate) fn from_name(name: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|claim| claim.name() == name)
+    }
+}
+
+impl std::fmt::Display for Claim {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.name())
+    }
+}
+
 /// All errors which [crate::RustyJwtTools] might throw
 #[derive(Debug, thiserror::Error)]
 pub enum RustyJwtError {
@@ -57,7 +156,7 @@ pub enum RustyJwtError {
     TokenLivesTooLong,
     /// JWT token lacks a claim
     #[error("JWT token lacks '{0}' claim")]
-    MissingTokenClaim(&'static str),
+    MissingTokenClaim(Claim),
     /// JWT token has an invalid "aud" claim
     #[error("JWT token has an invalid 'aud' claim")]
     InvalidAudience,

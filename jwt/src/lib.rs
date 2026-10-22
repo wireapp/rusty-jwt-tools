@@ -20,7 +20,7 @@ mod model;
 /// Prelude
 pub mod prelude {
     pub use dpop::{Dpop, Htm, Htu};
-    pub use error::{RustyJwtError, RustyJwtResult};
+    pub use error::{Claim, RustyJwtError, RustyJwtResult};
     #[cfg(feature = "test-utils")]
     pub use jwk_thumbprint::JwkThumbprint;
     #[cfg(feature = "test-utils")]

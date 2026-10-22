@@ -138,11 +138,14 @@ impl RustyJwtTools {
         if claims.custom.client_id != claims.subject.ok_or(RustyJwtError::ImplementationError)? {
             return Err(RustyJwtError::TokenSubMismatch);
         }
-        let nonce: BackendNonce = claims.nonce.ok_or(RustyJwtError::MissingTokenClaim("nonce"))?.into();
+        let nonce: BackendNonce = claims
+            .nonce
+            .ok_or(RustyJwtError::MissingTokenClaim(Claim::Nonce))?
+            .into();
 
         let dpop_issuer: Htu = claims
             .issuer
-            .ok_or(RustyJwtError::MissingTokenClaim("iss"))
+            .ok_or(RustyJwtError::MissingTokenClaim(Claim::Iss))
             .and_then(|i| i.as_str().try_into())?;
 
         // Dpop proof verification
