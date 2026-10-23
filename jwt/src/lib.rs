@@ -17,6 +17,11 @@ pub mod jwk_thumbprint;
 pub mod jwt;
 mod model;
 
+/// Our fork of `jsonwebtoken`, whose types such as `Header` and `Jwk` are part of this crate's API.
+///
+/// Use this re-export instead of depending on the fork directly, to make sure the types match.
+pub use jsonwebtoken;
+
 /// Prelude
 pub mod prelude {
     pub use dpop::{Dpop, Htm, Htu};
