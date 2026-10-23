@@ -40,7 +40,6 @@ url = { version = "2.5", features = ["serde"] }
 uuid = { workspace = true, features = ["std", "v4"] }
 zeroize = { version = "1.8", features = ["derive"] }
 getrandom = { version = "0.4", features = ["wasm_js"] }
-rand = { version = "0.10", optional = true }
 
 [dev-dependencies]
 # enables `test-utils` for all tests of this crate
@@ -55,4 +54,4 @@ workspace = true
 features = ["std", "js", "v4"]
 
 [features]
-test-utils = ["dep:rand"]
+test-utils = []
