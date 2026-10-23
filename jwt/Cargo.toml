@@ -25,7 +25,7 @@ jsonwebtoken = { git = "https://github.com/wireapp/jsonwebtoken", rev = "99fbbda
 p256 = { version = "0.14", default-features = false }
 p384 = { version = "0.14", default-features = false }
 p521 = { version = "0.14", default-features = false }
-ed25519-dalek = { version = "3", optional = true, features = [
+ed25519-dalek = { version = "3", features = [
   "alloc",
   "pkcs8",
   "pem",
@@ -55,4 +55,4 @@ workspace = true
 features = ["std", "js", "v4"]
 
 [features]
-test-utils = ["dep:ed25519-dalek", "dep:rand"]
+test-utils = ["dep:rand"]
