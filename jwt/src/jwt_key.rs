@@ -1,10 +1,7 @@
 //! Test utils exposed for e2e test
 
 use jsonwebtoken::{Validation, decode, jwk::Jwk};
-use p256::{
-    elliptic_curve::Generate,
-    pkcs8::{DecodePrivateKey as _, EncodePrivateKey as _, EncodePublicKey as _},
-};
+use p256::pkcs8::{DecodePrivateKey as _, EncodePublicKey as _};
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
@@ -28,46 +25,7 @@ pub struct JwtKey {
 impl JwtKey {
     ///  Create a new key pair
     pub fn new_key(alg: JwsAlgorithm) -> Self {
-        let (sk_pem, pk_pem) = match alg {
-            JwsAlgorithm::ES256 => Self::generate_p256_key_pair(),
-            JwsAlgorithm::ES384 => Self::generate_p384_keypair(),
-            JwsAlgorithm::ES512 => Self::generate_p521_keypair(),
-            JwsAlgorithm::EdDSA => Self::generate_ed25519_keypair(),
-        };
-
-        Self {
-            kp: sk_pem.clone().into(),
-            sk: sk_pem.into(),
-            pk: pk_pem.into(),
-            alg,
-        }
-    }
-
-    fn generate_p256_key_pair() -> (String, String) {
-        let sk = p256::SecretKey::generate();
-        let sk_pem = sk.to_pkcs8_pem(Default::default()).unwrap().to_string();
-        let pk_pem = sk.public_key().to_public_key_pem(Default::default()).unwrap();
-        (sk_pem, pk_pem)
-    }
-
-    fn generate_p384_keypair() -> (String, String) {
-        let sk = p384::SecretKey::generate();
-        let sk_pem = sk.to_pkcs8_pem(Default::default()).unwrap().to_string();
-        let pk_pem = sk.public_key().to_public_key_pem(Default::default()).unwrap();
-        (sk_pem, pk_pem)
-    }
-    fn generate_p521_keypair() -> (String, String) {
-        let sk = p521::SecretKey::generate();
-        let sk_pem = sk.to_pkcs8_pem(Default::default()).unwrap().to_string();
-        let pk_pem = sk.public_key().to_public_key_pem(Default::default()).unwrap();
-        (sk_pem, pk_pem)
-    }
-
-    fn generate_ed25519_keypair() -> (String, String) {
-        let sk = ed25519_dalek::SigningKey::generate(&mut rand::rng());
-        let sk_pem = sk.to_pkcs8_pem(Default::default()).unwrap().to_string();
-        let pk_pem = sk.verifying_key().to_public_key_pem(Default::default()).unwrap();
-        (sk_pem, pk_pem)
+        (alg, alg.generate_keypair().expect("key pair generation")).into()
     }
 
     /// Decode the claims of a token

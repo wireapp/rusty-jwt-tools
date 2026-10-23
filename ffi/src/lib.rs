@@ -314,6 +314,8 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::TokenLivesTooLong => Self::ExpMismatch,
             RustyJwtError::TokenExpired => Self::Expired,
             RustyJwtError::ImplementationError => Self::ImplementationError,
+            // only returned by the key pair conversions, which the FFI doesn't use
+            RustyJwtError::InvalidPrivateKey => Self::ImplementationError,
             RustyJwtError::JsonWebTokenError(_) => Self::JsonWebTokenError,
             RustyJwtError::UrlParseError(_) => Self::UrlParseError,
             RustyJwtError::UuidError(_) => Self::UuidError,

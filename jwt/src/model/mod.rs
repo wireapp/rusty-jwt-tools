@@ -3,6 +3,7 @@ use std::sync::LazyLock;
 pub(crate) mod alg;
 pub(crate) mod client_id;
 pub(crate) mod handle;
+pub(crate) mod keypair;
 pub(crate) mod nonce;
 pub(crate) mod pem;
 pub(crate) mod team;

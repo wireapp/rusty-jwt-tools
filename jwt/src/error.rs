@@ -187,6 +187,9 @@ pub enum RustyJwtError {
     /// Unsupported algorithm
     #[error("Unsupported algorithm")]
     UnsupportedAlgorithm,
+    /// A private key is invalid for the algorithm
+    #[error("Invalid private key")]
+    InvalidPrivateKey,
     /// Supplied backend keys have an invalid format
     #[error("Supplied backend keys have an invalid format")]
     InvalidBackendKeys(#[source] jsonwebtoken::errors::Error),
