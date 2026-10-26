@@ -45,7 +45,7 @@ getrandom = { version = "0.4", features = ["wasm_js"] }
 # enables `test-utils` for all tests of this crate
 rusty-jwt-tools = { path = ".", features = ["test-utils"] }
 wasm-bindgen-test = "0.3"
-rstest = { version = "0.27", default-features = false }
+rstest = { version = "0.28", default-features = false }
 rstest_reuse = { version = "0.7", default-features = false }
 rand = "0.10"
 
