@@ -1,6 +1,9 @@
 use std::{fmt::Formatter, str::FromStr};
 
-use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, jwk::ThumbprintHash};
+use jsonwebtoken::{
+    Algorithm, DecodingKey, EncodingKey,
+    jwk::{Jwk, ThumbprintHash},
+};
 
 use crate::prelude::*;
 
@@ -43,6 +46,11 @@ impl JwsAlgorithm {
             Self::ES256 | Self::ES384 | Self::ES512 => EncodingKey::from_ec_pem(pem.as_bytes()),
             Self::EdDSA => EncodingKey::from_ed_pem(pem.as_bytes()),
         }
+    }
+
+    /// Builds the public JWK of a PEM encoded key pair for this algorithm
+    pub fn public_jwk(self, kp: &Pem) -> RustyJwtResult<Jwk> {
+        Ok(Jwk::from_encoding_key(&self.encoding_key(kp)?, self.into())?)
     }
 
     /// Parses a PEM encoded public key for verifying signatures of this algorithm
