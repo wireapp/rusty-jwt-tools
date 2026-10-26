@@ -1045,7 +1045,7 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "rusty-jwt-tools"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "base64 0.23.1",
  "const_format",
@@ -1074,7 +1074,7 @@ dependencies = [
 
 [[package]]
 name = "rusty-jwt-tools-ffi"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "rusty-jwt-tools",
  "uuid",
