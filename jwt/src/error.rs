@@ -124,9 +124,6 @@ pub enum RustyJwtError {
     /// The JWK in the token header doesn't match the algorithm or the expected key
     #[error("Invalid JWK in token header")]
     InvalidJwk,
-    /// JWK thumbprint mismatches JWK in header
-    #[error("JWK thumbprint mismatches JWK in header")]
-    InvalidJwkThumbprint,
     /// JWT token 'iat' claim is in the future
     #[error("JWT token 'iat' claim is in the future")]
     TokenIssuedInFuture,
@@ -145,9 +142,6 @@ pub enum RustyJwtError {
     /// JWT token 'sub' claim mismatches with the expected one
     #[error("JWT token 'sub' claim mismatches with the expected one")]
     TokenSubMismatch,
-    /// JWT token 'iss' claim mismatches with the expected issuer
-    #[error("JWT token 'iss' claim mismatches with the expected issuer")]
-    TokenIssuerMismatch,
     /// JWT token is expired
     #[error("JWT token is expired")]
     TokenExpired,
@@ -172,18 +166,12 @@ pub enum RustyJwtError {
     /// DPoP token 'team' claim mismatches with the expected team
     #[error("DPoP token 'team' claim mismatches with the expected team")]
     DpopTeamMismatch,
-    /// JWT token 'chal' claim mismatches with the expected [crate::prelude::AcmeNonce]
-    #[error("JWT token 'chal' claim mismatches with the expected challenge")]
-    ChallengeMismatch,
     /// DPoP token 'htu' claim mismatches with the expected uri
     #[error("DPoP token 'htu' claim mismatches with the expected uri")]
     DpopHtuMismatch,
     /// DPoP token 'htm' claim mismatches with the expected method
     #[error("DPoP token 'htm' claim mismatches with the expected method")]
     DpopHtmMismatch,
-    /// The DPoP proof embedded in an access token failed verification
-    #[error("The DPoP proof in the access token is invalid: {0}")]
-    InvalidDpopProof(Box<RustyJwtError>),
     /// Unsupported algorithm
     #[error("Unsupported algorithm")]
     UnsupportedAlgorithm,
@@ -196,12 +184,6 @@ pub enum RustyJwtError {
     /// see [crate::prelude::ClientId]
     #[error("Supplied client identifier is invalid")]
     InvalidClientId,
-    /// Verified a token with an unsupported wire-server API version
-    #[error("Verified a token with an unsupported wire-server API version")]
-    UnsupportedApiVersion,
-    /// Verified a token with an unsupported scope
-    #[error("Verified a token with an unsupported scope")]
-    UnsupportedScope,
     /// Handle claim is in the wrong format
     #[error("Handle claim is in the wrong format")]
     InvalidHandle,

@@ -17,8 +17,6 @@ pub struct ExpectedClaims<'a> {
     pub backend_nonce: Option<&'a BackendNonce>,
     /// The maximum number of seconds of clock skew allowed when checking 'exp', 'nbf' and 'iat'
     pub leeway: u16,
-    /// If set, the 'iss' claim is required and must be equal to it
-    pub issuer: Option<Htu>,
     /// Latest accepted 'exp' claim, in seconds since the UNIX epoch
     pub max_expiration: u64,
 }
@@ -53,12 +51,7 @@ impl VerifyJwt for &str {
     {
         // Setup the validation
         let mut validation = Validation::new(alg.into());
-        if let Some(issuer) = expected.issuer {
-            validation.set_required_spec_claims(&["exp", "sub", "nbf", "iss"]);
-            validation.set_issuer(&[issuer]);
-        } else {
-            validation.set_required_spec_claims(&["exp", "sub", "nbf"]);
-        }
+        validation.set_required_spec_claims(&["exp", "sub", "nbf"]);
         validation.validate_aud = false;
         validation.validate_exp = true;
         validation.validate_nbf = true;
@@ -111,8 +104,6 @@ pub fn jwt_error_mapping(e: Error) -> RustyJwtError {
         ErrorKind::ExpiredSignature => RustyJwtError::TokenExpired,
 
         ErrorKind::ImmatureSignature => RustyJwtError::TokenNotYetValid,
-
-        ErrorKind::InvalidIssuer => RustyJwtError::TokenIssuerMismatch,
 
         // DPoP claims failing because of serde
         ErrorKind::Json(error) => {

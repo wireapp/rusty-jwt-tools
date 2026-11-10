@@ -78,8 +78,7 @@ pub(crate) trait VerifyDpop {
         display_name: &str,
         team: &Team,
         backend_nonce: &BackendNonce,
-        challenge: Option<&AcmeNonce>,
-        htm: Option<Htm>,
+        htm: Htm,
         htu: &Htu,
         max_expiration: u64,
         leeway: u16,
@@ -96,8 +95,7 @@ impl VerifyDpop for &str {
         display_name: &str,
         team: &Team,
         backend_nonce: &BackendNonce,
-        challenge: Option<&AcmeNonce>,
-        htm: Option<Htm>,
+        htm: Htm,
         htu: &Htu,
         max_expiration: u64,
         leeway: u16,
@@ -107,25 +105,17 @@ impl VerifyDpop for &str {
             client_id,
             backend_nonce: Some(backend_nonce),
             leeway,
-            issuer: None,
             max_expiration,
         };
 
         // also verifies the nonce
         let claims = (*self).verify_jwt::<Dpop>(alg, &pk, expected)?;
 
-        if let Some(expected_htm) = htm
-            && expected_htm != claims.custom.htm
-        {
+        if htm != claims.custom.htm {
             return Err(RustyJwtError::DpopHtmMismatch);
         }
         if htu != &claims.custom.htu {
             return Err(RustyJwtError::DpopHtuMismatch);
-        }
-        if let Some(chal) = challenge
-            && chal != &claims.custom.challenge
-        {
-            return Err(RustyJwtError::ChallengeMismatch);
         }
         if &claims.custom.handle != handle {
             return Err(RustyJwtError::DpopHandleMismatch);

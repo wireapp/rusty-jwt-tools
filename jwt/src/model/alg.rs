@@ -1,7 +1,7 @@
 use std::{fmt::Formatter, str::FromStr};
 
 use jsonwebtoken::{
-    Algorithm, DecodingKey, EncodingKey,
+    Algorithm, EncodingKey,
     jwk::{Jwk, ThumbprintHash},
 };
 
@@ -54,7 +54,9 @@ impl JwsAlgorithm {
     }
 
     /// Parses a PEM encoded public key for verifying signatures of this algorithm
-    pub(crate) fn decoding_key(self, pem: &Pem) -> jsonwebtoken::errors::Result<DecodingKey> {
+    #[cfg(feature = "test-utils")]
+    pub(crate) fn decoding_key(self, pem: &Pem) -> jsonwebtoken::errors::Result<jsonwebtoken::DecodingKey> {
+        use jsonwebtoken::DecodingKey;
         match self {
             Self::ES256 | Self::ES384 | Self::ES512 => DecodingKey::from_ec_pem(pem.as_bytes()),
             Self::EdDSA => DecodingKey::from_ed_pem(pem.as_bytes()),
