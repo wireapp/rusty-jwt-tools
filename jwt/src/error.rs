@@ -97,7 +97,7 @@ pub enum RustyJwtError {
     /// Invalid HTTP method
     #[error("Invalid Htm '{0}'")]
     InvalidHtm(String),
-    /// The JWK in the token header doesn't match the algorithm or the expected key
+    /// The JWK in the token header doesn't match the algorithm
     #[error("Invalid JWK in token header")]
     InvalidJwk,
     /// JWT token 'iat' claim is in the future
