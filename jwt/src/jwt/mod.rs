@@ -3,11 +3,9 @@
 #[cfg(test)]
 pub(crate) use claims::NOW_LEEWAY_SECONDS;
 pub use claims::{Audiences, JwtClaims};
-pub(crate) use verify::{ExpectedClaims, verify_jwt};
 
 mod claims;
 pub(crate) mod generate;
-mod verify;
 
 /// Generates a new jti
 pub fn new_jti() -> String {
