@@ -52,16 +52,6 @@ impl JwsAlgorithm {
     pub fn public_jwk(self, kp: &Pem) -> RustyJwtResult<Jwk> {
         Ok(Jwk::from_encoding_key(&self.encoding_key(kp)?, self.into())?)
     }
-
-    /// Parses a PEM encoded public key for verifying signatures of this algorithm
-    #[cfg(feature = "test-utils")]
-    pub(crate) fn decoding_key(self, pem: &Pem) -> jsonwebtoken::errors::Result<jsonwebtoken::DecodingKey> {
-        use jsonwebtoken::DecodingKey;
-        match self {
-            Self::ES256 | Self::ES384 | Self::ES512 => DecodingKey::from_ec_pem(pem.as_bytes()),
-            Self::EdDSA => DecodingKey::from_ed_pem(pem.as_bytes()),
-        }
-    }
 }
 
 impl From<JwsAlgorithm> for jsonwebtoken::Algorithm {

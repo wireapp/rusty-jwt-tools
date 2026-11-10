@@ -453,11 +453,7 @@ pub mod tests {
             let params = Params::from(ciphersuite.clone());
             let backend_keys = params.backend_keys.clone();
             let access_token = access_token(params).unwrap();
-            let key = ciphersuite
-                .key
-                .alg
-                .decoding_key(&backend_keys.pk)
-                .expect("key from pem");
+            let key = backend_keys.decoding_key();
             let mut validation = Validation::new(ciphersuite.key.alg.into());
             validation.validate_aud = false;
             decode::<serde_json::Value>(access_token, &key, &validation).unwrap();

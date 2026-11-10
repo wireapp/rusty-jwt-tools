@@ -174,7 +174,7 @@ pub mod tests {
             .unwrap();
 
             // validate token given raw public key
-            let decoding_key = key.alg.decoding_key(&key.pk).expect("DecodingKey from pem");
+            let decoding_key = key.decoding_key();
             let mut validation = Validation::new(key.alg.into());
             validation.validate_aud = false;
             assert!(decode::<Dpop>(&token, &decoding_key, &validation).is_ok());
@@ -188,10 +188,7 @@ pub mod tests {
 
             // should not be valid with another key
             let other_kp = JwtKey::new_key(key.alg);
-            let decoding_key = other_kp
-                .alg
-                .decoding_key(&other_kp.pk)
-                .expect("DecodingKey from random JwtKey");
+            let decoding_key = other_kp.decoding_key();
             assert!(decode::<Dpop>(&token, &decoding_key, &validation).is_err());
         }
     }
