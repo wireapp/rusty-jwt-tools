@@ -14,8 +14,6 @@ pub enum Claim {
     Jti,
     /// 'sub': subject
     Sub,
-    /// 'iss': issuer
-    Iss,
     /// 'aud': audience
     Aud,
     /// 'nonce': backend nonce
@@ -26,16 +24,6 @@ pub enum Claim {
     Htm,
     /// 'htu': HTTP URI of a DPoP proof
     Htu,
-    /// 'cnf': JWK thumbprint in an access token
-    Cnf,
-    /// 'proof': DPoP proof in an access token
-    Proof,
-    /// 'api_version': wire-server API version in an access token
-    ApiVersion,
-    /// 'client_id': client identifier in an access token
-    ClientId,
-    /// 'scope': scope of an access token
-    Scope,
     /// 'handle': handle of the client
     Handle,
     /// 'name': display name of the client
@@ -43,23 +31,17 @@ pub enum Claim {
 }
 
 impl Claim {
-    const ALL: [Self; 18] = [
+    const ALL: [Self; 12] = [
         Self::Exp,
         Self::Nbf,
         Self::Iat,
         Self::Jti,
         Self::Sub,
-        Self::Iss,
         Self::Aud,
         Self::Nonce,
         Self::Chal,
         Self::Htm,
         Self::Htu,
-        Self::Cnf,
-        Self::Proof,
-        Self::ApiVersion,
-        Self::ClientId,
-        Self::Scope,
         Self::Handle,
         Self::Name,
     ];
@@ -72,17 +54,11 @@ impl Claim {
             Self::Iat => "iat",
             Self::Jti => "jti",
             Self::Sub => "sub",
-            Self::Iss => "iss",
             Self::Aud => "aud",
             Self::Nonce => "nonce",
             Self::Chal => "chal",
             Self::Htm => "htm",
             Self::Htu => "htu",
-            Self::Cnf => "cnf",
-            Self::Proof => "proof",
-            Self::ApiVersion => "api_version",
-            Self::ClientId => "client_id",
-            Self::Scope => "scope",
             Self::Handle => "handle",
             Self::Name => "name",
         }
