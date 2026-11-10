@@ -3,15 +3,20 @@ use jsonwebtoken::{
     errors::{Error, ErrorKind},
     jwk::{AlgorithmParameters, EllipticCurve, EllipticCurveKeyParameters, Jwk, OctetKeyPairParameters},
 };
-use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{jwt::JwtClaims, prelude::*};
 
 /// What a DPoP proof must look like to pass [verify_dpop_proof]
 #[derive(Debug, Clone)]
 pub(crate) struct ExpectedDpop<'a> {
-    /// Expected registered claims, see [ExpectedClaims]
-    pub claims: ExpectedClaims<'a>,
+    /// The client the proof must belong to, i.e. the 'sub' claim must be its URI
+    pub client_id: &'a ClientId,
+    /// The 'nonce' claim must be equal to it
+    pub backend_nonce: &'a BackendNonce,
+    /// The maximum number of seconds of clock skew allowed when checking 'exp', 'nbf' and 'iat'
+    pub leeway: u16,
+    /// Largest acceptable 'exp' claim, in seconds since the UNIX epoch
+    pub max_expiration: u64,
     /// The 'handle' claim must be equal to it
     pub handle: &'a QualifiedHandle,
     /// The 'name' claim must be equal to it
@@ -33,9 +38,7 @@ pub(crate) fn verify_dpop_proof(
 ) -> RustyJwtResult<(JwsAlgorithm, Jwk, JwtClaims<Dpop>)> {
     let (alg, jwk) = verify_header(decode_header(proof)?)?;
     let pk = DecodingKey::from_jwk(&jwk).map_err(|e| RustyJwtError::InvalidToken(e.to_string()))?;
-
-    // also verifies the nonce
-    let claims = verify_jwt::<Dpop>(proof, alg, &pk, expected.claims)?;
+    let claims = verify_claims(proof, alg, &pk, &expected)?;
 
     if expected.htm != claims.custom.htm {
         return Err(RustyJwtError::DpopHtmMismatch);
@@ -69,6 +72,51 @@ fn verify_header(header: Header) -> RustyJwtResult<(JwsAlgorithm, Jwk)> {
     Ok((alg, jwk))
 }
 
+/// Verifies the signature of a DPoP proof and its 'sub', 'exp', 'nbf', 'iat', 'jti' and 'nonce' claims
+fn verify_claims(
+    proof: &str,
+    alg: JwsAlgorithm,
+    key: &DecodingKey,
+    expected: &ExpectedDpop,
+) -> RustyJwtResult<JwtClaims<Dpop>> {
+    let mut validation = Validation::new(alg.into());
+    validation.set_required_spec_claims(&["exp", "sub", "nbf"]);
+    validation.validate_aud = false;
+    validation.validate_exp = true;
+    validation.validate_nbf = true;
+    validation.leeway = expected.leeway.into();
+    validation.sub = Some(expected.client_id.to_uri());
+
+    // verifies the signature and the claims configured above
+    let claims = decode::<JwtClaims<Dpop>>(proof, key, &validation)
+        .map_err(jwt_error_mapping)?
+        .claims;
+
+    claims
+        .jwt_id
+        .as_ref()
+        .ok_or(RustyJwtError::MissingTokenClaim(Claim::Jti))?;
+    let issued_at = claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim(Claim::Iat))?;
+    let now = jsonwebtoken::get_current_timestamp();
+    if issued_at > now + expected.leeway as u64 {
+        return Err(RustyJwtError::TokenIssuedInFuture);
+    }
+    let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim(Claim::Exp))?;
+    if exp > expected.max_expiration {
+        return Err(RustyJwtError::TokenLivesTooLong);
+    }
+
+    let nonce = claims
+        .nonce
+        .as_deref()
+        .ok_or(RustyJwtError::MissingTokenClaim(Claim::Nonce))?;
+    if nonce != expected.backend_nonce.as_str() {
+        return Err(RustyJwtError::DpopNonceMismatch);
+    }
+
+    Ok(claims)
+}
+
 /// Whether the JWK's key type and curve are the ones expected by `alg`
 fn jwk_matches_alg(jwk: &Jwk, alg: JwsAlgorithm) -> bool {
     matches!(
@@ -99,74 +147,6 @@ fn jwk_matches_alg(jwk: &Jwk, alg: JwsAlgorithm) -> bool {
             })
         )
     )
-}
-
-/// What the claims of a token must look like to pass [verify_jwt]
-#[derive(Debug, Clone)]
-pub(crate) struct ExpectedClaims<'a> {
-    /// The client the token must belong to, i.e. the 'sub' claim must be its URI
-    pub client_id: &'a ClientId,
-    /// The 'nonce' claim must be equal to it
-    pub backend_nonce: &'a BackendNonce,
-    /// The maximum number of seconds of clock skew allowed when checking 'exp', 'nbf' and 'iat'
-    pub leeway: u16,
-    /// Latest accepted 'exp' claim, in seconds since the UNIX epoch
-    pub max_expiration: u64,
-}
-
-/// Verifies the signature and the claims of a JWT token and returns its claims
-///
-/// # Arguments
-/// * `token` - JWT token in compact serialization
-/// * `alg` - Algorithm the token must be signed with
-/// * `key` - Public key to verify the signature with
-/// * `expected` - What the claims must look like, see [ExpectedClaims]
-pub(crate) fn verify_jwt<T>(
-    token: &str,
-    alg: JwsAlgorithm,
-    key: &DecodingKey,
-    expected: ExpectedClaims,
-) -> RustyJwtResult<JwtClaims<T>>
-where
-    T: Serialize + DeserializeOwned,
-{
-    // Setup the validation
-    let mut validation = Validation::new(alg.into());
-    validation.set_required_spec_claims(&["exp", "sub", "nbf"]);
-    validation.validate_aud = false;
-    validation.validate_exp = true;
-    validation.validate_nbf = true;
-    validation.leeway = expected.leeway.into();
-    validation.sub = Some(expected.client_id.to_uri());
-
-    // Get the token claims, validating the above via jsonwebtoken
-    let token = decode::<JwtClaims<T>>(token, key, &validation).map_err(jwt_error_mapping)?;
-    let claims = token.claims;
-
-    // custom validations
-    claims
-        .jwt_id
-        .as_ref()
-        .ok_or(RustyJwtError::MissingTokenClaim(Claim::Jti))?;
-    let issued_at = claims.issued_at.ok_or(RustyJwtError::MissingTokenClaim(Claim::Iat))?;
-    let now = jsonwebtoken::get_current_timestamp();
-    if issued_at > now + expected.leeway as u64 {
-        return Err(RustyJwtError::TokenIssuedInFuture);
-    }
-    let exp = claims.expires_at.ok_or(RustyJwtError::MissingTokenClaim(Claim::Exp))?;
-    if exp > expected.max_expiration {
-        return Err(RustyJwtError::TokenLivesTooLong);
-    }
-
-    let nonce = claims
-        .nonce
-        .as_deref()
-        .ok_or(RustyJwtError::MissingTokenClaim(Claim::Nonce))?;
-    if nonce != expected.backend_nonce.as_str() {
-        return Err(RustyJwtError::DpopNonceMismatch);
-    }
-
-    Ok(claims)
 }
 
 /// Maps jsonwebtoken::errors::Error to RustyJwtError

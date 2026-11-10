@@ -3,7 +3,7 @@ use std::time::Duration;
 pub use htm::Htm;
 pub use htu::Htu;
 use serde::{Deserialize, Serialize};
-pub(crate) use verify::{ExpectedClaims, ExpectedDpop, verify_dpop_proof};
+pub(crate) use verify::{ExpectedDpop, verify_dpop_proof};
 
 use crate::{jwt::JwtClaims, prelude::*};
 

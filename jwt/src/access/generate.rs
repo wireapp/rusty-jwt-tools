@@ -4,7 +4,7 @@ use jsonwebtoken::{Header, jwk::Jwk};
 
 use crate::{
     access::Access,
-    dpop::{ExpectedClaims, ExpectedDpop, verify_dpop_proof},
+    dpop::{ExpectedDpop, verify_dpop_proof},
     jwk_thumbprint::JwkThumbprint,
     jwt::JwtClaims,
     prelude::*,
@@ -64,12 +64,10 @@ impl RustyJwtTools {
         expiry: Duration,
     ) -> RustyJwtResult<String> {
         let expected = ExpectedDpop {
-            claims: ExpectedClaims {
-                client_id,
-                backend_nonce: &backend_nonce,
-                leeway: max_skew_secs,
-                max_expiration,
-            },
+            client_id,
+            backend_nonce: &backend_nonce,
+            leeway: max_skew_secs,
+            max_expiration,
             handle: &handle,
             display_name,
             team: &team,
