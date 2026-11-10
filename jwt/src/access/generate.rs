@@ -1,10 +1,10 @@
 use std::time::Duration;
 
-use jsonwebtoken::{Header, decode_header, jwk::Jwk};
+use jsonwebtoken::{Header, jwk::Jwk};
 
 use crate::{
     access::Access,
-    dpop::{VerifyDpop, VerifyDpopTokenHeader},
+    dpop::{ExpectedClaims, ExpectedDpop, verify_dpop_proof},
     jwk_thumbprint::JwkThumbprint,
     jwt::JwtClaims,
     prelude::*,
@@ -63,21 +63,20 @@ impl RustyJwtTools {
         api_version: u32,
         expiry: Duration,
     ) -> RustyJwtResult<String> {
-        let header = decode_header(dpop_proof)?;
-        let (alg, jwk) = header.verify_dpop_header()?;
-        let proof_claims = dpop_proof.verify_client_dpop(
-            alg,
-            &jwk,
-            client_id,
-            &handle,
+        let expected = ExpectedDpop {
+            claims: ExpectedClaims {
+                client_id,
+                backend_nonce: &backend_nonce,
+                leeway: max_skew_secs,
+                max_expiration,
+            },
+            handle: &handle,
             display_name,
-            &team,
-            &backend_nonce,
-            method,
-            &uri,
-            max_expiration,
-            max_skew_secs,
-        )?;
+            team: &team,
+            htm: method,
+            htu: &uri,
+        };
+        let (alg, jwk, proof_claims) = verify_dpop_proof(dpop_proof, expected)?;
         Self::access_token(
             alg,
             &jwk,
@@ -148,6 +147,7 @@ impl RustyJwtTools {
 #[cfg(test)]
 pub mod tests {
     use base64::Engine;
+    use jsonwebtoken::decode_header;
     use serde_json::{Value, json};
 
     use super::*;

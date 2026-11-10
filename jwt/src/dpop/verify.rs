@@ -1,5 +1,5 @@
 use jsonwebtoken::{
-    DecodingKey, Header, Validation, decode,
+    DecodingKey, Header, Validation, decode, decode_header,
     errors::{Error, ErrorKind},
     jwk::{AlgorithmParameters, EllipticCurve, EllipticCurveKeyParameters, Jwk, OctetKeyPairParameters},
 };
@@ -7,25 +7,66 @@ use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{jwt::JwtClaims, prelude::*};
 
-/// Verifies DPoP token specific header
-pub(crate) trait VerifyDpopTokenHeader {
-    /// Verifies the header
-    fn verify_dpop_header(self) -> RustyJwtResult<(JwsAlgorithm, Jwk)>;
+/// What a DPoP proof must look like to pass [verify_dpop_proof]
+#[derive(Debug, Clone)]
+pub(crate) struct ExpectedDpop<'a> {
+    /// Expected registered claims, see [ExpectedClaims]
+    pub claims: ExpectedClaims<'a>,
+    /// The 'handle' claim must be equal to it
+    pub handle: &'a QualifiedHandle,
+    /// The 'name' claim must be equal to it
+    pub display_name: &'a str,
+    /// The 'team' claim must be equal to it
+    pub team: &'a Team,
+    /// The 'htm' claim must be equal to it
+    pub htm: Htm,
+    /// The 'htu' claim must be equal to it
+    pub htu: &'a Htu,
 }
 
-impl VerifyDpopTokenHeader for Header {
-    fn verify_dpop_header(self) -> RustyJwtResult<(JwsAlgorithm, Jwk)> {
-        let typ = self.typ.ok_or(RustyJwtError::MissingTokenHeader("typ"))?;
-        if typ != Dpop::TYP {
-            return Err(RustyJwtError::InvalidTokenTyp(Dpop::TYP));
-        }
-        let alg = JwsAlgorithm::try_from(self.alg)?;
-        let jwk = self.jwk.ok_or(RustyJwtError::MissingTokenHeader("jwk"))?;
-        if !jwk_matches_alg(&jwk, alg) {
-            return Err(RustyJwtError::InvalidJwk);
-        }
-        Ok((alg, jwk))
+/// Verifies the header, the signature and the claims of a DPoP proof
+///
+/// Returns the algorithm and the JWK of the proof's header, together with its claims.
+pub(crate) fn verify_dpop_proof(
+    proof: &str,
+    expected: ExpectedDpop,
+) -> RustyJwtResult<(JwsAlgorithm, Jwk, JwtClaims<Dpop>)> {
+    let (alg, jwk) = verify_header(decode_header(proof)?)?;
+    let pk = DecodingKey::from_jwk(&jwk).map_err(|e| RustyJwtError::InvalidToken(e.to_string()))?;
+
+    // also verifies the nonce
+    let claims = verify_jwt::<Dpop>(proof, alg, &pk, expected.claims)?;
+
+    if expected.htm != claims.custom.htm {
+        return Err(RustyJwtError::DpopHtmMismatch);
     }
+    if expected.htu != &claims.custom.htu {
+        return Err(RustyJwtError::DpopHtuMismatch);
+    }
+    if expected.handle != &claims.custom.handle {
+        return Err(RustyJwtError::DpopHandleMismatch);
+    }
+    if expected.team != &claims.custom.team {
+        return Err(RustyJwtError::DpopTeamMismatch);
+    }
+    if expected.display_name != claims.custom.display_name {
+        return Err(RustyJwtError::DpopDisplayNameMismatch);
+    }
+    Ok((alg, jwk, claims))
+}
+
+/// Verifies the DPoP specific header fields and returns the algorithm and the JWK
+fn verify_header(header: Header) -> RustyJwtResult<(JwsAlgorithm, Jwk)> {
+    let typ = header.typ.ok_or(RustyJwtError::MissingTokenHeader("typ"))?;
+    if typ != Dpop::TYP {
+        return Err(RustyJwtError::InvalidTokenTyp(Dpop::TYP));
+    }
+    let alg = JwsAlgorithm::try_from(header.alg)?;
+    let jwk = header.jwk.ok_or(RustyJwtError::MissingTokenHeader("jwk"))?;
+    if !jwk_matches_alg(&jwk, alg) {
+        return Err(RustyJwtError::InvalidJwk);
+    }
+    Ok((alg, jwk))
 }
 
 /// Whether the JWK's key type and curve are the ones expected by `alg`
@@ -58,75 +99,6 @@ fn jwk_matches_alg(jwk: &Jwk, alg: JwsAlgorithm) -> bool {
             })
         )
     )
-}
-
-/// Verifies DPoP token specific claims
-pub(crate) trait VerifyDpop {
-    /// Verifies the claims
-    ///
-    /// # Arguments
-    /// * `htm` - method
-    /// * `uri` - uri
-    #[expect(clippy::too_many_arguments)]
-    fn verify_client_dpop(
-        &self,
-        alg: JwsAlgorithm,
-        jwk: &Jwk,
-        client_id: &ClientId,
-        handle: &QualifiedHandle,
-        display_name: &str,
-        team: &Team,
-        backend_nonce: &BackendNonce,
-        htm: Htm,
-        htu: &Htu,
-        max_expiration: u64,
-        leeway: u16,
-    ) -> RustyJwtResult<JwtClaims<Dpop>>;
-}
-
-impl VerifyDpop for &str {
-    fn verify_client_dpop(
-        &self,
-        alg: JwsAlgorithm,
-        jwk: &Jwk,
-        client_id: &ClientId,
-        handle: &QualifiedHandle,
-        display_name: &str,
-        team: &Team,
-        backend_nonce: &BackendNonce,
-        htm: Htm,
-        htu: &Htu,
-        max_expiration: u64,
-        leeway: u16,
-    ) -> RustyJwtResult<JwtClaims<Dpop>> {
-        let pk = DecodingKey::from_jwk(jwk).map_err(|e| RustyJwtError::InvalidToken(e.to_string()))?;
-        let expected = ExpectedClaims {
-            client_id,
-            backend_nonce,
-            leeway,
-            max_expiration,
-        };
-
-        // also verifies the nonce
-        let claims = verify_jwt::<Dpop>(self, alg, &pk, expected)?;
-
-        if htm != claims.custom.htm {
-            return Err(RustyJwtError::DpopHtmMismatch);
-        }
-        if htu != &claims.custom.htu {
-            return Err(RustyJwtError::DpopHtuMismatch);
-        }
-        if &claims.custom.handle != handle {
-            return Err(RustyJwtError::DpopHandleMismatch);
-        }
-        if team != &claims.custom.team {
-            return Err(RustyJwtError::DpopTeamMismatch);
-        }
-        if display_name != claims.custom.display_name {
-            return Err(RustyJwtError::DpopDisplayNameMismatch);
-        }
-        Ok(claims)
-    }
 }
 
 /// What the claims of a token must look like to pass [verify_jwt]
