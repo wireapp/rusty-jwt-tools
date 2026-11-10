@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+### Highlights
+
+`RustyJwtTools::verify_access_token` has been removed. Neither wire-server nor
+core-crypto uses it, and the ACME server (smallstep) verifies access tokens
+itself.
+Everything that only existed for verifying access tokens has been removed as
+well, and the verification of JWTs is now internal to this crate.
+
+### Breaking Changes
+
+#### Rust API
+
+- `RustyJwtTools::verify_access_token` has been removed.
+
+- `RustyJwtError` variants only returned by `verify_access_token` have been
+  removed: `InvalidDpopProof`, `TokenIssuerMismatch`, `ChallengeMismatch`,
+  `UnsupportedApiVersion`, `UnsupportedScope` and `InvalidJwkThumbprint`.
+
+- `Claim` variants of access token claims have been removed: `Iss`, `Cnf`,
+  `Proof`, `ApiVersion`, `ClientId` and `Scope`.
+
+- The `jwt::verify` module, `jwt::ExpectedClaims`, `jwt::VerifyJwt` and
+  `jwt_error_mapping` are no longer public.
+
+#### FFI
+
+- The error codes `InvalidJwkThumbprint` (31), `MissingIssuer` (33),
+  `DpopChallengeMismatch` (34), `UnsupportedApiVersion` (39) and
+  `UnsupportedScope` (40) have been retired. They were never returned by
+  `generate_dpop_access_token`, so nothing changes for its callers.
+
 ## v0.15.0 - 2026-10-26
 
 ### Highlights
@@ -221,7 +254,6 @@ made.
 - e2e-identity: remove support for Dex (150a1bb)
 - e2e-identity: remove interactive Google test (38fa021)
 
-
 ## v0.13.0 - 2025-04-14
 
 ### Documentation
@@ -297,7 +329,6 @@ made.
 - upgrade tests to new testcontainers api (f411bb8)
 - update testcontainers crate (f9c156b)
 
-
 ## v0.10.0 - 2024-05-02
 
 ### Features
@@ -331,7 +362,6 @@ made.
 - Tryout latest Smallstep version (b854ad8)
 - Fix compilation (894c7ef)
 
-
 ## v0.9.0 - 2024-02-19
 
 ### Features
@@ -350,7 +380,6 @@ made.
 - Fix missed code path bail on no CRL availability (32923ab)
 - Correctly initialize Intermediate CA store (bc6c5c1)
 
-
 ## v0.8.6 - 2024-01-22
 
 ### Features
@@ -368,7 +397,6 @@ made.
 - Test smallstep's upstream branch and add a couple more e2e tests (b8f1850)
 - Fix some failing unit tests (2075fab)
 
-
 ## v0.8.5 - 2024-01-17
 
 ### Features
@@ -379,20 +407,17 @@ made.
 
 - Seal keyauth in OIDC id token by using Keycloak. Also test the whole flow with Keycloak (6ff52d5)
 
-
 ## v0.8.4 - 2024-01-16
 
 ### Bug Fixes
 
 - Wrong keypair was used for signing the client dpop token (0d3cc9f)
 
-
 ## v0.8.2 - 2024-01-15
 
 ### Bug Fixes
 
 - Enrollment JWK was not the ACME one (c4acab1)
-
 
 ## v0.8.1 - 2024-01-15
 
@@ -403,7 +428,6 @@ made.
 ### Documentation
 
 - Regenerate e2e-identity/README.md (4b1a850)
-
 
 ## v0.8.0 - 2024-01-10
 
@@ -416,13 +440,11 @@ made.
 
 - Use different keys for CSR signing and ACME account as recommended by RFC8555 Section 11.1 (7a25230)
 
-
 ## v0.7.1 - 2024-01-09
 
 ### Testing
 
 - Turn stepca registry image configurable (788d55d)
-
 
 ## v0.7.0 - 2024-01-09
 
@@ -438,13 +460,11 @@ made.
 
 - Fix openssl command for verifying certificates in tests and this time verify the whole certificate chain and not each certificate individually (690ce12)
 
-
 ## v0.6.1 - 2023-11-23
 
 ### Bug Fixes
 
 - WireIdentityBuilder was not tested. Now supports unqualified handle (a66f41d)
-
 
 ## v0.6.0 - 2023-11-23
 
@@ -456,7 +476,6 @@ made.
 
 - Use stepca image '0.0.42-test.95' (911170f)
 
-
 ## v0.5.2 - 2023-11-16
 
 ### Bug Fixes
@@ -466,7 +485,6 @@ made.
 ### Testing
 
 - Fix tests regarding ciphersuite agility and those without the demo context because of domain validation in certificates (bb94548)
-
 
 ## v0.5.0 - 2023-08-29
 
@@ -487,7 +505,6 @@ made.
 - Update e2e test with latest refinements (2094eae)
 - Fix new clippy lints (0b09497)
 
-
 ## v0.4.5 - 2023-07-04
 
 ### Features
@@ -496,7 +513,6 @@ made.
 - Better error mapping in certificate validation (52b1360)
 - Simplify x509 certificate builder (cd2a1ee)
 - Add `extract_created_at` to parse a certificate and get the 'Not Before' claim (1d7d56f)
-
 
 ## v0.4.4 - 2023-06-09
 
@@ -513,13 +529,11 @@ made.
 
 - Some tests were not on wasm-bindgen (7f5e65b)
 
-
 ## v0.4.3 - 2023-05-17
 
 ### Bug Fixes
 
 - Accidentally made the "identity-builder" feature default, bringing in "ring" transitively (f213196)
-
 
 ## v0.4.2 - 2023-05-12
 
@@ -527,13 +541,11 @@ made.
 
 - Turn enrollment instance serializable (21366a8)
 
-
 ## v0.4.1 - 2023-05-09
 
 ### Bug Fixes
 
 - Return order & finalize urls (a449a34)
-
 
 ## v0.4.0 - 2023-05-09
 
@@ -546,13 +558,11 @@ made.
 
 - Generate JWTs with "nbf" claim slightly in past to prevent any clock drift issue (5a13a00)
 
-
 ## v0.3.6 - 2023-04-12
 
 ### Features
 
 - Add helpers to extract identity & fix lowercase SAN URIs (a65f16f)
-
 
 ## v0.3.5 - 2023-04-03
 
@@ -567,7 +577,6 @@ made.
 - Verify integration with Google OIDC provider (32299e3)
 - Have sign in part submit the login form on the client side (1195c1b)
 
-
 ## v0.3.2 - 2023-03-28
 
 ### Features
@@ -579,7 +588,6 @@ made.
 
 - Also test acme & e2e-identity crates in CI (678fd63)
 - More e2e tests of the oidc challenge (88cacda)
-
 
 ## v0.3.1 - 2023-03-17
 
@@ -594,7 +602,6 @@ made.
 ### Testing
 
 - More e2e tests for non-nominal cases (a11b581)
-
 
 ## v0.3.0 - 2023-03-10
 
@@ -611,7 +618,6 @@ made.
 - Allow passing the userId as a string over Haskell FFI then convert it back into uuid bytes on Rust side (a68ed48)
 - Use the correct Result in Haskell FFI used as pointer to free the allocated access token (27cf40e)
 - Haskell FFI was not built because a dangling "haskell" feature remained (a82e68b)
-
 
 ## v0.2.0 - 2023-02-10
 
