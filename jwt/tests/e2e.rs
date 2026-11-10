@@ -7,8 +7,6 @@ use rusty_jwt_tools::{jwk_thumbprint::JwkThumbprint, jwt_key::JwtKey, prelude::*
 
 #[test]
 fn e2e_jwt() {
-    let mut results = vec![];
-
     for (key, backend_keys, hash_alg) in keys() {
         let alg = key.alg;
         println!("# {alg:?} - {hash_alg:?}");
@@ -46,7 +44,7 @@ fn e2e_jwt() {
 
         println!("1. generate dpop:\nDpop token:\nhttps://jwt.io/#id_token={client_dpop}\n");
 
-        let backend_sk = backend_keys.sk;
+        let backend_sk = backend_keys.sk.clone();
 
         // wire-server now validates the 'client_dpop' and generates an access token
         let access_token = RustyJwtTools::generate_access_token(
@@ -60,7 +58,7 @@ fn e2e_jwt() {
             htm,
             leeway,
             max_expiration,
-            backend_sk.clone(),
+            backend_sk,
             hash_alg,
             5,
             Duration::from_secs(360),
@@ -69,36 +67,19 @@ fn e2e_jwt() {
 
         println!("2. generate access token:\naccess token:\nhttps://jwt.io/#id_token={access_token}\n");
 
-        // now acme server will verify the access token
-        let backend_pk = backend_keys.pk;
-        let dpop_header = decode_header(&client_dpop).unwrap();
-        let dpop_jwk = dpop_header.jwk.unwrap();
+        // the ACME server verifies the access token with wire-server's public key and checks that it is bound to
+        // the DPoP proof
+        let claims = backend_keys.claims::<serde_json::Value>(&access_token);
+        let dpop_jwk = decode_header(&client_dpop).unwrap().jwk.unwrap();
         let kid = JwkThumbprint::generate(&dpop_jwk, hash_alg).unwrap().kid;
-        let verify = RustyJwtTools::verify_access_token(
-            &access_token,
-            &alice,
-            &handle,
-            display_name,
-            &team.into(),
-            challenge,
-            leeway,
-            max_expiration,
-            htu.clone(),
-            backend_pk.clone(),
-            kid,
-            hash_alg,
-            5,
-        );
-        println!("3. verify access token");
-        if verify.is_ok() {
-            println!("✅ access token verified");
-            results.push(verify);
-        } else {
-            panic!("❌ access token invalid because {:?}", verify);
-        }
+        assert_eq!(claims.custom["cnf"]["kid"], kid.as_str());
+        assert_eq!(claims.custom["chal"], challenge.as_str());
+        assert_eq!(claims.custom["proof"], client_dpop.as_str());
+        assert_eq!(claims.issuer, Some(htu.to_string()));
+        assert_eq!(claims.subject, Some(alice.to_uri()));
+        println!("3. access token verified");
         println!("---------------------------------------------------------------------\n");
     }
-    assert!(results.into_iter().all(|v| v.is_ok()));
 }
 
 fn keys() -> Vec<(JwtKey, JwtKey, HashAlgorithm)> {
