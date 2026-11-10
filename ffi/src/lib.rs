@@ -245,13 +245,7 @@ pub enum HsError {
     /// Bubbling up errors
     Utf8Error = 26,
     /// Bubbling up errors
-    InvalidJwkThumbprint = 31,
-    /// Bubbling up errors
     MissingDpopHeader = 32,
-    /// Bubbling up errors
-    MissingIssuer = 33,
-    /// Bubbling up errors
-    DpopChallengeMismatch = 34,
     /// Bubbling up errors
     DpopHtuMismatch = 35,
     /// Bubbling up errors
@@ -260,10 +254,6 @@ pub enum HsError {
     InvalidBackendKeys = 37,
     /// Bubbling up errors
     InvalidClientId = 38,
-    /// Bubbling up errors
-    UnsupportedApiVersion = 39,
-    /// Bubbling up errors
-    UnsupportedScope = 40,
     /// Client handle does not match the supplied handle
     DpopHandleMismatch = 41,
     /// Client team does not match the supplied team
@@ -320,16 +310,11 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::UrlParseError(_) => Self::UrlParseError,
             RustyJwtError::UuidError(_) => Self::UuidError,
             RustyJwtError::Utf8Error(_) => Self::Utf8Error,
-            RustyJwtError::InvalidJwkThumbprint => Self::InvalidJwkThumbprint,
             RustyJwtError::MissingTokenHeader(_) => Self::MissingDpopHeader,
-            RustyJwtError::MissingTokenClaim(Claim::Iss) => Self::MissingIssuer,
-            RustyJwtError::ChallengeMismatch => Self::DpopChallengeMismatch,
             RustyJwtError::DpopHtuMismatch => Self::DpopHtuMismatch,
             RustyJwtError::DpopHtmMismatch => Self::DpopHtmMismatch,
             RustyJwtError::InvalidBackendKeys(_) => Self::InvalidBackendKeys,
             RustyJwtError::InvalidClientId => Self::InvalidClientId,
-            RustyJwtError::UnsupportedApiVersion => Self::UnsupportedApiVersion,
-            RustyJwtError::UnsupportedScope => Self::UnsupportedScope,
             RustyJwtError::DpopDisplayNameMismatch => Self::DpopDisplayNameMismatch,
             RustyJwtError::MissingTokenClaim(Claim::Nbf) => Self::MissingNbf,
             RustyJwtError::MissingTokenClaim(Claim::Sub) => Self::MissingSub,
@@ -341,14 +326,8 @@ impl From<RustyJwtError> for HsError {
             RustyJwtError::MissingTokenClaim(Claim::Name) => Self::MissingDisplayName,
             RustyJwtError::InvalidAudience => Self::InvalidAudience,
             RustyJwtError::InvalidHandle => Self::InvalidHandle,
-            // Can't happen, since only a DPoP proof is verified here, never an access token, and no identifier URIs
-            // are parsed
-            RustyJwtError::MissingTokenClaim(
-                Claim::Cnf | Claim::Proof | Claim::ApiVersion | Claim::ClientId | Claim::Scope,
-            )
-            | RustyJwtError::TokenIssuerMismatch
-            | RustyJwtError::InvalidDpopProof(_)
-            | RustyJwtError::InvalidIdentifierScheme(_) => Self::ImplementationError,
+            // Can't happen, since no identifier URIs are parsed here
+            RustyJwtError::InvalidIdentifierScheme(_) => Self::ImplementationError,
         }
     }
 }
