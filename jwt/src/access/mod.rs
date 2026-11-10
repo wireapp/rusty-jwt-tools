@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use crate::{jwk_thumbprint::JwkThumbprint, jwt::JwtClaims, prelude::*};
 
 mod generate;
-mod verify;
 
 /// Claims in an access token
 ///

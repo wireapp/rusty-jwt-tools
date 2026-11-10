@@ -1,4 +1,3 @@
-pub use access::*;
 pub use dpop::*;
 use jsonwebtoken::jwk::Jwk;
 pub use rstest::*;
@@ -6,8 +5,7 @@ pub use rstest_reuse::{self, *};
 pub use utils::*;
 
 pub use crate::jwt_key;
-use crate::{dpop::Dpop, jwk_thumbprint::JwkThumbprint, jwt_key::JwtKey, prelude::*};
-pub mod access;
+use crate::{dpop::Dpop, jwt_key::JwtKey, prelude::*};
 pub mod dpop;
 pub mod utils;
 
@@ -47,10 +45,6 @@ impl Ciphersuite {
             key: JwtKey::new_key(sign),
             hash,
         }
-    }
-
-    pub fn to_jwk_thumbprint(&self) -> JwkThumbprint {
-        JwkThumbprint::generate(&self.key.to_jwk(), self.hash).unwrap()
     }
 }
 
