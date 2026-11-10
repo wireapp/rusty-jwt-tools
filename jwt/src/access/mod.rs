@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::{jwk_thumbprint::JwkThumbprint, jwt::JwtClaims, prelude::*};
 
@@ -11,8 +11,8 @@ mod generate;
 /// Specified in [OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)][1]
 ///
 /// [1]: https://www.ietf.org/archive/id/draft-ietf-oauth-dpop-11.html
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
-#[cfg_attr(test, derive(Default))]
+#[derive(Debug, Clone, Serialize, Eq, PartialEq)]
+#[cfg_attr(test, derive(Default, serde::Deserialize))]
 pub(crate) struct Access {
     /// ACME server nonce
     #[serde(rename = "chal")]
