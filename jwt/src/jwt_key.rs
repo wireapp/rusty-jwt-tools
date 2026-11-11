@@ -2,7 +2,7 @@
 
 use jsonwebtoken::{DecodingKey, Validation, decode, jwk::Jwk};
 use p256::pkcs8::{DecodePrivateKey as _, EncodePublicKey as _};
-use serde::{Serialize, de::DeserializeOwned};
+use serde::de::DeserializeOwned;
 
 use crate::{
     jwt::JwtClaims,
@@ -31,7 +31,7 @@ impl JwtKey {
     /// Decode the claims of a token
     pub fn claims<T>(&self, token: &str) -> JwtClaims<T>
     where
-        T: Serialize + DeserializeOwned,
+        T: DeserializeOwned,
     {
         let key = self.decoding_key();
         let mut validation = Validation::new(self.alg.into());
