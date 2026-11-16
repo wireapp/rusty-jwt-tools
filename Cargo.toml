@@ -2,6 +2,12 @@
 members = ["jwt", "ffi"]
 resolver = "2"
 
+[workspace.package]
+version = "0.15.0"
+edition = "2024"
+repository = "https://github.com/wireapp/rusty-jwt-tools"
+license = "MPL-2.0"
+
 [workspace.lints.clippy]
 allow_attributes = "warn"
 missing_safety_doc = "deny"
